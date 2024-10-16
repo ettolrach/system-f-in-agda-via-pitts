@@ -1,3 +1,11 @@
+
+latex/*.pdf
+!latex/eushield-normal.pdf
+
+### === Everything below these next three lines are taken from               ===
+### === https://github.com/github/gitignore/blob/main/TeX.gitignore          ===
+### === which is licensed under a CC0 licence, so is okay to reproduce here. ===
+
 ## Core latex/pdflatex auxiliary files:
 *.aux
 *.lof
