@@ -16,6 +16,36 @@
 \usepackage{microtype} % recommended, but you can remove if it causes problems
 \usepackage[round]{natbib} % recommended for citations
 
+% === Custom packages === %
+
+% Maths:
+
+\usepackage{mathtools}
+\usepackage{amssymb}
+\usepackage{enumitem}
+\usepackage{hyperref}
+\DeclareMathOperator{\lcm}{lcm}
+\DeclareMathOperator{\Real}{Re}
+\DeclareMathOperator{\Imag}{Im}
+\DeclareMathOperator{\complex}{\mathbb{C}}
+\DeclareMathOperator{\reals}{\mathbb{R}}
+\DeclareMathOperator{\nat}{\mathbb{N}}
+\DeclareMathOperator{\integer}{\mathbb{Z}}
+\DeclareMathOperator{\Log}{Log}
+\DeclareMathOperator{\Arg}{Arg}
+
+% Others:
+
+% Syntax highlighting
+\usepackage{minted}
+% BNF
+\usepackage{simplebnf}
+% Unicode
+\usepackage[utf8]{inputenc}
+
+% Unicode characters:
+\DeclareUnicodeCharacter{2115}{$\nat$}
+
 \begin{document}
 \begin{preliminary}
 
@@ -62,21 +92,6 @@ summary of your report.
    {\end{frontenv}\newpage}
 
 \begin{ethics}
-\textbf{Instructions:} \emph{Agree with your supervisor which
-statement you need to include. Then delete the statement that you are not using,
-and the instructions in italics.\\
-\textbf{Either complete and include this statement:}}\\ % DELETE THESE INSTRUCTIONS
-%
-% IF ETHICS APPROVAL WAS REQUIRED:
-This project obtained approval from the Informatics Research Ethics committee.\\
-Ethics application number: ???\\
-Date when approval was obtained: YYYY-MM-DD\\
-%
-\emph{[If the project required human participants, edit as appropriate, otherwise delete:]}\\ % DELETE THIS LINE
-The participants' information sheet and a consent form are included in the appendix.\\
-%
-% IF ETHICS APPROVAL WAS NOT REQUIRED:
-\textbf{\emph{Or include this statement:}}\\ % DELETE THIS LINE
 This project was planned in accordance with the Informatics Research
 Ethics policy. It did not involve any aspects that required approval
 from the Informatics Research Ethics committee.
@@ -157,9 +172,57 @@ and use {\tt {\textbackslash}citep} for a parenthetical citation:
 
 You may use any consistent reference style that you prefer, including ``[1]'' numerical citations. 
 
-\chapter{Your next chapter}
+\chapter{Background}
 
-A dissertation usually contains several chapters.
+\section{Agda}
+Agda is a dependently-typed functional programming language, which makes it suitable as a proof-assistent for intuitionistic logic. Its syntax is very similar to Haskell, and in fact, the two are quite closely related. Agda compiles to Haskell and can use Haskell's standard library.
+
+We won't present a detailed description of Agda and instead encourage the reader to learn more about it themselves. Initial code examples should be simple enough to follow, and if prior experience in other theorem provers like Coq or Lean is present, then it shouldn't be too difficult to understand the code in this paper.
+
+A lot of definitions of datatypes in Agda use inductive definitions. For example, following the Peano axioms for the natural numbers $\nat$, we may define them like so.
+
+\begin{minted}{agda}
+data Nat : Set where
+  zero : Nat
+  suc  : Nat -> Nat
+\end{minted}
+
+Note how we here we use \texttt{Nat} and \texttt{->}, words which are composed of ASCII characters. Agda also supports non-ASCII (unicode) characters, and in fact, encourages its use. So it would be more idiomatic to write the above using $\nat$ and $\rightarrow$.
+
+\begin{minted}{agda}
+data ℕ : Set where
+  zero : ℕ
+  suc  : ℕ → ℕ
+\end{minted}
+
+\section{The $\lambda$-Calculus and System F}
+
+The \textit{$\lambda$-calculus} (pronounced \textit{lambda calculus}) is a theoretical model of computation which looks and works similar to familiar functional programming languages while still being as simple as possible to be fully Turing-complete. We recommend that resource for readers who aren't as familiar with the $\lambda$-calculus to use a resource such as Pierce TODO: CITE PIERCE. We will summarise the results we're interested in below.
+
+We have the following familiar BNF grammar for any $\lambda$-calculus term $t$.
+
+\begin{center}
+\begin{bnf}
+  $t$ ::=
+  | $x$ : variables
+  | $\lambda \, x. t$ : ($\lambda$)-abstractions
+  | $t_1 t_2$ : function application
+\end{bnf}
+\end{center}
+
+We will take for granted the following facts.
+
+\begin{itemize}
+  \item The familiar syntax of the $\lambda$-calculus, e.g. function application is left-associative (so for all abstractions $f$, $f a b = (f a) b$), and $\lambda$-abstractions extend as far as possible (e.g. $\lambda f. f a b = \lambda f. (f a b)$).
+
+  \item We have the familiar $\alpha$-conversion, $\beta$-reduction, and $\eta$-reduction.
+
+  \item $\beta$-reduction is a congruence, and so we can choose any redex (reducible expression) to perform a $\beta$-reduction.
+  
+  \item The Church-Rosser theorem.
+  
+  \item $\alpha$-equivalence is an equivalence relation, and so is $\alpha\beta$-equivalence and $\alpha\beta\eta$-equivalence. We write this as $=_{\alpha}$, $=_{\alpha\beta}$, and $=_{\alpha\beta\eta}$ repectively.
+\end{itemize}
 
 \chapter{Conclusions}
 
