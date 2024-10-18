@@ -123,11 +123,11 @@ TODO
 Agda is a dependently-typed functional programming language, which makes it
 suitable as a proof-assistant for intuitionistic logic
 \citep{norell_towards_2007}, similar to other such proof-assistants like Coq or
-Lean. Its syntax is very similar to Haskell, and in fact, the two are quite
-closely related; the Agda compiler is actually a transpiler to Haskell, and the
-Haskell standard library can be used in Agda \citep{kusee_compiling_2017}. Yet,
-Agda has stricter limitations on recursive functions and other such language
-features which would make it harder to reason about proofs
+Lean. Its syntax is very similar to Haskell, and in fact, the two are closely
+related; the Agda compiler is a transpiler to Haskell, and the Haskell standard
+library can be used in Agda \citep{kusee_compiling_2017}. Yet, Agda has stricter
+limitations on recursive functions and some other such language features which,
+if included, would make it harder to reason about proofs
 \citep{berghofer_brief_2009}.
 
 Agda most commonly uses inductive definitions. For example, following the Peano
@@ -141,9 +141,9 @@ data ℕ : Set where
 \end{minted}
 
 Taking advantage of the Curry-Howard correspondence, a proof in Agda is simply a
-function with an appropriate type signature and function body. So, a proof that
-addition is associative would use recursion, which corresponds to induction, as
-shown below.
+function with an appropriate type signature and function body
+\citep{wadler_propositions_2015}. So, a proof that addition is associative would
+use recursion, which corresponds to induction, as shown below.
 
 \begin{minted}{agda}
 open import Relation.Binary.PropositionalEquality
@@ -159,10 +159,11 @@ open import Data.Nat using (ℕ; zero; suc; _+_)
 
 \paragraph*{The $\lambda$-calculus.} The $\lambda$-calculus (pronounced
 \textit{lambda calculus}), is a theoretical model of computation developed by
-Alonzo Church in the 1930s and is what System F is based upon. It looks and
-works similar to familiar functional programming languages, yet its defintion is
-as minimal as possible while still being Turing-complete. As described in
-\cite{pierce_types_2002}, the most relevant results are summarised below.
+Alonzo Church in the 1930s (first described in \citet{church_set_1932}) and is
+what System F is based upon. It looks and works similar to familiar functional
+programming languages, yet its defintion is as minimal as possible while still
+being Turing-complete. As described in \cite{pierce_types_2002}, the most
+relevant results are summarised below.
 
 We have the following familiar BNF grammar for any $\lambda$-calculus term $t$.
 
@@ -221,13 +222,14 @@ We say that these terms \textit{do not have a normal form}.
 
 \paragraph*{The simply-typed $\lambda$-calculus.} While not being
 Turing-complete, the simply-typed $\lambda$-calculus (STLC for short and
-sometimes given the symbol $\lambda^{\rightarrow}$) is an extension to untyped
-$\lambda$-calculus described above which Church developed that requires each
-term to have a \textit{type}. Terms which do not have a normal form cannot be
-given a type. As such, we only remain with `nice' expressions, that is, all
-expressions will after successive $\beta$-reductions result in an irreducible
-expression---their normal form. This is also called \textit{strong
-normalisation}. \citep{pierce_types_2002}
+sometimes given the symbol $\lambda^{\rightarrow}$) is an extension to the
+untyped $\lambda$-calculus described above that was developed in
+\citet{church_formulation_1940} which requires each term to have a
+\textit{type}. Terms which do not have a normal form cannot be given a type. As
+such, we only remain with `nice' expressions, that is, all expressions will
+after successive $\beta$-reductions result in an irreducible expression---their
+normal form. This is also called \textit{strong normalisation}.
+\citep{pierce_types_2002}
 
 Since we can no longer represent all of the terms of the untyped
 $\lambda$-calculus, we've lost Turing-completeness. Nevertheless, STLC is still
@@ -332,10 +334,10 @@ $y$ that is in our context (if we were to use actual functions on the naturals,
 then we could have a real problem if the outer $y$ is the squaring function and
 the inner $y$ the successor function, for instance). We can use an
 $\alpha$-conversion and resolve this issue. We shall apply the conversion $y
-\mapsto_{alpha} q$ to our inner expression,
+\mapsto_{\alpha} q$ to our inner expression,
 
 \begin{equation*}
-  x \colon \nat, y \colon \nat \to \nat \in \Gamma \vdash \lambda \, q \colon \nat \to \nat. q x \colon \nat.
+  x \colon \nat, y \colon \nat \to \nat \in \Gamma \vdash \lambda \, q \colon \nat \to \nat. q x \colon \nat,
 \end{equation*}
 
 which solves our problem. We can add further assumptions to our context without
@@ -352,10 +354,10 @@ with\footnote{The name \textit{quotient} is taken from other areas of
 mathematics where equivalence classes produce quotient objects. For example, in
 ring theory, for a ring $R$ and ideal $I \subseteq R$, the quotient ring $R/I$
 is the set of equivalence classes where for all $a, b \in R$ we have the
-relation $a ~ b \iff a - b \in I$. For example, with $R = \integer$ and $I =
-2\integer$, the relation is $a ~ b \iff a - b \in 2\integer \iff \text{they have
+relation $a \sim b \iff a - b \in I$. If we let $R = \integer$ and $I =
+2\integer$, the relation is $a \sim b \iff a - b \in 2\integer \iff \text{they have
 the same parity}$. The quotient ring $R/I$ is just the set $\{0, 1\}$. In our
-case, the relation is $a ~ b \iff a =_{\alpha} b$, and our quotient becomes the
+case, the relation is $a \sim b \iff a =_{\alpha} b$, and our quotient becomes the
 set of possible terms which are semantically distinct}. This becomes difficult
 in Agda, since Agda primarily relies on inductive definitions
 \citep{pitts_locally_2023}.
@@ -397,6 +399,13 @@ part of the metatheory. A recent article by \citet{pitts_locally_2023} explores
 locally nameless sets in Agda, and proves that this infrastructure can be
 defined in a syntax-agnostic way. This will form part of the basis of our
 approach to implementing System F in Agda.
+
+\section{Prior research}
+System F was previously formalised in Agda by \citet{hutton_system_2019}.
+However, the authors of that paper formalised a variant of System F with
+language extensions known as \textit{System F$_{\omega \mu}$}. They also used a
+different approach, opting to make use of De Bruijn indicies. This paper will
+feature a novel approach using locally nameless sets.
 
 \chapter{Conclusions}
 
