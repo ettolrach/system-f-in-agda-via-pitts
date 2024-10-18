@@ -151,7 +151,7 @@ open import Relation.Binary.PropositionalEquality
 open import Data.Nat using (ℕ; zero; suc; _+_)
 
 +-assoc : ∀ (m n p : ℕ) → (m + n) + p ≡ m + (n + p)
-+-assoc zero n p = refl
++-assoc zero    n p = refl
 +-assoc (suc m) n p = cong suc (+-assoc m n p)
 \end{minted}
 
@@ -160,10 +160,13 @@ open import Data.Nat using (ℕ; zero; suc; _+_)
 \paragraph*{The $\lambda$-calculus.} The $\lambda$-calculus (pronounced
 \textit{lambda calculus}), is a theoretical model of computation developed by
 Alonzo Church in the 1930s (first described in \citet{church_set_1932}) and is
-what System F is based upon. It looks and works similar to familiar functional
-programming languages, yet its defintion is as minimal as possible while still
-being Turing-complete. As described in \cite{pierce_types_2002}, the most
-relevant results are summarised below.
+what System F is based upon. It looks and works similarly to familiar functional
+programming languages, yet its definition is as minimal as possible while still
+being Turing-complete\footnote{Although Turing machines would be invented after
+the $\lambda$-calculus, `turing-complete' has become a shorthand for `universal
+method of computation'. Such a universal method was not Church's initial goal,
+but is why we're still interested in the $\lambda$-calculus.}. As described in
+\cite{pierce_types_2002}, the most relevant results are summarised below.
 
 We have the following familiar BNF grammar for any $\lambda$-calculus term $t$.
 
@@ -184,11 +187,11 @@ The $\lambda$-calculus includes three reductions. $\alpha$-conversion is the
 renaming of variables such that the semantics of the program are not changed;
 terms which are semantically identical but use different variable bindings are
 called $\alpha$-equivalent, and $\alpha$-equivalence is an equivalence-relation.
-$\beta$-reduction is how functions are applied, we write a reduction as $t
-\mapsto_{\beta} t'$. For any function application $(\lambda \, x. t) u$, we
-replace all occurrences of $x$ in $t$ with $u$. $\beta$-reduction is a
-congruence, so if $t \mapsto_{\beta} t'$, then $st \mapsto_{\beta} st'$, and $ts
-\mapsto_{\beta} t's$.
+$\beta$-reduction is how functions are applied; for any term $t$, we write a
+reduction as $t \mapsto_{\beta} t'$. For any function application $(\lambda \,
+x. t) u$, we replace all occurrences of $x$ in $t$ with $u$. $\beta$-reduction
+is a congruence, so if $t \mapsto_{\beta} t'$, then $st \mapsto_{\beta} st'$,
+and $ts \mapsto_{\beta} t's$.
 
 Finally, we have $\eta$-reduction; for all $\lambda$-abstractions $\lambda \, x.
 f x$, we have that $\lambda \, x. f x \mapsto_{\eta} f$ (this is the idea of
@@ -222,29 +225,29 @@ We say that these terms \textit{do not have a normal form}.
 
 \paragraph*{The simply-typed $\lambda$-calculus.} While not being
 Turing-complete, the simply-typed $\lambda$-calculus (STLC for short and
-sometimes given the symbol $\lambda^{\rightarrow}$) is an extension to the
+sometimes given the symbol $\lambda^{\rightarrow}$) is an extension of the
 untyped $\lambda$-calculus described above that was developed in
 \citet{church_formulation_1940} which requires each term to have a
 \textit{type}. Terms which do not have a normal form cannot be given a type. As
-such, we only remain with `nice' expressions, that is, all expressions will
-after successive $\beta$-reductions result in an irreducible expression---their
+such, we only permit `nice' expressions, that is, all expressions will (after
+successive $\beta$-reductions) result in an irreducible expression---their
 normal form. This is also called \textit{strong normalisation}.
 \citep{pierce_types_2002}
 
 Since we can no longer represent all of the terms of the untyped
-$\lambda$-calculus, we've lost Turing-completeness. Nevertheless, STLC is still
-useful, since we can guarantee that any term which can be given a type will have
-a normal form. Having a normal form is the $\lambda$-calculus equivalent of a
-Turing machine encoding halting. The popular saying goes, `well-typed programs
-can't go wrong!' \citep{milner_theory_1978}
+$\lambda$-calculus, the STLC is not Turing-complete. Nevertheless, the STLC is
+still useful, since we can guarantee that any term which can be given a type
+will have a normal form. Having a normal form is the $\lambda$-calculus
+equivalent of a Turing machine encoding halting. The popular saying goes,
+`well-typed programs can't go wrong!' \citep{milner_theory_1978}
 
-The base types we will commonly be using are $\mathbb{B}$ and $\nat$ (we could
-use just one, but using two will make the examples easier to
-understand)\footnote{If we didn't include any base types, then our computational
-model becomes \textit{degenerate} (that is, there are no terms). This is because
-everything has to have a type, and if there are no types, then nothing can
-exist.}. We shall call the set of base types $T$, so in our case, $T = \{
-\mathbb{B} , \nat \}$. The set of variables will be $V$. Our \textit{type
+The base types we will commonly be using are the booleans $\mathbb{B}$ and the
+naturals $\nat$ (we could use just one, but using two will make the examples
+easier to understand)\footnote{If we didn't include any base types, then our
+computational model becomes \textit{degenerate} (that is, there are no terms).
+This is because everything has to have a type, and if there are no types, then
+nothing can exist.}. We shall call the set of base types $T$, so in our case, $T
+= \{ \mathbb{B} , \nat \}$. The set of variables will be $V$. Our \textit{type
 context} (also called \textit{type environment}) will be given the symbol
 $\Gamma$, which is a map from variables to types $\Gamma \colon V \to T$
 (alternatively, we can see it as a sequence indexed by variables $(T_v)_{v \in
@@ -260,8 +263,8 @@ could write an function which applies its argument to $x$ like so,
 \end{equation*}
 
 Crucially, if $x$ had type $\mathbb{B}$, we would fail to determine the type of
-the function, and so we can guarantee that all of our typed expressions `can't
-go wrong'. \citep{milner_theory_1978}
+the function, and so we can guarantee that all permitted expressions `can't go
+wrong' \citep{milner_theory_1978} (since untypable expresisons are disallowed).
 
 This paper will build upon and borrow notation from the textbook
 \textit{Programming Language Foundations in Agda}
@@ -282,7 +285,7 @@ This function will accept any kind of list. This is because we used a
 \textit{type parameter} in the function's type signature, in this case called
 \texttt{A}.
 
-System F is the STLC equipped with \textit{polymorphic types}, another word for
+System F is the STLC equipped with \textit{polymorphic types}, another term for
 type parameters. It was independently discovered by Jean-Yves
 \citet{girard_interpretation_1972} and John \citet{goos_towards_1974} (who gave
 it the more straight-forward name, \textit{the polymorphic $\lambda$-calulus}).
@@ -313,7 +316,7 @@ is consistent.
 Using the intrinsic approach will require less code and effort, so we shall
 proceed that way.
 
-\section{De Bruijn Indicies and Locally Nameless Sets}
+\section{De Bruijn indices and Locally Nameless Sets}
 
 Suppose we had the following expression,
 
@@ -343,29 +346,29 @@ $\alpha$-conversion and resolve this issue. We shall apply the conversion $y
 which solves our problem. We can add further assumptions to our context without
 affecting the semantics of the expression (for example, adding $k \colon \nat$
 to $\Gamma$ won't change the semantics of the expression), this is called
-weakening-invariance (taken from proof theory where extra assumptions make a
+weakening-invariance (taken from proof theory, where extra assumptions make a
 theorem weaker).
 
 Since we have these $\alpha$-equivalent expressions, we can say that we have
 \textit{quotient} inductive definitions \citep{aydemir_engineering_2008}, since
-we have both an inductive defintion of the $\lambda$-calculus, but also
+we have both an inductive definition of the $\lambda$-calculus, but also
 (infinitely) many $\alpha$-equivalence classes which we need to deal
 with\footnote{The name \textit{quotient} is taken from other areas of
 mathematics where equivalence classes produce quotient objects. For example, in
 ring theory, for a ring $R$ and ideal $I \subseteq R$, the quotient ring $R/I$
 is the set of equivalence classes where for all $a, b \in R$ we have the
 relation $a \sim b \iff a - b \in I$. If we let $R = \integer$ and $I =
-2\integer$, the relation is $a \sim b \iff a - b \in 2\integer \iff \text{they have
-the same parity}$. The quotient ring $R/I$ is just the set $\{0, 1\}$. In our
-case, the relation is $a \sim b \iff a =_{\alpha} b$, and our quotient becomes the
-set of possible terms which are semantically distinct}. This becomes difficult
-in Agda, since Agda primarily relies on inductive definitions
+2\integer$, the relation is $a \sim b \iff a - b \in 2\integer \iff \text{they
+have the same parity}$. The quotient ring $R/I$ is just the set $\{0, 1\}$. In
+our case, the relation is $a \sim b \iff a =_{\alpha} b$, and our quotient
+becomes the set of possible terms which are semantically distinct}. This becomes
+difficult in Agda, since Agda primarily relies on inductive definitions
 \citep{pitts_locally_2023}.
 
-We can solve this by using \textit{De Bruijn indicies}, where, no matter what
-variables we have in our context, we don't have any local variable names which
-could cause issues, since we only use indicies that directly reference the
-scope. In our example,
+We can solve this by using \textit{De Bruijn indices}. Using these ensures that
+no matter what variables we have in our context, we don't have any local
+variable names which could cause issues (since we only use indices that directly
+reference the scope). In our example,
 
 \begin{equation*}
   x \colon \nat, y \colon \nat \to \nat \in \Gamma \vdash \lambda \nat \to \nat. 0 2 \colon \nat.
@@ -373,7 +376,7 @@ scope. In our example,
 
 We can't use any $\alpha$-conversions since each bound variable is indexed by a
 (unique) natural number. However, if we were to change the context, we would
-need to change the index too. So we have a purely inductive deifnition. For
+need to change the index too. So we have a purely inductive definition. For
 example, if we remove the $y$,
 
 \begin{equation*}
@@ -384,16 +387,17 @@ then we need to reindex the $2$ to a $1$. We have lost weakening invariance
 \citep{aydemir_engineering_2008}.
 
 Using \textit{locally nameless sets}, we can get both purely inductive
-defintions \textit{and} weakening-invariance. Free variables will use variable
-names while bound variables will use indicies. Our example becomes
+definitions \textit{and} weakening-invariance. Free variables will use variable
+names while bound variables will use indices. Our example becomes
 
 \begin{align*}
   x \colon \nat, \in \Gamma &\vdash \lambda \nat \to \nat. 0 x \colon \nat,\quad \text{or with another variable in the context,}\\
   x \colon \nat, y \colon \nat \to \nat \in \Gamma &\vdash \lambda \nat \to \nat. 0 x \colon \nat.
 \end{align*}
 
-This approach has been of research interest as of late. As part of using locally
-nameless terms, common operations (called `infrastructure' by
+This approach has been of research interest as of late
+\citep{aydemir_engineering_2008} \citep{chargueraud_locally_2012}. As part of
+using locally nameless terms, common operations (called `infrastructure' by
 \citet{aydemir_engineering_2008}) need to be defined for the language used as
 part of the metatheory. A recent article by \citet{pitts_locally_2023} explores
 locally nameless sets in Agda, and proves that this infrastructure can be
@@ -404,7 +408,7 @@ approach to implementing System F in Agda.
 System F was previously formalised in Agda by \citet{hutton_system_2019}.
 However, the authors of that paper formalised a variant of System F with
 language extensions known as \textit{System F$_{\omega \mu}$}. They also used a
-different approach, opting to make use of De Bruijn indicies. This paper will
+different approach, opting to make use of De Bruijn indices. This paper will
 feature a novel approach using locally nameless sets.
 
 \chapter{Conclusions}
@@ -430,7 +434,7 @@ subject to the usual late penalties based on your final submission time.
 % \bibliographystyle{plain}
 \bibliographystyle{plainnat}
 % \bibliography{mybibfile}
-\bibliography{system_f_in_agda_via_pitt}
+\bibliography{system_f_in_agda_via_pitts}
 
 
 % You may delete everything from \appendix up to \end{document} if you don't need it.
