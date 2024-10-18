@@ -9,7 +9,7 @@ jobs:
       - name: Compile LaTeX document
         uses: xu-cheng/latex-action@v3
         with:
-          root_file: main.tex
+          root_file: latex/system_f_in_agda_via_pitts.tex
           latexmk_shell_escape: true
       - name: Upload PDF file
         uses: actions/upload-artifact@v4
