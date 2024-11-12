@@ -44,6 +44,10 @@
 \usepackage[utf8]{inputenc}
 % Inference rules
 \usepackage{mathpartir}
+% Agda
+\usepackage{agda}
+
+% To make Agda codeblocks look nice:
 
 % Unicode characters:
 \DeclareUnicodeCharacter{2115}{$\nat$}
@@ -134,11 +138,14 @@ Agda most commonly uses inductive definitions. For example, following the Peano
 axioms for the natural numbers $\nat$ \citep{boolos_freges_1995}, we may define
 them like so.
 
-\begin{minted}{agda}
+%  \begin{minted}{agda}
+\begin{code}
+module dissertation where
 data ℕ : Set where
   zero : ℕ
   suc  : ℕ → ℕ
-\end{minted}
+\end{code}
+
 
 Taking advantage of the Curry-Howard correspondence, a proof in Agda is simply a
 function with an appropriate type signature and function body
@@ -434,7 +441,7 @@ subject to the usual late penalties based on your final submission time.
 % \bibliographystyle{plain}
 \bibliographystyle{plainnat}
 % \bibliography{mybibfile}
-\bibliography{system_f_in_agda_via_pitts}
+\bibliography{dissertation}
 
 
 % You may delete everything from \appendix up to \end{document} if you don't need it.
