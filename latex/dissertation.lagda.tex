@@ -18,6 +18,58 @@
 
 % === Custom packages === %
 
+% Syntax highlighting
+\usepackage{minted}
+% BNF
+\usepackage{simplebnf}
+% Unicode
+%\usepackage[utf8]{inputenc}
+% Inference rules
+\usepackage{mathpartir}
+% Agda
+\usepackage{agda}
+\AgdaNoSpaceAroundCode{}
+% Hide output
+\usepackage{comment}
+
+% Unicode
+
+\usepackage{fontspec}
+\usepackage{newunicodechar}
+\newfontface{\whatever}{Noto Sans Mono Regular}
+\newunicodechar{ℕ}{{\whatever{ℕ}}}
+\newunicodechar{∀}{{\whatever{∀}}}
+\newunicodechar{≡}{{\whatever{≡}}}
+\newunicodechar{≥}{{\whatever{≥}}}
+\newunicodechar{≤}{{\whatever{≤}}}
+\newunicodechar{≰}{{\whatever{≰}}}
+\newunicodechar{⊔}{{\whatever{⊔}}}
+\newunicodechar{≟}{{\whatever{≟}}}
+\newunicodechar{⇒}{{\whatever{⇒}}}
+\newunicodechar{≢}{{\whatever{≢}}}
+\newunicodechar{≮}{{\whatever{≮}}}
+\newunicodechar{⟪}{{\whatever{⟪}}}
+\newunicodechar{⟫}{{\whatever{⟫}}}
+\newunicodechar{⊤}{{\whatever{⊤}}}
+\newunicodechar{⊥}{{\whatever{⊥}}}
+\newunicodechar{∣}{{\whatever{∣}}}
+\newunicodechar{⟨}{{\whatever{⟨}}}
+\newunicodechar{⟩}{{\whatever{⟩}}}
+\newunicodechar{∎}{{\whatever{∎}}}
+%%\newunicodechar{¬}{{\whatever{¬}}}
+\newunicodechar{⌊}{{\whatever{⌊}}}
+\newunicodechar{⌋}{{\whatever{⌋}}}
+%%\newunicodechar{×}{{\whatever{×}}}
+\newunicodechar{₁}{{\whatever{₁}}}
+\newunicodechar{₂}{{\whatever{₂}}}
+\newunicodechar{∃}{{\whatever{∃}}}
+\newunicodechar{∷}{{\whatever{∷}}}
+\newunicodechar{∈}{{\whatever{∈}}}
+\newunicodechar{∉}{{\whatever{∉}}}
+\newunicodechar{λ}{{\whatever{λ}}}
+\newunicodechar{И}{{\whatever{И}}}
+\newunicodechar{∘}{{\whatever{∘}}}
+
 % Maths:
 
 \usepackage{mathtools}
@@ -31,28 +83,21 @@
 \DeclareMathOperator{\reals}{\mathbb{R}}
 \DeclareMathOperator{\nat}{\mathbb{N}}
 \DeclareMathOperator{\integer}{\mathbb{Z}}
+\DeclareMathOperator{\rational}{\mathbb{Q}}
 \DeclareMathOperator{\Log}{Log}
 \DeclareMathOperator{\Arg}{Arg}
+\DeclareMathOperator{\cof}{\text{И}}
 
-% Others:
+% Use minted for Agda
 
-% Syntax highlighting
-\usepackage{minted}
-% BNF
-\usepackage{simplebnf}
-% Unicode
-\usepackage[utf8]{inputenc}
-% Inference rules
-\usepackage{mathpartir}
-% Agda
-\usepackage{agda}
-
-% To make Agda codeblocks look nice:
-
-% Unicode characters:
-\DeclareUnicodeCharacter{2115}{$\nat$}
-\DeclareUnicodeCharacter{2200}{$\forall$}
-\DeclareUnicodeCharacter{2261}{$\equiv$}
+\let\oldcode\code
+\NewCommandCopy{\mintedcopy}{\minted}
+\NewCommandCopy{\endmintedcopy}{\endminted}
+% Adapted from https://tex.stackexchange.com/a/488451/202867
+\renewenvironment{code}{\mintedcopy[breaklines]{agda}}{\endmintedcopy}
+% \let\oldcode\code
+% % Adapted from https://tex.stackexchange.com/a/488451/202867
+% \def\code{\minted{agda}}
 
 \begin{document}
 \begin{preliminary}
@@ -121,6 +166,10 @@ Any acknowledgements go here.
 
 TODO
 
+\begin{code}
+module dissertation where
+\end{code}
+
 \chapter{Background}
 
 \section{Agda}
@@ -138,13 +187,12 @@ Agda most commonly uses inductive definitions. For example, following the Peano
 axioms for the natural numbers $\nat$ \citep{boolos_freges_1995}, we may define
 them like so.
 
-%  \begin{minted}{agda}
-\begin{code}
-module dissertation where
-data ℕ : Set where
-  zero : ℕ
-  suc  : ℕ → ℕ
-\end{code}
+% \begin{code}
+% module Example where
+%   data ℕ : Set where
+%     zero : ℕ
+%     suc  : ℕ → ℕ
+% \end{code}
 
 
 Taking advantage of the Curry-Howard correspondence, a proof in Agda is simply a
@@ -152,15 +200,104 @@ function with an appropriate type signature and function body
 \citep{wadler_propositions_2015}. So, a proof that addition is associative would
 use recursion, which corresponds to induction, as shown below.
 
-\begin{minted}{agda}
-open import Relation.Binary.PropositionalEquality
-  using (_≡_; refl; cong)
-open import Data.Nat using (ℕ; zero; suc; _+_)
+% \begin{code}
+% open import Relation.Binary.PropositionalEquality
+%   using (_≡_; refl; cong)
+% open import Data.Nat using (ℕ; zero; suc; _+_)
 
-+-assoc : ∀ (m n p : ℕ) → (m + n) + p ≡ m + (n + p)
-+-assoc zero    n p = refl
-+-assoc (suc m) n p = cong suc (+-assoc m n p)
-\end{minted}
+% +-assoc : ∀ (m n p : ℕ) → (m + n) + p ≡ m + (n + p)
+% +-assoc zero    n p = refl
+% +-assoc (suc m) n p = cong suc (+-assoc m n p)
+% \end{code}
+
+We will need a lot of imports from the Agda standard library.
+
+\begin{comment}
+\begin{code}
+-- Data types (naturals, strings, characters)
+open import Data.Nat using (ℕ; zero; suc; _<_; _≥_; _≤_; _≤?_; _<?_; z≤n; s≤s; _⊔_)
+  renaming (_≟_ to _≟ℕ_)
+open import Data.Nat.Properties using (≤-refl; ≤-trans; ≤-<-trans; <-≤-trans; ≤-antisym; ≤-total;
+  +-mono-≤; n≤1+n; m≤n⇒m≤1+n; suc-injective; <⇒≢; ≰⇒>; ≮⇒≥)
+open import Data.String using (String; fromList) renaming (_≟_ to _≟str_; _++_ to _++str_;
+  length to str-length; toList to ⟪_⟫)
+open import Data.Char using (Char)
+open import Data.Char.Properties using () renaming (_≟_ to _≟char_)
+open import Data.Unit using (⊤; tt)
+
+-- Function manipulation.
+open import Function using (_∘_; flip; it; id; case_returning_of_)
+
+-- Relations and predicates/decidability.
+import Relation.Binary.PropositionalEquality as Eq
+open Eq using (_≡_; _≢_; refl; sym; trans; cong; cong-app; cong₂)
+open Eq.≡-Reasoning using (begin_; step-≡-∣; step-≡-⟩; _∎)
+open import Relation.Binary.Definitions using (DecidableEquality)
+open import Relation.Nullary.Decidable using (Dec; yes; no; True; False; toWitnessFalse;
+  toWitness; fromWitness; ¬?; ⌊_⌋; From-yes)
+open import Relation.Unary using (Decidable)
+open import Relation.Binary using () renaming (Decidable to BinaryDecidable)
+open import Relation.Nullary.Negation using (¬_; contradiction)
+open import Data.Empty using (⊥-elim)
+
+-- Products and exists quantifier.
+open import Data.Product using (_×_; proj₁; proj₂; ∃-syntax) renaming (_,_ to ⟨_,_⟩)
+
+-- Lists.
+open import Data.List using (List; []; _∷_; _++_; length; filter; map; foldr; head; replicate)
+open import Data.List.Properties using (≡-dec)
+import Data.List.Membership.DecPropositional as DecPropMembership
+open import Data.List.Relation.Unary.All using (All; all?; lookup)
+  renaming (fromList to All-fromList; toList to All-toList)
+open import Data.List.Relation.Unary.Any using (Any; here; there)
+open import Data.List.Extrema Data.Nat.Properties.≤-totalOrder using (max; xs≤max)
+
+-- Import list membership using List Char comparisons.
+_≟lchar_ : ∀ (xs ys : List Char) → Dec (xs ≡ ys)
+xs ≟lchar ys = ≡-dec (_≟char_) xs ys
+
+open DecPropMembership _≟lchar_ using (_∈_; _∉_; _∈?_)
+\end{code}
+\end{comment}
+
+We also need to forward-declare some theorems. These are proven in appendix A [TODO].
+
+\begin{code}
+All¬⇒¬Any : ∀ {A : Set} {P : A → Set} {xs : List A}
+  → All (¬_ ∘ P) xs
+    ---------------
+  → (¬_ ∘ Any P) xs
+
+¬Any⇒All¬ : ∀ {A : Set} {P : A → Set} {xs : List A}
+  → (¬_ ∘ Any P) xs
+    ---------------
+  → All (¬_ ∘ P) xs
+
+∉-++ : ∀ {s : List Char} {xs ys : List (List Char)}
+  → s ∉ xs ++ ys
+    --------------------
+  → (s ∉ xs) × (s ∉ ys)
+
+++-∉ : ∀ {s : List Char} {xs ys : List (List Char)}
+  → s ∉ xs
+  → s ∉ ys
+    -------------
+  → s ∉ xs ++ ys
+
+∉∷[]⇒≢ : {x y : List Char} → x ∉ y ∷ [] → x ≢ y
+
+sym-≢ : ∀ {A : Set} {x y : A}
+  → x ≢ y
+    -----
+  → y ≢ x
+
+∉⇒≢ : ∀ {xs : List (List Char)} {x y : List Char}
+  → x ∈ xs
+  → y ∉ xs
+    -------
+  → x ≢ y
+
+\end{code}
 
 \section{The $\lambda$-Calculus and System F}
 
@@ -278,35 +415,40 @@ This paper will build upon and borrow notation from the textbook
 \citep{wadler_programming_2022}, which includes an implementation of the STLC
 and also serves as further background.
 
-\paragraph*{System F.} System F has been the formal background to what many
-modern programming languages call \textit{generics}. For example, in Rust, we
-could write a function which checks if a list's length is two.
+\paragraph*{System F.} System F has been the formal background to what many modern programming
+languages call \textit{generics}. For example, in Rust, we could write a function which applies a
+function twice to an argument.
 
-\begin{minted}{rust}
-fn is_length_two<A>(slice: &[A]) -> bool {
-    slice.len() == 2
+\begin{minted}[samepage]{rust}
+fn twice<A, F>(f: F, x: A) -> A
+where
+    F: Fn(A) -> A,
+{
+    f(f(x))
 }
 \end{minted}
 
-This function will accept any kind of list. This is because we used a
-\textit{type parameter} in the function's type signature, in this case called
-\texttt{A}.
+Since we used a \textit{type parameter} in the function's type signature, in this case called
+\texttt{T}, we can supply any appropriate function which has the type signature $T \to T$. One such
+function is \texttt{u64::isqrt}, the (flooring) square root function. If this function was invoked
+with \texttt{twice(u64::isqrt, 81)}, its output would be \texttt{3}. In this case, the compiler is
+clever enough to infer that the type for \texttt{A} should be \texttt{u64}, so we don't need to
+specify it manually.
 
-System F is the STLC equipped with \textit{polymorphic types}, another term for
-type parameters. It was independently discovered by Jean-Yves
-\citet{girard_interpretation_1972} and John \citet{goos_towards_1974} (who gave
-it the more straight-forward name, \textit{the polymorphic $\lambda$-calulus}).
-We could write a function which applies a function twice to an argument,
+System F is the STLC equipped with \textit{polymorphic types}, another term for type parameters. It
+was independently discovered by Jean-Yves  and John (who gave it the more straight-forward name,
+\textit{the polymorphic
+$\lambda$-calulus}). We can write this \textit{twice} function like so in System F:
 
 \begin{equation*}
-  \Lambda \, X. \lambda \, f \colon X \to X . \lambda \, x \colon X . f (f x) \colon \forall X . (X \to X) \to X \to X.
+  \Lambda \, T. \lambda \, f \colon T \to T . \lambda \, x \colon T . f (f x) \colon \forall T . (T \to T) \to T \to T.
 \end{equation*}
 
-If we wanted to use this function, we would need to instantiate it with a
-specific type, notated using [square brackets]. For instance,
+If we wanted to use this function and be explicit about what type we're using, we could instantiate
+it with a specific type, notated using [square brackets]. For instance,
 
 \begin{align*}
-  s \colon \nat \to \nat, z \colon \nat \in \Gamma \vdash &(\Lambda \, X. \lambda \, f \colon X \to X . \lambda \, x \colon X . f (f x))[\nat] s z \colon \nat\\
+  s \colon \nat \to \nat, z \colon \nat \in \Gamma \vdash &(\Lambda \, T. \lambda \, f \colon T \to T . \lambda \, x \colon T . f (f x))[\nat] s z \colon \nat\\
   &\mapsto_{\beta} (\lambda \, f \colon \nat \to \nat . \lambda \, x \colon \nat . f (f x)) s z \colon \nat\\
   &\mapsto_{\beta^{\star}} s s z \colon \nat.
 \end{align*}
@@ -402,21 +544,90 @@ names while bound variables will use indices. Our example becomes
   x \colon \nat, y \colon \nat \to \nat \in \Gamma &\vdash \lambda \nat \to \nat. 0 x \colon \nat.
 \end{align*}
 
-This approach has been of research interest as of late
-\citep{aydemir_engineering_2008} \citep{chargueraud_locally_2012}. As part of
-using locally nameless terms, common operations (called `infrastructure' by
-\citet{aydemir_engineering_2008}) need to be defined for the language used as
-part of the metatheory. A recent article by \citet{pitts_locally_2023} explores
-locally nameless sets in Agda, and proves that this infrastructure can be
-defined in a syntax-agnostic way. This will form part of the basis of our
-approach to implementing System F in Agda.
+This approach has been of research interest as of late \citep{aydemir_engineering_2008}
+\citep{chargueraud_locally_2012}. As part of using locally nameless terms, common operations (called
+`infrastructure' by ) need to be defined for the language used as part of the metatheory. A recent
+article by explores locally nameless sets in Agda, and proves that this infrastructure can be
+defined in a syntax-agnostic way. This will form part of the basis of our approach to implementing
+System F in Agda.
+
+\section{Cofinite Quantification}
+
+Often, we may want to prove a property for \textit{almost} all members of a set, where we exclude a
+finite subset. For example, for \textit{almost} all natural numbers $n$, $n \geq 2$. Or in number
+theory, \textit{almost} all natural numbers can be written as a product of primes. To prove this,
+one would need to give a set of numbers which the proof will ignore (in the example, $\{ (0), 1
+\}$), and then prove it for all $n \in \nat$ with the extra assumption that $n \not \in \{0, 1\}$.
+Practically, this is never done, since we usually want the exceptions explicitly in the proof. But
+this special pattern proves useful.
+
+In several papers on the locally nameless representation, \textit{cofinite} quantification is
+discussed. This is exactly what we would understand as `for almost all'.
+
+While the Agda implementation that Pitts gave [TODO cite] uses an arbitrary set, I chose to use the
+specific \texttt{List Char}, since we will only quantify over strings.
+
+\begin{code}
+record Cof (P : List Char → Set) : Set where
+  constructor И⟨_,_⟩
+  field
+    Иe₁ : List (List Char)
+    Иe₂ : (a : List Char) {_ : a ∉ Иe₁} → P a
+open Cof
+syntax Cof (λ a → P) = И a , P
+\end{code}
+
+For a simple example, I can show \textit{almost} all strings have a length greater or equal to $1$
+(with the exception being the empty string).
+
+\begin{code}
+simple-cof : {s : String} → И s , (1 ≤ length s)
+simple-cof = И⟨ [] ∷ [] , (
+  λ{[] {a∉}  → contradiction refl (∉∷[]⇒≢ a∉)
+  ; (x ∷ xs) → s≤s z≤n}) ⟩
+\end{code}
 
 \section{Prior research}
-System F was previously formalised in Agda by \citet{hutton_system_2019}.
-However, the authors of that paper formalised a variant of System F with
-language extensions known as \textit{System F$_{\omega \mu}$}. They also used a
-different approach, opting to make use of De Bruijn indices. This paper will
-feature a novel approach using locally nameless sets.
+System F was previously formalised in Agda by \citet{hutton_system_2019}. However, the authors of that paper formalised a
+variant of System F with language extensions known as \textit{System F$_{\omega \mu}$}. They also
+used a different approach, opting to make use of De Bruijn indices. This paper will use the locally
+nameless representation, which hasn't been used for System F in Agda before.
+
+\subsection{Syntax and basic theorems of STLC}
+I have previously submitted some work on STLC using locally nameless representation for a university
+course called \textit{Types and Semantics of Programming Languages} [TODO: Cite DRPS]. I will
+present my prior work in this subsection. Some functions which were submitted are presented without their
+function bodies and are instead included in appendix A [TODO: appendix]. Any new additions are in
+the next chapter.
+
+\subsubsection{Creating new strings}
+We will use \texttt{List Char} rather than the built-in \texttt{String} type, since it's easier to
+reason with lists. The \texttt{String} type is opaque in Agda, and reasoning about length and other
+properties of \texttt{String} is more difficult than if we just used \texttt{List Char}. To generate
+arbitrary strings, we'll provide functions for \texttt{List A} for some set \texttt{A} and then use
+the specific where \texttt{A} is \texttt{Char}. The `toList` function for `String` (which I have
+renamed to \texttt{⟪\_⟫}) can be used to convert from a \texttt{String}.
+
+\begin{code}
+new-list : ∀ {A : Set} → A → List (List A) → List A
+new-list a xss = a ∷ replicate (max 0 (map length xss)) a
+
+fresh : List (List Char) → List Char
+fresh xss = new-list 'q' xss
+\end{code}
+
+We can create a new string by finding the longest string and creating a string which is one
+character longer. Now to prove that this function is correct:
+
+\begin{code}
+
+new-list-correct : ∀ {A : Set} (xss : List (List A)) (a : A)
+  → ¬ Any ((new-list a xss) ≡_) xss
+-- Function body in appendix.
+
+fresh-correct : (xss : List (List Char)) → (fresh xss) ∉ xss
+fresh-correct xss = new-list-correct xss 'q'
+\end{code}
 
 \chapter{Conclusions}
 
@@ -447,15 +658,146 @@ subject to the usual late penalties based on your final submission time.
 % You may delete everything from \appendix up to \end{document} if you don't need it.
 \appendix
 
-\chapter{First appendix}
+\chapter{Miscellaneous Proofs}
 
-\section{First section}
+Since we already declared these functions, it would be an error to declare them again. I decided to
+include the type signatures anyway for clarity.
 
-Any appendices, including any required ethics information, should be included
-after the references.
+\section{PLFA adaption}
 
-Markers do not have to consider appendices. Make sure that your contributions
-are made clear in the main body of the dissertation (within the page limit).
+These functions are closely adapted from PLFA [TODO: cite].
+
+\begin{code}
+All-++ : ∀ {A : Set} {P : A → Set} (xs ys : List A)
+  → All P (xs ++ ys)
+    ---------------------
+  → (All P xs × All P ys)
+All-++ [] ys Pys = ⟨ All.[] , Pys ⟩
+All-++ (x ∷ xs) ys (Px All.∷ Pxs++ys) with All-++ xs ys Pxs++ys
+... | ⟨ Pxs , Pys ⟩ = ⟨ Px All.∷ Pxs , Pys ⟩
+
+-- All¬⇒¬Any : ∀ {A : Set} {P : A → Set} {xs : List A}
+--   → All (¬_ ∘ P) xs
+--     ---------------
+--   → (¬_ ∘ Any P) xs
+All¬⇒¬Any {xs = x ∷ xs} (¬Px All.∷ All¬P) (here Px) = ¬Px Px
+All¬⇒¬Any {xs = x ∷ xs} (¬Px All.∷ All¬P) (there Pxs) =
+  All¬⇒¬Any {xs = xs} All¬P Pxs
+
+-- ¬Any⇒All¬ : ∀ {A : Set} {P : A → Set} {xs : List A}
+--   → (¬_ ∘ Any P) xs
+--     ---------------
+--   → All (¬_ ∘ P) xs
+¬Any⇒All¬ {xs = []} ¬∘AnyP = All.[]
+¬Any⇒All¬ {xs = (x ∷ xs)} ¬AnyP =
+  (λ Px → ¬AnyP (here Px))
+    All.∷ ¬Any⇒All¬ {xs = xs} (λ Pxs → ¬AnyP (there Pxs))
+
+-- We have to use ¬Any⇒All¬ and its inverse because ∉ is an
+-- alias for "¬ Any (_≡ x) xs".  So we have to go through
+-- the process of converting to "All ¬" to apply the
+-- "All-++" lemma.
+-- ∉-++ : ∀ {s : List Char} {xs ys : List (List Char)}
+--   → s ∉ xs ++ ys
+--     --------------------
+--   → (s ∉ xs) × (s ∉ ys)
+∉-++ {s} {xs} {ys} s∉xs++ys =
+  let ⟨ all¬xs , all¬ys ⟩ = All-++ xs ys (¬Any⇒All¬ s∉xs++ys) in
+    ⟨ All¬⇒¬Any {xs = xs} all¬xs
+    , All¬⇒¬Any {xs = ys} all¬ys ⟩
+
+++-All : ∀ {A : Set} {P : A → Set} (xs ys : List A)
+  → All P xs × All P ys
+    -------------------
+  → All P (xs ++ ys)
+++-All [] ys ⟨ All.[] , Pys ⟩ = Pys
+++-All (x ∷ xs) ys ⟨ Px All.∷ Pxs , Pys ⟩ =
+  Px All.∷ ++-All xs ys ⟨ Pxs , Pys ⟩
+
+-- ++-∉ : ∀ {s : List Char} {xs ys : List (List Char)}
+--   → s ∉ xs
+--   → s ∉ ys
+--     -------------
+--   → s ∉ xs ++ ys
+++-∉ {_} {xs} {ys} s∉xs s∉ys =
+  All¬⇒¬Any (++-All xs ys ⟨ (¬Any⇒All¬ s∉xs) , (¬Any⇒All¬ s∉ys) ⟩)
+\end{code}
+
+\section{Prior work submitted for TSPL}
+
+\begin{code}
+All≤⇒<⇒All< : ∀ {n m : ℕ} (xs : List ℕ)
+  → n < m
+  → All (_≤ n) xs
+    -------------
+  → All (_< m) xs
+All≤⇒<⇒All< [] n<m All.[] = All.[]
+All≤⇒<⇒All< (x ∷ xs) n<m (x≤n All.∷ all≤) =
+  ≤-<-trans x≤n n<m All.∷ All≤⇒<⇒All< xs n<m all≤
+
+-- sym-≢ : ∀ {A : Set} {x y : A}
+--   → x ≢ y
+--     -----
+--   → y ≢ x
+sym-≢ x≢y = λ y≡x → (x≢y (sym y≡x))
+
+≡⇒<s : ∀ {n m : ℕ} → n ≡ m → n < suc m
+≡⇒<s {zero} {m} n≡m = s≤s z≤n
+≡⇒<s {suc n} {suc m} sn≡sm = s≤s (≡⇒<s (suc-injective sn≡sm))
+
+-- ∉⇒≢ : ∀ {xs : List (List Char)} {x y : List Char}
+--   → x ∈ xs
+--   → y ∉ xs
+--     -------
+--   → x ≢ y
+∉⇒≢ {xs} x∈ y∉ refl = y∉ x∈
+
+len≠⇒≠ : ∀ {A : Set} (xs ys : List A)
+  → length xs ≢ length ys → xs ≢ ys
+len≠⇒≠ xs ys len≢ =
+  λ xs≡ys → contradiction (cong length xs≡ys) len≢
+
+-- ∉∷[]⇒≢ : {x y : List Char}
+--   → x ∉ y ∷ []
+--     -----------
+--   → x ≢ y
+∉∷[]⇒≢ x∉ with ¬Any⇒All¬ x∉
+... | px All.∷ All.[] = px
+
+len-replicate : ∀ {A : Set} (n : ℕ) (a : A)
+  → length (replicate n a) ≡ n
+len-replicate zero a = refl
+len-replicate (suc n) a = cong suc (len-replicate n a)
+
+len-new-list : ∀ {A : Set} (a : A) (xss : List (List A))
+  → max 0 (map length xss) < length (new-list a xss)
+len-new-list a xss =
+  ≡⇒<s (sym (len-replicate (max 0 (map length xss)) a))
+
+-- new-list-correct :
+--   ∀ {A : Set} (xss : List (List A)) (a : A)
+--   → ¬ Any ((new-list a xss) ≡_) xss
+new-list-correct xss a = All¬⇒¬Any (go xss a)
+  where
+    go : ∀ {A : Set} (xss : List (List A)) (a : A)
+      → All ((new-list a xss) ≢_) xss
+    go xs a =
+      helper
+        xs
+        (new-list a xs)
+        (All≤⇒<⇒All<
+          (map length xs)
+          (len-new-list a xs)
+          (xs≤max 0 (map length xs)))
+      where
+        helper : ∀ {A : Set} (xss : List (List A)) (ys : List A)
+          → All (_< length ys) (map length xss)
+          → All (ys ≢_) xss
+        helper [] ys All.[] = All.[]
+        helper (xs ∷ xss) ys (lenxs<lenys All.∷ all<) =
+          sym-≢ (len≠⇒≠ xs ys (<⇒≢ lenxs<lenys))
+            All.∷ helper xss ys all<
+\end{code}
 
 \chapter{Participants' information sheet}
 
