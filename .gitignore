@@ -1,6 +1,7 @@
 
 latex/*.pdf
 !latex/eushield-normal.pdf
+!latex/eushield.pdf
 
 ### === Everything below these next three lines are taken from               ===
 ### === https://github.com/github/gitignore/blob/main/TeX.gitignore          ===
