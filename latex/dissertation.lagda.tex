@@ -36,52 +36,54 @@
 
 \usepackage{fontspec}
 \usepackage{newunicodechar}
-\newfontface{\unicodemonofont}{Noto Sans Mono Regular}
-\newfontface{\ibmplexmath}{IBM Plex Math}
-\newunicodechar{ℕ}{{\unicodemonofont{ℕ}}}
-\newunicodechar{∀}{{\unicodemonofont{∀}}}
-\newunicodechar{≡}{{\unicodemonofont{≡}}}
-\newunicodechar{≥}{{\unicodemonofont{≥}}}
-\newunicodechar{≤}{{\unicodemonofont{≤}}}
-\newunicodechar{≰}{{\unicodemonofont{≰}}}
-\newunicodechar{⊔}{{\unicodemonofont{⊔}}}
-\newunicodechar{≟}{{\unicodemonofont{≟}}}
-\newunicodechar{⇒}{{\unicodemonofont{⇒}}}
-\newunicodechar{≢}{{\unicodemonofont{≢}}}
-\newunicodechar{≮}{{\unicodemonofont{≮}}}
-\newunicodechar{⟪}{{\unicodemonofont{⟪}}}
-\newunicodechar{⟫}{{\unicodemonofont{⟫}}}
-\newunicodechar{⊤}{{\unicodemonofont{⊤}}}
-\newunicodechar{⊥}{{\unicodemonofont{⊥}}}
-\newunicodechar{∣}{{\unicodemonofont{∣}}}
-\newunicodechar{⟨}{{\unicodemonofont{⟨}}}
-\newunicodechar{⟩}{{\unicodemonofont{⟩}}}
-\newunicodechar{∎}{{\unicodemonofont{∎}}}
-\newunicodechar{⌊}{{\unicodemonofont{⌊}}}
-\newunicodechar{⌋}{{\unicodemonofont{⌋}}}
-\newunicodechar{₁}{{\unicodemonofont{₁}}}
-\newunicodechar{₂}{{\unicodemonofont{₂}}}
-\newunicodechar{∃}{{\unicodemonofont{∃}}}
-\newunicodechar{∷}{{\unicodemonofont{∷}}}
-\newunicodechar{∈}{{\unicodemonofont{∈}}}
-\newunicodechar{∉}{{\unicodemonofont{∉}}}
-\newunicodechar{λ}{{\unicodemonofont{λ}}}
-\newunicodechar{И}{{\unicodemonofont{И}}}
-\newunicodechar{∘}{{\unicodemonofont{∘}}}
-\newunicodechar{≠}{{\unicodemonofont{≠}}}
-\newunicodechar{‵}{{\unicodemonofont{‵}}}
-\newunicodechar{ƛ}{{\unicodemonofont{ƛ}}}
-\newunicodechar{≻}{{\unicodemonofont{≻}}}
+\newfontface{\notosansmono}{NotoSansMono-Regular.ttf}[Path = fonts/]
+\newfontface{\ibmplexmath}{IBMPlexMath-Regular.otf}[Path = fonts/]
+\newfontface{\hack}{Hack Regular}
+\newunicodechar{ℕ}{{\notosansmono{ℕ}}}
+\newunicodechar{∀}{{\notosansmono{∀}}}
+\newunicodechar{≡}{{\notosansmono{≡}}}
+\newunicodechar{≥}{{\notosansmono{≥}}}
+\newunicodechar{≤}{{\notosansmono{≤}}}
+\newunicodechar{≰}{{\notosansmono{≰}}}
+\newunicodechar{⊔}{{\notosansmono{⊔}}}
+\newunicodechar{≟}{{\notosansmono{≟}}}
+\newunicodechar{⇒}{{\hack{⇒}}}
+\newunicodechar{≢}{{\notosansmono{≢}}}
+\newunicodechar{≮}{{\notosansmono{≮}}}
+\newunicodechar{⟪}{{\notosansmono{⟪}}}
+\newunicodechar{⟫}{{\notosansmono{⟫}}}
+\newunicodechar{⊤}{{\notosansmono{⊤}}}
+\newunicodechar{⊥}{{\notosansmono{⊥}}}
+\newunicodechar{∣}{{\notosansmono{∣}}}
+\newunicodechar{⟨}{{\notosansmono{⟨}}}
+\newunicodechar{⟩}{{\notosansmono{⟩}}}
+\newunicodechar{∎}{{\notosansmono{∎}}}
+\newunicodechar{⌊}{{\notosansmono{⌊}}}
+\newunicodechar{⌋}{{\notosansmono{⌋}}}
+\newunicodechar{₁}{{\notosansmono{₁}}}
+\newunicodechar{₂}{{\notosansmono{₂}}}
+\newunicodechar{∃}{{\notosansmono{∃}}}
+\newunicodechar{∷}{{\notosansmono{∷}}}
+\newunicodechar{∈}{{\notosansmono{∈}}}
+\newunicodechar{∉}{{\notosansmono{∉}}}
+\newunicodechar{λ}{{\notosansmono{λ}}}
+\newunicodechar{И}{{\notosansmono{И}}}
+\newunicodechar{∘}{{\notosansmono{∘}}}
+\newunicodechar{≠}{{\notosansmono{≠}}}
+\newunicodechar{‵}{{\notosansmono{‵}}}
+\newunicodechar{ƛ}{{\notosansmono{ƛ}}}
+\newunicodechar{≻}{{\ibmplexmath{≻}}}
 \newunicodechar{⦃}{{\ibmplexmath{⦃}}}
 \newunicodechar{⦄}{{\ibmplexmath{⦄}}}
-\newunicodechar{′}{{\unicodemonofont{′}}}
-\newunicodechar{∋}{{\unicodemonofont{∋}}}
+\newunicodechar{′}{{\notosansmono{′}}}
+\newunicodechar{∋}{{\notosansmono{∋}}}
 \newunicodechar{⦂}{{\ibmplexmath{⦂}}}
-\newunicodechar{∅}{{\unicodemonofont{∅}}}
-\newunicodechar{⊢}{{\unicodemonofont{⊢}}}
-\newunicodechar{ξ}{{\unicodemonofont{ξ}}}
-\newunicodechar{β}{{\unicodemonofont{β}}}
-\newunicodechar{↠}{{\unicodemonofont{↠}}}
+\newunicodechar{∅}{{\hack{∅}}}
+\newunicodechar{⊢}{{\hack{⊢}}}
+\newunicodechar{ξ}{{\notosansmono{ξ}}}
+\newunicodechar{β}{{\notosansmono{β}}}
+\newunicodechar{↠}{{\notosansmono{↠}}}
+\newunicodechar{ρ}{{\notosansmono{ρ}}}
 
 % Maths:
 
@@ -369,7 +371,7 @@ and $ts \mapsto_{\beta} t's$.
 Finally, we have $\eta$-reduction; for all $\lambda$-abstractions $\lambda \, x.
 f x$, we have that $\lambda \, x. f x \mapsto_{\eta} f$ (this is the idea of
 function extensionality).
-  
+
 If further $\beta$-reducations do not simplify a term, we say that it is in its
 \textit{normal form}. We shall represent an arbitrary number of successive
 $\beta$-reductions as $\mapsto_{\beta^{\star}}$.
@@ -777,9 +779,11 @@ x # t = [ 0 ←— x ] t ≡ t
 
 \subsection{Local Closure}
 A term is said to be \textit{locally closed} up to level $i$ if it remains unchanged after opening
-it at $i$ with a string. We write (for some $i \in \nat$ and term $M$) $i \succ M \triangleq \forall j
-\geq i, \cof a , [j \to a] M = M$. If it is locally closed at level $0$, we simply call it
-\textit{locally closed}.
+it at $i$ with a string. We write (for some $i \in \nat$ and term $M$),
+\begin{equation*}
+  i \succ M \triangleq \forall j \geq i, \; \cof a , \; [j \to a] M = M.  
+\end{equation*}
+If it is locally closed at level $0$, we simply call it \textit{locally closed}.
 
 \begin{code}
 _≻_ : ℕ → Term → Set
@@ -1072,11 +1076,17 @@ subst {x = y} ⊢u (⊢free {x = x} (H refl)) with y ≟lchar y
 subst {x = y} ⊢u (⊢free {x = x} (T x≢y ∋x)) with y ≟lchar x
 ... | yes y≡x = contradiction (sym y≡x) x≢y
 ... | no  _   = ⊢free ∋x
-subst {Γ} {x = y} {ƛ t} {u} {A} {A' ⇒ B} ⊢u (⊢ƛ И⟨ Иe₁ , Иe₂ ⟩) = ⊢ƛ
-  И⟨ y ∷ Иe₁ , (λ a {a∉} →
-    let a≢y   = ∉∷[]⇒≢ (proj₁ (∉-++ a∉))
-        a∉Иe₁ = proj₂ (∉-++ a∉)
-    in subst-open-context {t = t} (sym-≢ a≢y) (⊢⇒lc ⊢u) (subst ⊢u (swap a≢y (Иe₂ a {a∉Иe₁}))) )⟩
+subst {x = x} {t = ƛ t} ⊢u (⊢ƛ И⟨ Иe₁ , Иe₂ ⟩) =
+  ⊢ƛ И⟨ x ∷ Иe₁
+      , (λ a {a∉} →
+        let a≢y   = ∉∷[]⇒≢ (proj₁ (∉-++ a∉))
+            a∉Иe₁ = proj₂ (∉-++ a∉)
+        in subst-open-context
+          {t = t}
+          (sym-≢ a≢y)
+          (⊢⇒lc ⊢u)
+          (subst ⊢u (swap a≢y (Иe₂ a {a∉Иe₁}))) )
+      ⟩
 subst ⊢u (⊢· ⊢t₁ ⊢t₂) = ⊢· (subst ⊢u ⊢t₁) (subst ⊢u ⊢t₂)
 subst ⊢u ⊢zero = ⊢zero
 subst ⊢u (⊢suc ⊢t) = ⊢suc (subst ⊢u ⊢t)
@@ -1106,7 +1116,8 @@ the term \texttt{free x}.
 ... | yes _ = refl
 ... | no  _ = refl
 —→≡:→free {i} {x} (ƛ t) = cong ƛ_ (—→≡:→free t)
-—→≡:→free {i} {x} (t₁ · t₂) = cong₂ _·_ (—→≡:→free t₁) (—→≡:→free t₂)
+—→≡:→free {i} {x} (t₁ · t₂) =
+  cong₂ _·_ (—→≡:→free t₁) (—→≡:→free t₂)
 —→≡:→free {i} {x} ‵zero = refl
 —→≡:→free {i} {x} (‵suc t) = cong ‵suc_ (—→≡:→free t)
 \end{code}
@@ -1385,8 +1396,8 @@ All¬⇒¬Any {xs = x ∷ xs} (¬Px All.∷ All¬P) (there Pxs) =
 --   → s ∉ ys
 --     -------------
 --   → s ∉ xs ++ ys
-++-∉ {_} {xs} {ys} s∉xs s∉ys =
-  All¬⇒¬Any (++-All xs ys ⟨ (¬Any⇒All¬ s∉xs) , (¬Any⇒All¬ s∉ys) ⟩)
+++-∉ {_} {xs} {ys} s∉xs s∉ys = All¬⇒¬Any
+  (++-All xs ys ⟨ (¬Any⇒All¬ s∉xs) , (¬Any⇒All¬ s∉ys) ⟩)
 \end{code}
 
 \section{Prior work submitted for TSPL}
@@ -1405,7 +1416,7 @@ All≤⇒<⇒All< (x ∷ xs) n<m (x≤n All.∷ all≤) =
 --   → x ≢ y
 --     -----
 --   → y ≢ x
-sym-≢ x≢y = λ y≡x → (x≢y (sym y≡x))
+sym-≢ x≢y y≡x = x≢y (sym y≡x)
 
 ≡⇒<s : ∀ {n m : ℕ} → n ≡ m → n < suc m
 ≡⇒<s {zero} {m} n≡m = s≤s z≤n
@@ -1496,7 +1507,7 @@ ax2 i j x ‵zero = refl
 ax2 i j x (‵suc t) rewrite ax2 i j x t = refl
 
 suc-preserves-≢ : ∀ {n m : ℕ} → n ≢ m → suc n ≢ suc m
-suc-preserves-≢ {n} {m} n≢m = λ sn≡sm → ⊥-elim (n≢m (helper n m sn≡sm))
+suc-preserves-≢ {n} {m} n≢m sn≡sm = n≢m (helper n m sn≡sm)
   where
     helper : ∀ (n m : ℕ) → suc n ≡ suc m → n ≡ m
     helper n m refl = refl
@@ -1506,24 +1517,25 @@ suc-preserves-≢ {n} {m} n≢m = λ sn≡sm → ⊥-elim (n≢m (helper n m sn�
 --   → [ i —→ a ] ([ j —→ b ] t) ≡ [ j —→ b ] ([ i —→ a ] t)
 ax5 i j a b (free x) _ = refl
 ax5 i j a b (bound k) i≢j with j ≟ℕ k
-...                         | no  j≢k with i ≟ℕ k
-...                                   | yes i≡k = refl
-...                                   | no  i≢k with j ≟ℕ k
-...                                             | yes j≡k = contradiction j≡k j≢k
-...                                             | no  j≢k = refl
+... | no  j≢k with i ≟ℕ k
+...   | yes i≡k = refl
+...   | no  i≢k with j ≟ℕ k
+...     | yes j≡k = contradiction j≡k j≢k
+...     | no  j≢k = refl
 ax5 i j a b (bound k) i≢j | yes j≡k with i ≟ℕ k
-...                                   | yes i≡k = ⊥-elim (i≢j (trans i≡k (sym j≡k)))
-...                                   | no  i≢k with j ≟ℕ k
-...                                             | yes j≡k = refl
-...                                             | no  j≢k = contradiction j≡k j≢k
-ax5 i j a b (ƛ t) i≢j rewrite ax5 (suc i) (suc j) a b t (suc-preserves-≢ i≢j) = refl
-ax5 i j a b (t₁ · t₂) i≢j rewrite ax5 i j a b t₁ (i≢j) | ax5 i j a b t₂ (i≢j) = refl
+...   | yes i≡k = ⊥-elim (i≢j (trans i≡k (sym j≡k)))
+...   | no  i≢k with j ≟ℕ k
+...     | yes j≡k = refl
+...     | no  j≢k = contradiction j≡k j≢k
+ax5 i j a b (ƛ t) i≢j
+  rewrite ax5 (suc i) (suc j) a b t (suc-preserves-≢ i≢j) = refl
+ax5 i j a b (t₁ · t₂) i≢j
+  rewrite ax5 i j a b t₁ (i≢j) | ax5 i j a b t₂ (i≢j) = refl
 ax5 i j a b ‵zero i≢j = refl
 ax5 i j a b (‵suc t) i≢j rewrite ax5 i j a b t i≢j = refl
 
 -- #⇒∉fv : ∀ (x : List Char) (t : Term) → x # t → x ∉ fv t
 #⇒∉fv x (free y) x#t with x ≟lchar y
--- If x = y, then x cannot be a fresh variable in t!
 ... | yes x≡y with () ← x#t
 ... | no  x≢y = All¬⇒¬Any (x≢y All.∷ All.[])
 #⇒∉fv x (bound i) x#t = λ ()
@@ -1558,10 +1570,11 @@ ax5 i j a b (‵suc t) i≢j rewrite ax5 i j a b t i≢j = refl
   ≡⟨ ∉fv⇒# x t x∉fv ⟩
     t
   ∎)
-∉fv⇒# x (t₁ · t₂) x∉fv = let ⟨ x∉fv-t₁ , x∉fv-t₂ ⟩ = (∉-++ x∉fv) in
-  cong₂ _·_
-    (∉fv⇒# x t₁ x∉fv-t₁)
-    (∉fv⇒# x t₂ x∉fv-t₂)
+∉fv⇒# x (t₁ · t₂) x∉fv =
+  let ⟨ x∉fv-t₁ , x∉fv-t₂ ⟩ = (∉-++ x∉fv) in
+    cong₂ _·_
+      (∉fv⇒# x t₁ x∉fv-t₁)
+      (∉fv⇒# x t₂ x∉fv-t₂)
 ∉fv⇒# x ‵zero x∉fv = refl
 ∉fv⇒# x (‵suc t) x∉fv rewrite ∉fv⇒# x t x∉fv = refl
 
@@ -1585,7 +1598,8 @@ ax5 i j a b (‵suc t) i≢j rewrite ax5 i j a b t i≢j = refl
 --     ---------------
 --   → x # t₁ × x # t₂
 #-· {x} t₁ t₂ x#t₁t₂ with ∉-++ (#⇒∉fv x (t₁ · t₂) x#t₁t₂)
-... | ⟨ x∉fv-t₁ , x∉fv-t₂ ⟩ = ⟨ (∉fv⇒# x t₁ x∉fv-t₁) , ∉fv⇒# x t₂ x∉fv-t₂ ⟩
+... | ⟨ x∉fv-t₁ , x∉fv-t₂ ⟩
+  = ⟨ (∉fv⇒# x t₁ x∉fv-t₁) , ∉fv⇒# x t₂ x∉fv-t₂ ⟩
 
 -- #-‵suc : ∀ {x : List Char} (t : Term)
 --   → x # (‵suc t)
@@ -1598,7 +1612,7 @@ ax5 i j a b (‵suc t) i≢j rewrite ax5 i j a b t i≢j = refl
 --   → [ i —→ x ] t ≡ t
 --     ----------------
 --   → [ i —→ y ] t ≡ t
-lemma2·7-1 {i} {x} {y} {t} [i>x]t≡t = 
+lemma2·7-1 {i} {x} {y} {t} [i>x]t≡t =
   begin
     ([ i —→ y ] t)
   -- use the fact that t ≡ [ i —→ x ] t
@@ -1616,7 +1630,8 @@ lemma2·7-1 {i} {x} {y} {t} [i>x]t≡t =
 --     ----------------
 --   → [ j —→ x ] t ≡ t
 lemma2·7-2 {j = j} j≥i i≻t with (i≻t j ⦃ j≥i ⦄)
-... | И⟨ Иe₁ , Иe₂ ⟩ = lemma2·7-1 (Иe₂ (fresh Иe₁) {fresh-correct Иe₁})
+... | И⟨ Иe₁ , Иe₂ ⟩ =
+  lemma2·7-1 (Иe₂ (fresh Иe₁) {fresh-correct Иe₁})
 \end{code}
 
 Note, in the paper \citep{chargueraud_locally_2012}, the assumption is written like so (with the
@@ -1635,7 +1650,8 @@ to the source code:
 --   → [ i —→ u ] ([ j —→ v ] t) ≡ [ j —→ v ] t
 --   → [ i —→ u ] t ≡ t
 open-rec-lc-lemma {free x} i≢j assump = refl
-open-rec-lc-lemma {bound k} {i} {j} {u} {v} i≢j assump with i ≟ℕ j | i ≟ℕ k
+open-rec-lc-lemma {bound k} {i} {j} i≢j assump
+  with i ≟ℕ j | i ≟ℕ k
 ... | yes i≡j | yes i≡k = contradiction i≡j i≢j
 ... | yes i≡j | no  i≢k = contradiction i≡j i≢j
 ... | no  _   | no  _   = refl
@@ -1645,7 +1661,9 @@ open-rec-lc-lemma {bound k} {i} {j} {u} {v} i≢j assump with i ≟ℕ j | i ≟
 ...     | yes i≡k' with () ← assump
 ...     | no  i≢k  = contradiction i≡k i≢k
 open-rec-lc-lemma {ƛ t} {i} {j} i≢j assump
-  rewrite open-rec-lc-lemma {t} {suc i} {suc j} (suc-preserves-≢ i≢j) (ƛ-inj assump)
+  rewrite open-rec-lc-lemma {t} {suc i} {suc j}
+      (suc-preserves-≢ i≢j)
+      (ƛ-inj assump)
     = refl
 open-rec-lc-lemma {t₁ · t₂} i≢j assump
   rewrite
@@ -1660,7 +1678,8 @@ open-rec-lc-lemma {‵suc t} i≢j assump
 --   → j ≥ i
 --   → i ≻ t
 --   → i ≻ ([ j —→ a ] t)
-lemma2·13 {t} {a} {i} j j≥i i≻t k with j ≟ℕ k | Иe₁ (i≻t j ⦃ j≥i ⦄)
+lemma2·13 {t} {a} {i} j j≥i i≻t k
+  with j ≟ℕ k | Иe₁ (i≻t j ⦃ j≥i ⦄)
 ... | yes refl | l = И⟨ l , (λ b → ax1 j b a t) ⟩
 ... | no  j≢k  | l = И⟨ l , (λ b →
   begin
@@ -1676,7 +1695,9 @@ lemma2·13 {t} {a} {i} j j≥i i≻t k with j ≟ℕ k | Иe₁ (i≻t j ⦃ j�
 ≻⇒lc-at i (bound j) i≻t with j <? i
 ... | yes j<i = lc-at-bound ⦃ j<i ⦄
 ... | no  j≮i with
-  (Иe₂ (i≻t j ⦃ ≮⇒≥ j≮i ⦄)) (fresh (Иe₁ (i≻t j ⦃ ≮⇒≥ j≮i ⦄))) {fresh-correct (Иe₁ (i≻t j ⦃ ≮⇒≥ j≮i ⦄))}
+  (Иe₂ (i≻t j ⦃ ≮⇒≥ j≮i ⦄))
+    (fresh (Иe₁ (i≻t j ⦃ ≮⇒≥ j≮i ⦄)))
+    {fresh-correct (Иe₁ (i≻t j ⦃ ≮⇒≥ j≮i ⦄))}
 ...   | q with j ≟ℕ j
 ...     | yes refl with () ← q
 ...     | no  j≢j  = contradiction refl j≢j
@@ -1686,34 +1707,37 @@ lemma2·13 {t} {a} {i} j j≥i i≻t k with j ≟ℕ k | Иe₁ (i≻t j ⦃ j�
     helper (suc j) ⦃ s≤s j≥i ⦄ =
       И⟨ Иe₁ (i≻t j ⦃ j≥i ⦄)
       , (λ a {a∉} → ƛ-inj ((Иe₂ (i≻t j ⦃ j≥i ⦄)) a {a∉})) ⟩
-≻⇒lc-at i (t₁ · t₂) i≻t = lc-at-app (≻⇒lc-at i t₁ i≻t₁) (≻⇒lc-at i t₂ i≻t₂)
+≻⇒lc-at i (t₁ · t₂) i≻t =
+  lc-at-app (≻⇒lc-at i t₁ i≻t₁) (≻⇒lc-at i t₂ i≻t₂)
   where
     i≻t₁ : i ≻ t₁
     i≻t₁ j ⦃ j≥i ⦄ =
       И⟨ Иe₁ (i≻t j ⦃ j≥i ⦄)
-      , (λ a {a∉} → proj₁ (·-inj ((Иe₂ (i≻t j ⦃ j≥i ⦄)) a {a∉}))) ⟩
+      , (λ a {a∉} → proj₁ (·-inj ((Иe₂ (i≻t j ⦃ j≥i ⦄)) a {a∉})))
+      ⟩
     i≻t₂ : i ≻ t₂
     i≻t₂ j ⦃ j≥i ⦄ =
       И⟨ Иe₁ (i≻t j ⦃ j≥i ⦄)
-      , (λ a {a∉} → proj₂ (·-inj ((Иe₂ (i≻t j ⦃ j≥i ⦄)) a {a∉}))) ⟩
+      , (λ a {a∉} → proj₂ (·-inj ((Иe₂ (i≻t j ⦃ j≥i ⦄)) a {a∉})))
+      ⟩
 ≻⇒lc-at _ ‵zero _ = lc-at-‵zero
 ≻⇒lc-at i (‵suc t) i≻t = lc-at-‵suc (≻⇒lc-at i t (λ j →
   И⟨ (Иe₁ (i≻t j ⦃ it ⦄))
   , (λ a {a∉} → ‵suc-inj ((Иe₂ (i≻t j ⦃ it ⦄)) a {a∉})) ⟩))
 
 -- lc-at⇒≻ : ∀ (i : ℕ) (t : Term) → Lc-at i t → i ≻ t
--- Here we use "[]" because we don't really care what string we use to test the locally
--- closedness.
+-- Here we use "[]" because we don't really care what string
+-- we use to test the locally closedness.
 lc-at⇒≻ i (bound k) lc-at-bound j ⦃ i≤j ⦄ with j ≟ℕ k
 ... | yes j≡k = contradiction (sym j≡k) (<⇒≢ (≤-trans it i≤j))
 ... | no  j≢k = И⟨ [] , (λ a → refl) ⟩
 lc-at⇒≻ i (free x) lc-at-free j = И⟨ [] , (λ a → refl) ⟩
-lc-at⇒≻ i (ƛ t) (lc-at-lam lc-at) j with lc-at⇒≻ (suc i) t lc-at
+lc-at⇒≻ i (ƛ t) (lc-at-lam lc-at) j
+  with lc-at⇒≻ (suc i) t lc-at
 ... | si≻t = И⟨ [] , (λ a → cong ƛ_ (lemma2·7-2 (s≤s it) si≻t)) ⟩
 lc-at⇒≻ i (t₁ · t₂) (lc-at-app lc-at₁ lc-at₂) j =
   И⟨ []
-  , (λ a →
-    cong₂ _·_
+  , (λ a → cong₂ _·_
       (lemma2·7-2 it (lc-at⇒≻ i t₁ lc-at₁))
       (lemma2·7-2 it (lc-at⇒≻ i t₂ lc-at₂))) ⟩
 lc-at⇒≻ _ (‵zero) (lc-at-‵zero) j = И⟨ [] , (λ _ → refl) ⟩
@@ -1723,7 +1747,8 @@ lc-at⇒≻ i (‵suc t) (lc-at-‵suc lc-at) j =
 
 -- bound-never-lc : ∀ (n : ℕ) → ¬ LocallyClosed (bound n)
 bound-never-lc n x with ≻⇒lc-at 0 (bound n) x
-... | lc-at-bound ⦃ () ⦄ -- This implies that n < 0 which is never true.
+... | lc-at-bound ⦃ () ⦄ -- This implies that n < 0
+                         -- which is never true.
 
 -- free-lc : ∀ {x : List Char} → LocallyClosed (free x)
 free-lc _ = И⟨ [] , (λ _ → refl) ⟩
@@ -1734,9 +1759,12 @@ free-lc _ = И⟨ [] , (λ _ → refl) ⟩
 i≻ƛt⇒si≻t {i} {t} lc-t with ≻⇒lc-at i (ƛ t) lc-t
 ... | lc-at-lam lc-at-si-t = lc-at⇒≻ (suc i) t lc-at-si-t
 
--- ·-≻ : ∀ {t₁ t₂ : Term} {i : ℕ} → i ≻ (t₁ · t₂) → (i ≻ t₁) × (i ≻ t₂)
+-- ·-≻ : ∀ {t₁ t₂ : Term} {i : ℕ}
+--   → i ≻ (t₁ · t₂) → (i ≻ t₁) × (i ≻ t₂)
 ·-≻ {t₁} {t₂} {i} i≻· with ≻⇒lc-at i (t₁ · t₂) i≻·
-... | lc-at-app t₁-at t₂-at = ⟨ lc-at⇒≻ i t₁ t₁-at , lc-at⇒≻ i t₂ t₂-at ⟩
+... | lc-at-app t₁-at t₂-at =
+  ⟨ lc-at⇒≻ i t₁ t₁-at
+  , lc-at⇒≻ i t₂ t₂-at ⟩
 
 -- ‵zero-≻ : ∀ {i : ℕ} → i ≻ ‵zero
 ‵zero-≻ j = И⟨ [] , (λ _ → refl) ⟩
@@ -1750,7 +1778,8 @@ During the development, I ended up proving more locally nameless substitution th
 needed, so some haven't been referenced above. These aren't strictly needed.
 
 \begin{code}
--- subst-open-var : ∀ {u : Term} {x y : List Char} {i : ℕ} (t : Term)
+-- subst-open-var :
+--   ∀ {u : Term} {x y : List Char} {i : ℕ} (t : Term)
 --   → x ≢ y
 --   → i ≻ u
 --   → [ x := u ] ([ i —→ y ] t) ≡ [ i —→ y ] ([ x := u ] t)
@@ -1762,11 +1791,15 @@ subst-open-var {_} {x} {y} {i} (bound k) x≢y lc-u with i ≟ℕ k
 ... | yes i≡k with x ≟lchar y
 ...   | yes x≡y = contradiction x≡y x≢y
 ...   | no  x≢y = refl
-subst-open-var (ƛ t) x≢y lc-u = cong ƛ_ (subst-open-var t x≢y (≻⇒s≻ lc-u))
+subst-open-var (ƛ t) x≢y lc-u =
+  cong ƛ_ (subst-open-var t x≢y (≻⇒s≻ lc-u))
 subst-open-var (t₁ · t₂) x≢y lc-u =
-  cong₂ _·_ (subst-open-var t₁ x≢y lc-u) (subst-open-var t₂ x≢y lc-u)
+  cong₂ _·_
+    (subst-open-var t₁ x≢y lc-u)
+    (subst-open-var t₂ x≢y lc-u)
 subst-open-var (‵zero) x≢y lc-u = refl
-subst-open-var (‵suc t) x≢y lc-u = cong ‵suc_ (subst-open-var t x≢y lc-u)
+subst-open-var (‵suc t) x≢y lc-u =
+  cong ‵suc_ (subst-open-var t x≢y lc-u)
 
 subst-fresh : ∀ {t u : Term} {x : List Char}
   → x # t
@@ -1775,11 +1808,14 @@ subst-fresh {free y} {u} {x} x#t with x ≟lchar y
 ... | yes _ with () ← x#t
 ... | no  _ = refl
 subst-fresh {bound i} {u} {x} x#t = refl
-subst-fresh {ƛ t} {u} x#t rewrite subst-fresh {t} {u} (#-ƛ t x#t) = refl
-subst-fresh {t₁ · t₂} {u} {x} x#· = let ⟨ x#t₁ , x#t₂ ⟩ = #-· t₁ t₂ x#· in
-  cong₂ _·_ (subst-fresh x#t₁) (subst-fresh x#t₂)
+subst-fresh {ƛ t} {u} x#t =
+  cong ƛ_ (subst-fresh (#-ƛ t x#t))
+subst-fresh {t₁ · t₂} {u} {x} x#· =
+  let ⟨ x#t₁ , x#t₂ ⟩ = #-· t₁ t₂ x#· in
+    cong₂ _·_ (subst-fresh x#t₁) (subst-fresh x#t₂)
 subst-fresh {‵zero} {u} x#t = refl
-subst-fresh {‵suc t} {u} x#t = cong ‵suc_ (subst-fresh (#-‵suc t x#t))
+subst-fresh {‵suc t} {u} x#t =
+  cong ‵suc_ (subst-fresh (#-‵suc t x#t))
 
 -- subst-open-lc : ∀ {t u : Term} {x y : List Char}
 --   → x ≢ y
@@ -1802,27 +1838,33 @@ subst-≻ {bound k} x i≻t i≻u j with j ≟ℕ k
 ...     | no  j≢k = contradiction j≡k j≢k
 ...     | yes _   with () ← Иe₂ (fresh Иe₁) {fresh-correct Иe₁}
 subst-≻ {ƛ t} {u} x i≻t i≻u j with i≻ƛt⇒si≻t i≻t
-... | si≻t = И⟨ (x ∷ (Иe₁ (si≻t (suc j) ⦃ s≤s it ⦄))) , (λ a {a∉} → cong ƛ_ ((
-  begin
-    [ suc j —→ a ] ([ x := u ] t)
-  ≡⟨ sym (
-    subst-open-var
-      t
-      (sym-≢ (∉∷[]⇒≢ (proj₁ (∉-++ {xs = x ∷ []} a∉))))
-      (lemma2·6 (m≤n⇒m≤1+n it) i≻u)) ⟩
-    [ x := u ] ([ suc j —→ a ] t)
-  ≡⟨ cong ([ x := u ]_) ((Иe₂ (si≻t (suc j) ⦃ s≤s it ⦄)) a {proj₂ (∉-++ {xs = x ∷ []} a∉)}) ⟩
-    [ x := u ] t
-  ∎))) ⟩
-subst-≻ {t₁ · t₂} {i = i} x i≻t i≻u j = let ⟨ i≻t₁ , i≻t₂ ⟩ = ·-≻ i≻t in
-  И⟨ (Иe₁ ((subst-≻ x i≻t₁ i≻u) j) ++ Иe₁ ((subst-≻ x i≻t₂ i≻u) j)) , (λ a {a∉} →
-    cong₂ _·_
-      (lemma2·7-2 it (subst-≻ x i≻t₁ i≻u))
-      (lemma2·7-2 it (subst-≻ x i≻t₂ i≻u))) ⟩
+... | si≻t =
+  И⟨ (x ∷ (Иe₁ (si≻t (suc j) ⦃ s≤s it ⦄)))
+  , (λ a {a∉} → cong ƛ_ ((
+    begin
+      [ suc j —→ a ] ([ x := u ] t)
+    ≡⟨ sym (subst-open-var
+          t
+          (sym-≢ (∉∷[]⇒≢ (proj₁ (∉-++ {xs = x ∷ []} a∉))))
+          (lemma2·6 (m≤n⇒m≤1+n it) i≻u)) ⟩
+      [ x := u ] ([ suc j —→ a ] t)
+    ≡⟨ cong ([ x := u ]_)
+        ((Иe₂ (si≻t (suc j) ⦃ s≤s it ⦄))
+          a
+          {proj₂ (∉-++ {xs = x ∷ []} a∉)}) ⟩
+      [ x := u ] t
+    ∎))) ⟩
+subst-≻ {t₁ · t₂} {i = i} x i≻t i≻u j =
+  let ⟨ i≻t₁ , i≻t₂ ⟩ = ·-≻ i≻t in
+    И⟨ (Иe₁ ((subst-≻ x i≻t₁ i≻u) j)
+      ++ Иe₁ ((subst-≻ x i≻t₂ i≻u) j))
+    , (λ a {a∉} → cong₂ _·_
+        (lemma2·7-2 it (subst-≻ x i≻t₁ i≻u))
+        (lemma2·7-2 it (subst-≻ x i≻t₂ i≻u))) ⟩
 subst-≻ {‵zero} {u} x i≻t i≻u j = И⟨ [] , (λ _ → refl) ⟩
 subst-≻ {‵suc t} {u} x i≻t i≻u j =
-  let И⟨ Иe₁ , Иe₂ ⟩ = (subst-≻ {t} x (‵suc-≻ i≻t) i≻u) j ⦃ it ⦄ in
-    И⟨ Иe₁ , (λ a {a∉} → cong ‵suc_ (Иe₂ a {a∉})) ⟩
+  let И⟨ Иe₁ , Иe₂ ⟩ = (subst-≻ {t} x (‵suc-≻ i≻t) i≻u) j ⦃ it ⦄
+    in И⟨ Иe₁ , (λ a {a∉} → cong ‵suc_ (Иe₂ a {a∉})) ⟩
 
 subst-lc : ∀ {t u : Term} (x : List Char)
   → LocallyClosed t
@@ -1834,11 +1876,17 @@ subst-lc = subst-≻
 -- ⊢⇒lc : ∀ {Γ t A} → Γ ⊢ t ⦂ A → LocallyClosed t
 ⊢⇒lc {Γ} {t} {A} (⊢free Γ∋A) = free-lc
 ⊢⇒lc {Γ} {ƛ t} {A} (⊢ƛ И⟨ Иe₁ ,  Иe₂ ⟩) j =
-  И⟨ Иe₁ , (λ a {a∉} → cong ƛ_ (open-rec-lc-lemma (λ ()) (open-rec-lc (⊢⇒lc (Иe₂ a {a∉}))))) ⟩
+  И⟨ Иe₁ , (λ a {a∉} → cong ƛ_
+    (open-rec-lc-lemma
+      (λ ())
+      (open-rec-lc (⊢⇒lc (Иe₂ a {a∉}))))) ⟩
 ⊢⇒lc {Γ} {t₁ · t₂} (⊢· ⊢A⇒B ⊢A) _ =
-  И⟨ domain Γ , (λ _ → cong₂ _·_ (open-rec-lc (⊢⇒lc ⊢A⇒B)) (open-rec-lc (⊢⇒lc ⊢A))) ⟩
+  И⟨ domain Γ , (λ _ → cong₂ _·_
+    (open-rec-lc (⊢⇒lc ⊢A⇒B)) (open-rec-lc (⊢⇒lc ⊢A))) ⟩
 ⊢⇒lc {Γ} {‵zero} ⊢zero = ‵zero-≻
-⊢⇒lc {Γ} {‵suc t} (⊢suc ⊢t) j = И⟨ domain Γ , (λ a {a∉} → cong ‵suc_ (open-rec-lc (⊢⇒lc ⊢t))) ⟩
+⊢⇒lc {Γ} {‵suc t} (⊢suc ⊢t) j =
+  И⟨ domain Γ , (λ a {a∉} →
+    cong ‵suc_ (open-rec-lc (⊢⇒lc ⊢t))) ⟩
 
 -- ext : ∀ {Γ Δ}
 --   → (∀ {x A}     →         Γ ∋ x ⦂ A →         Δ ∋ x ⦂ A)
@@ -1852,9 +1900,8 @@ ext ρ (T x≢y ∋x) = T x≢y (ρ ∋x)
 --   → (∀ {M A} → Γ ⊢ M ⦂ A → Δ ⊢ M ⦂ A)
 rename ρ (⊢free ∋A) = ⊢free (ρ ∋A)
 rename {Δ = Δ} ρ (⊢ƛ И⟨ Иe₁ , Иe₂ ⟩ ) =
-  ⊢ƛ
-    И⟨ (domain Δ ++ Иe₁)
-    , (λ a {a∉} → rename (ext ρ) (Иe₂ a {proj₂ (∉-++ a∉)})) ⟩
+  ⊢ƛ И⟨ (domain Δ ++ Иe₁) , (λ a {a∉} →
+    rename (ext ρ) (Иe₂ a {proj₂ (∉-++ a∉)})) ⟩
 rename ρ (⊢· ⊢A⇒B ⊢A) = ⊢· (rename ρ ⊢A⇒B) (rename ρ ⊢A)
 rename {Δ = Δ} ρ ⊢zero = ⊢zero
 rename {Δ = Δ} ρ (⊢suc ⊢t) = ⊢suc (rename ρ ⊢t)
@@ -1893,19 +1940,8 @@ drop {Γ} {x} {M} {A} {B} {C} ⊢M = rename ρ ⊢M
 --   → LocallyClosed u
 --   → Γ ⊢ [ x := u ] ([ 0 —→ y ] t) ⦂ A
 --   → Γ ⊢ [ 0 —→ y ] ([ x := u ] t) ⦂ A
-subst-open-context {t = t} x≢y lc-u sub-open = ≡-with-⊢ sub-open (subst-open-var t x≢y lc-u)
+subst-open-context {t = t} x≢y lc-u sub-open =
+  ≡-with-⊢ sub-open (subst-open-var t x≢y lc-u)
 \end{code}
-
-\chapter{Participants' information sheet}
-
-If you had human participants, include key information that they were given in
-an appendix, and point to it from the ethics declaration.
-
-\chapter{Participants' consent form}
-
-If you had human participants, include information about how consent was
-gathered in an appendix, and point to it from the ethics declaration.
-This information is often a copy of a consent form.
-
 
 \end{document}

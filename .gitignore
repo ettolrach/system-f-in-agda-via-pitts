@@ -1,6 +1,7 @@
 ## === Agda ===
 
 *.agdai
+latex/latex
 
 ## === LaTeX ===
 
