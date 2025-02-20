@@ -29,8 +29,10 @@
 % Agda
 \usepackage{agda}
 \AgdaNoSpaceAroundCode{}
-% Hide output
+% Hide in output
 \usepackage{comment}
+% Colour
+\usepackage{xcolor}
 
 % Unicode
 
@@ -180,7 +182,10 @@ Any acknowledgements go here.
 
 \chapter{Introduction}
 
-TODO
+TODO.
+
+This document is a literate Agda file and uses {\color{violet}colour}. Please see appendix
+\ref{appendix:compilation_instructions} for details.
 
 \begin{code}
 module dissertation where
@@ -203,29 +208,41 @@ Agda most commonly uses inductive definitions. For example, following the Peano
 axioms for the natural numbers $\nat$ \citep{boolos_freges_1995}, we may define
 them like so.
 
-% \begin{code}
-% module Example where
-%   data ℕ : Set where
-%     zero : ℕ
-%     suc  : ℕ → ℕ
-% \end{code}
-
+\begin{code}
+module Example where
+  data ℕ : Set where
+    zero : ℕ
+    suc  : ℕ → ℕ
+\end{code}
 
 Taking advantage of the Curry-Howard correspondence, a proof in Agda is simply a
 function with an appropriate type signature and function body
 \citep{wadler_propositions_2015}. So, a proof that addition is associative would
 use recursion, which corresponds to induction, as shown below.
 
-% \begin{code}
-% open import Relation.Binary.PropositionalEquality
-%   using (_≡_; refl; cong)
-% open import Data.Nat using (ℕ; zero; suc; _+_)
+\begin{comment}
+\begin{code}
+\end{code}
+\end{comment}
 
-% +-assoc : ∀ (m n p : ℕ) → (m + n) + p ≡ m + (n + p)
-% +-assoc zero    n p = refl
-% +-assoc (suc m) n p = cong suc (+-assoc m n p)
-% \end{code}
+\begin{code}
+  -- We can import from the standard library, here we're using
+  -- the reflexive and congruence properties of equality.
+  open import Relation.Binary.PropositionalEquality
+    using (_≡_; refl; cong)
 
+  _+_ : ℕ → ℕ → ℕ
+  zero  + m = m
+  suc n + m = suc (n + m)
+
+  +-assoc : ∀ (m n p : ℕ) → (m + n) + p ≡ m + (n + p)
+  +-assoc zero    n p = refl
+  +-assoc (suc m) n p = cong suc (+-assoc m n p)
+\end{code}
+
+
+We will need to import a lot of functions from the standard library. These imports are omitted here,
+but are available in the full source file (see appendix \ref{appendix:compilation_instructions}).
 \begin{comment}
 \begin{code}
 -- Data types (naturals, strings, characters)
@@ -291,43 +308,31 @@ infix 4 _—→_
 \end{code}
 \end{comment}
 
-We also need to forward-declare some theorems. These are proven in appendix A [TODO].
+We also need to forward-declare some theorems. These are proven in appendix
+\ref{appendix:misc_proofs}. Similar to lanugages like C, we can declare a function's type signature
+before its body. That way, functions whose exact definitions aren't of interest can be specified
+in the appendix.
 
 \begin{code}
 All¬⇒¬Any : ∀ {A : Set} {P : A → Set} {xs : List A}
-  → All (¬_ ∘ P) xs
-    ---------------
-  → (¬_ ∘ Any P) xs
+  → All (¬_ ∘ P) xs → (¬_ ∘ Any P) xs
 
 ¬Any⇒All¬ : ∀ {A : Set} {P : A → Set} {xs : List A}
-  → (¬_ ∘ Any P) xs
-    ---------------
-  → All (¬_ ∘ P) xs
+  → (¬_ ∘ Any P) xs → All (¬_ ∘ P) xs
 
 ∉-++ : ∀ {s : List Char} {xs ys : List (List Char)}
-  → s ∉ xs ++ ys
-    --------------------
-  → (s ∉ xs) × (s ∉ ys)
+  → s ∉ xs ++ ys → (s ∉ xs) × (s ∉ ys)
 
 ++-∉ : ∀ {s : List Char} {xs ys : List (List Char)}
-  → s ∉ xs
-  → s ∉ ys
-    -------------
-  → s ∉ xs ++ ys
+  → s ∉ xs → s ∉ ys → s ∉ xs ++ ys
 
 ∉∷[]⇒≢ : {x y : List Char} → x ∉ y ∷ [] → x ≢ y
 
 sym-≢ : ∀ {A : Set} {x y : A}
-  → x ≢ y
-    -----
-  → y ≢ x
+  → x ≢ y → y ≢ x
 
 ∉⇒≢ : ∀ {xs : List (List Char)} {x y : List Char}
-  → x ∈ xs
-  → y ∉ xs
-    -------
-  → x ≢ y
-
+  → x ∈ xs → y ∉ xs → x ≢ y
 \end{code}
 
 \section{The $\lambda$-Calculus and System F}
@@ -1336,6 +1341,7 @@ subject to the usual late penalties based on your final submission time.
 \appendix
 
 \chapter{Miscellaneous Proofs}
+\label{appendix:misc_proofs}
 
 Since some of these functions were already declared above, it would be an error to declare them
 again. I decided to include the type signatures anyway for clarity.
@@ -1943,5 +1949,23 @@ drop {Γ} {x} {M} {A} {B} {C} ⊢M = rename ρ ⊢M
 subst-open-context {t = t} x≢y lc-u sub-open =
   ≡-with-⊢ sub-open (subst-open-var t x≢y lc-u)
 \end{code}
+
+\chapter{Compilation instructions}
+\label{appendix:compilation_instructions}
+
+This document is a literate Agda file. It has been tested to work with
+\begin{itemize}
+  \item Agda 2.7.0,
+  \item the Agda Standard Library 2.1 [TODO: Cite],
+  \item XeLaTeX 3.141592653-2.6-0.999996 (TeX Live 2024/Arch Linux 2024.2-4).
+\end{itemize}
+
+Since this document uses the Minted package [TODO: cite], XeLaTeX needs to be run with the
+\texttt{--shell-escape} option. While Agda does provide its own typesetting of Agda code, it uses a
+sans-serif typeface. I decided to use the Minted package to provide a monospace typeface for the
+code blocks.
+
+To typecheck the document, run Agda with the \texttt{--latex} option. If successful, it will give no
+output and return an exit code \texttt{0}.
 
 \end{document}
