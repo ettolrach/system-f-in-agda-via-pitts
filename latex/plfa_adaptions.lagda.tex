@@ -1,0 +1,114 @@
+These functions are closely adapted from PLFA [TODO: cite].
+
+\begin{code}
+module plfa_adaptions where
+\end{code}
+\begin{comment}
+  \begin{code}
+  -- Data types (naturals, strings, characters)
+  open import Data.Nat using (ℕ; zero; suc; _<_; _≥_; _≤_; _≤?_; _<?_; z≤n; s≤s; _⊔_)
+    renaming (_≟_ to _≟ℕ_)
+  open import Data.Nat.Properties using (≤-refl; ≤-trans; ≤-<-trans; <-≤-trans; ≤-antisym; ≤-total;
+    +-mono-≤; n≤1+n; m≤n⇒m≤1+n; suc-injective; <⇒≢; ≰⇒>; ≮⇒≥)
+  open import Data.String using (String; fromList) renaming (_≟_ to _≟str_; _++_ to _++str_;
+    length to str-length; toList to ⟪_⟫)
+  open import Data.Char using (Char)
+  open import Data.Char.Properties using () renaming (_≟_ to _≟char_)
+  
+  -- Function manipulation.
+  open import Function using (_∘_; flip; it; id; case_returning_of_)
+  
+  -- Relations and predicates/decidability.
+  import Relation.Binary.PropositionalEquality as Eq
+  open Eq using (_≡_; _≢_; refl; sym; trans; cong; cong-app; cong₂)
+  open Eq.≡-Reasoning using (begin_; step-≡-∣; step-≡-⟩; _∎)
+  open import Relation.Binary.Definitions using (DecidableEquality)
+  open import Relation.Nullary.Decidable using (Dec; yes; no; True; False; toWitnessFalse;
+    toWitness; fromWitness; ¬?; ⌊_⌋; From-yes)
+  open import Relation.Unary using (Decidable)
+  open import Relation.Binary using () renaming (Decidable to BinaryDecidable)
+  open import Relation.Nullary.Negation using (¬_; contradiction)
+  open import Data.Empty using (⊥-elim)
+  
+  -- Products and exists quantifier.
+  open import Data.Product using (_×_; proj₁; proj₂; ∃-syntax) renaming (_,_ to ⟨_,_⟩)
+  
+  -- Lists.
+  open import Data.List using (List; []; _∷_; _++_; length; filter; map; foldr; head; replicate)
+  open import Data.List.Properties using (≡-dec)
+  import Data.List.Membership.DecPropositional as DecPropMembership
+  open import Data.List.Relation.Unary.All using (All; all?; lookup)
+    renaming (fromList to All-fromList; toList to All-toList)
+  open import Data.List.Relation.Unary.Any using (Any; here; there)
+  open import Data.List.Extrema Data.Nat.Properties.≤-totalOrder using (max; xs≤max)
+  
+  -- Import list membership using List Char comparisons.
+  private
+    _≟lchar_ : ∀ (xs ys : List Char) → Dec (xs ≡ ys)
+    xs ≟lchar ys = ≡-dec (_≟char_) xs ys
+  
+  open DecPropMembership _≟lchar_ using (_∈_; _∉_; _∈?_)
+  \end{code}
+\end{comment}
+\begin{code}
+  All-++ : ∀ {A : Set} {P : A → Set} (xs ys : List A)
+    → All P (xs ++ ys)
+      ---------------------
+    → (All P xs × All P ys)
+  All-++ [] ys Pys = ⟨ All.[] , Pys ⟩
+  All-++ (x ∷ xs) ys (Px All.∷ Pxs++ys) with All-++ xs ys Pxs++ys
+  ... | ⟨ Pxs , Pys ⟩ = ⟨ Px All.∷ Pxs , Pys ⟩
+
+  All¬⇒¬Any : ∀ {A : Set} {P : A → Set} {xs : List A}
+    → All (¬_ ∘ P) xs
+      ---------------
+    → (¬_ ∘ Any P) xs
+  All¬⇒¬Any {xs = x ∷ xs} (¬Px All.∷ All¬P) (here Px) = ¬Px Px
+  All¬⇒¬Any {xs = x ∷ xs} (¬Px All.∷ All¬P) (there Pxs) =
+    All¬⇒¬Any {xs = xs} All¬P Pxs
+
+  ¬Any⇒All¬ : ∀ {A : Set} {P : A → Set} {xs : List A}
+    → (¬_ ∘ Any P) xs
+      ---------------
+    → All (¬_ ∘ P) xs
+  ¬Any⇒All¬ {xs = []} ¬∘AnyP = All.[]
+  ¬Any⇒All¬ {xs = (x ∷ xs)} ¬AnyP =
+    (λ Px → ¬AnyP (here Px))
+      All.∷ ¬Any⇒All¬ {xs = xs} (λ Pxs → ¬AnyP (there Pxs))
+
+  -- We have to use ¬Any⇒All¬ and its inverse because ∉ is an
+  -- alias for "¬ Any (_≡ x) xs".  So we have to go through
+  -- the process of converting to "All ¬" to apply the
+  -- "All-++" lemma.
+  ∉-++ : ∀ {s : List Char} {xs ys : List (List Char)}
+    → s ∉ xs ++ ys
+      --------------------
+    → (s ∉ xs) × (s ∉ ys)
+  ∉-++ {s} {xs} {ys} s∉xs++ys =
+    let ⟨ all¬xs , all¬ys ⟩ = All-++ xs ys (¬Any⇒All¬ s∉xs++ys) in
+      ⟨ All¬⇒¬Any {xs = xs} all¬xs
+      , All¬⇒¬Any {xs = ys} all¬ys ⟩
+
+  ++-All : ∀ {A : Set} {P : A → Set} (xs ys : List A)
+    → All P xs × All P ys
+      -------------------
+    → All P (xs ++ ys)
+  ++-All [] ys ⟨ All.[] , Pys ⟩ = Pys
+  ++-All (x ∷ xs) ys ⟨ Px All.∷ Pxs , Pys ⟩ =
+    Px All.∷ ++-All xs ys ⟨ Pxs , Pys ⟩
+
+  ++-∉ : ∀ {s : List Char} {xs ys : List (List Char)}
+    → s ∉ xs
+    → s ∉ ys
+      -------------
+    → s ∉ xs ++ ys
+  ++-∉ {_} {xs} {ys} s∉xs s∉ys = All¬⇒¬Any
+    (++-All xs ys ⟨ (¬Any⇒All¬ s∉xs) , (¬Any⇒All¬ s∉ys) ⟩)
+
+  ∉∷[]⇒≢ : {x y : List Char}
+    → x ∉ y ∷ []
+      -----------
+    → x ≢ y
+  ∉∷[]⇒≢ x∉ with ¬Any⇒All¬ x∉
+  ... | px All.∷ All.[] = px
+\end{code}

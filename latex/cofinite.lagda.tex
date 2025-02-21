@@ -1,0 +1,76 @@
+Often, we may want to prove a property for \textit{almost} all members of a set, where we exclude a
+finite subset. For example, for \textit{almost} all natural numbers $n$, $n \geq 2$. Or in number
+theory, \textit{almost} all natural numbers can be written as a product of primes. To prove this,
+one would need to give a set of numbers which the proof will ignore (in the example, $\{ (0), 1
+\}$), and then prove it for all $n \in \nat$ with the extra assumption that $n \not \in \{0, 1\}$.
+Usually in mathematics, we want the exceptions explicitly in the claim, so we don't say \textit{for
+almost all}.
+
+When using the locally nameless representation, \textit{cofinite} quantification proves to be very
+useful \citep{aydemir_engineering_2008}, which is exactly what we would understand as `for almost
+all'.
+
+While the Agda implementation that \citet{pitts_locally_2023} gives uses an arbitrary set, I chose
+to use the specific \texttt{List Char}, since we will only quantify over strings.
+\begin{code}
+module cofinite where
+  open import plfa_adaptions using (∉∷[]⇒≢)
+\end{code}
+\begin{comment}
+\begin{code}
+  -- Data types (naturals, strings, characters)
+  open import Data.Nat using (ℕ; zero; suc; _≤_; z≤n; s≤s)
+  open import Data.Nat.Properties using (≤-refl; ≤-trans; ≤-antisym; ≤-total)
+  open import Data.Char using (Char)
+  open import Data.Char.Properties using () renaming (_≟_ to _≟char_)
+
+  -- Relations and predicates/decidability.
+  import Relation.Binary.PropositionalEquality as Eq
+  open Eq using (_≡_; _≢_; refl; sym; trans; cong)
+  open import Relation.Binary.Definitions using (DecidableEquality)
+  open import Relation.Nullary.Decidable using (Dec)
+  open import Relation.Unary using (Decidable)
+  open import Relation.Binary using () renaming (Decidable to BinaryDecidable)
+  open import Relation.Nullary.Negation using (contradiction)
+
+  -- Lists.
+  open import Data.List using (List; []; _∷_; _++_; length; filter; map; foldr; head; replicate)
+  open import Data.List.Properties using (≡-dec)
+  import Data.List.Membership.DecPropositional as DecPropMembership
+  open import Data.List.Relation.Unary.All using (All; all?; lookup)
+    renaming (fromList to All-fromList; toList to All-toList)
+  open import Data.List.Relation.Unary.Any using (Any; here; there)
+  open import Data.List.Extrema Data.Nat.Properties.≤-totalOrder using (max; xs≤max)
+
+  -- Import list membership using List Char comparisons.
+  private
+    _≟lchar_ : ∀ (xs ys : List Char) → Dec (xs ≡ ys)
+    xs ≟lchar ys = ≡-dec (_≟char_) xs ys
+
+  open DecPropMembership _≟lchar_ using (_∈_; _∉_; _∈?_)
+\end{code}
+\end{comment}
+\begin{code}
+  record Cof (P : List Char → Set) : Set where
+    inductive
+    eta-equality
+    constructor И⟨_,_⟩
+    field
+      Иe₁ : List (List Char)
+      Иe₂ : (a : List Char) {_ : a ∉ Иe₁} → P a
+  open Cof public
+  
+  Cof-syntax : (P : List Char → Set) → Set
+  Cof-syntax = Cof
+  syntax Cof-syntax (λ a → P) = И a , P
+\end{code}
+
+For a simple example, I can show \textit{almost} all strings have a length greater or equal to $1$
+(with the exception being the empty string).
+
+\begin{code}
+  simple-cof : {s : List Char} → И s , (1 ≤ length s)
+  simple-cof = И⟨ [] ∷ [] , (
+    λ{[] {a∉}  → contradiction refl (∉∷[]⇒≢ a∉)
+    ; (x ∷ xs) → s≤s z≤n}) ⟩
+\end{code}
