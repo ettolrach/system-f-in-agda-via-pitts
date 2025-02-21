@@ -22,8 +22,6 @@
 \usepackage{minted}
 % BNF
 \usepackage{simplebnf}
-% Unicode
-%\usepackage[utf8]{inputenc}
 % Inference rules
 \usepackage{mathpartir}
 % Agda
@@ -40,7 +38,7 @@
 \usepackage{newunicodechar}
 \newfontface{\notosansmono}{NotoSansMono-Regular.ttf}[Path = fonts/]
 \newfontface{\ibmplexmath}{IBMPlexMath-Regular.otf}[Path = fonts/]
-\newfontface{\hack}{Hack Regular}
+\newfontface{\hack}{HackNerdFontMono-Regular.ttf}[Path = fonts/]
 \newunicodechar{ℕ}{{\notosansmono{ℕ}}}
 \newunicodechar{∀}{{\notosansmono{∀}}}
 \newunicodechar{≡}{{\notosansmono{≡}}}
@@ -84,7 +82,7 @@
 \newunicodechar{⊢}{{\hack{⊢}}}
 \newunicodechar{ξ}{{\notosansmono{ξ}}}
 \newunicodechar{β}{{\notosansmono{β}}}
-\newunicodechar{↠}{{\notosansmono{↠}}}
+\newunicodechar{↠}{{\hack{↠}}}
 \newunicodechar{ρ}{{\notosansmono{ρ}}}
 
 % Maths:
@@ -241,8 +239,9 @@ use recursion, which corresponds to induction, as shown below.
 \end{code}
 
 
-We will need to import a lot of functions from the standard library. These imports are omitted here,
-but are available in the full source file (see appendix \ref{appendix:compilation_instructions}).
+We will need to import a lot of functions from the Agda standard library
+\citep{the_agda_community_agda_2024}. These imports are omitted here, but are available in the full
+source file (see appendix \ref{appendix:compilation_instructions}).
 \begin{comment}
 \begin{code}
 -- Data types (naturals, strings, characters)
@@ -587,6 +586,39 @@ article by explores locally nameless sets in Agda, and proves that this infrastr
 defined in a syntax-agnostic way. This will form part of the basis of our approach to implementing
 System F in Agda.
 
+\section{Evaluation strategy}
+\label{section:evaluation_strategy}
+There are several ways of evaluating the $\lambda$-calculus. The main question is whether to treat
+$\lambda$-abstractions as values, or to reduce these if they are a redex.
+
+The idea of reducible expressions, called a \textit{redex}, was introduced by Church
+\citet[p.~56]{pierce_types_2002}. We refer to any expression of the form $(\lambda x. M) N$ as a
+redex, since we can perform a $\beta$-reduction.
+
+When evaluating, we need to consider some terms to be \textit{values}. These cannot be reduced any
+further. One method is to consider $\lambda$-abstractions to be values and to only evaluated
+\textit{closed} terms, that is, terms without any free variables. This is called weak-head
+reduction, and the values are called weak-head normal forms \citep{wadler_programming_2022}. This
+method is also used by popular programming languages such as Haskell \citep{hutchison_sharing_2005}.
+The definition of $\lambda$-calculus as Church first described it uses what is nowadays referred to
+as full normalisation \citep{wadler_programming_2022}. The reduction rule which is missing in
+weak-head reduction is often called $\zeta$, or \textit{reducing under a $\lambda$-abstraction}, and
+can be written like so \citep{hutchison_sharing_2005}, for some terms $M$ and $N$.
+\begin{equation*}
+\inferrule
+  {M \to N}
+  {\lambda x. M \to \lambda x. N}
+\end{equation*}
+
+One of the early explorations of weak-head reduction was made by \citet{cagman_combinatory_1998},
+comparing it to combinatory logic. They presented the necessity of another reduction rule. Since
+evaluation stops at $\lambda$-abstractions, the Church-Rosser property no longer applies (and, in
+fact, the system is no longer Turing complete). While one could introduce specific rules when one
+can reduce under a $\lambda$-abstraction to restore this property \citep{hutchison_sharing_2005},
+another, simpler, method is to introduce primitives \citep{wadler_programming_2022}. These
+primitives are a small subset of Scott and Plotkin's Programming Computable Functions (PCF)
+\citep{plotkin_lcf_1977}, described in section \ref{section:stlc_terms}.
+
 \section{Cofinite Quantification}
 
 Often, we may want to prove a property for \textit{almost} all members of a set, where we exclude a
@@ -626,10 +658,11 @@ simple-cof = И⟨ [] ∷ [] , (
 \end{code}
 
 \section{Prior research}
-System F was previously formalised in Agda by \citet{hutton_system_2019}. However, the authors of that paper formalised a
-variant of System F with language extensions known as \textit{System F$_{\omega \mu}$}. They also
-used a different approach, opting to make use of De Bruijn indices. This paper will use the locally
-nameless representation, which hasn't been used for System F in Agda before.
+System F was previously formalised in Agda by \citet{hutton_system_2019}. However, the authors of
+that paper formalised a variant of System F with language extensions known as \textit{System
+F$_{\omega \mu}$}. They also used a different approach, opting to make use of De Bruijn indices.
+This paper will use the locally nameless representation, which hasn't been used for System F in Agda
+before.
 
 \section{Syntax and basic theorems of STLC}
 I have previously submitted some work on STLC using locally nameless representation for a university
@@ -668,7 +701,7 @@ fresh-correct xss = new-list-correct xss 'q'
 \end{code}
 
 \subsection{Terms and their operations}
-
+\label{section:stlc_terms}
 Since we will need to have quite a few proofs on local closure, we should define our terms.
 \begin{code}
 data Term : Set where
@@ -695,15 +728,20 @@ data Term : Set where
 ‵suc-inj refl = refl
 \end{code}
 
-We have free and bound variables, $\lambda$-abstractions, and application (written explicitly with a
-$\cdot$). Later when doing evaluation, we will only implement weak-head normalisation, so we also
-need to include two primitives \texttt{‵zero} and \texttt{‵suc}. To avoid name conflicts with the
-Agda built-in natural number keywords, a small \texttt{‵} symbol is used, following what is done in
+We have free and bound variables, $\lambda$-abstractions, and applications (written explicitly with
+a $\cdot$). Later when doing evaluation, we will only implement weak-head normalisation, so we also
+need to include two primitives \texttt{‵zero} and \texttt{‵suc}, as explained in
+\ref{section:evaluation_strategy}. To avoid name conflicts with the Agda built-in natural number
+keywords, a small \texttt{‵} symbol is used, following what is done in
 \citet{wadler_programming_2022}. We also exploit the injectivity of terms to help in proofs later.
 
-Now we define the opening and closing operations for terms.
+\paragraph*{Opening and closing.} Two important operations in the locally nameless representation are
+opening and closing terms. This is when an index is replaced with a free variable, and when a free
+variable is replaced with an index. We write these as $[k \to x] M$ and $[k \leftarrow x] M$
+respectively, for some $k \in \nat$, $x \in \texttt{List Char}$, and $M \in \texttt{Terms}$. These
+can be defined recursively.
 \begin{code}
-[_—→_]_ : ∀ (k : ℕ) (x : List Char) → Term → Term
+[_—→_]_ : ℕ → List Char → Term → Term
 [ k —→ x ] (free y) = free y
 [ k —→ x ] (bound i) with k ≟ℕ i
 ... | yes _ = free x
@@ -713,7 +751,7 @@ Now we define the opening and closing operations for terms.
 [ k —→ x ] ‵zero = ‵zero
 [ k —→ x ] ‵suc t = ‵suc ([ k —→ x ] t)
 
-[_←—_]_ : ∀ (k : ℕ) (x : List Char) → Term → Term
+[_←—_]_ : ℕ → List Char → Term → Term
 [ k ←— x ] (free y) with x ≟lchar y
 ... | yes _ = bound k
 ... | no  _ = free y
@@ -723,9 +761,12 @@ Now we define the opening and closing operations for terms.
 [ k ←— x ] ‵zero = ‵zero
 [ k ←— x ] ‵suc t = ‵suc ([ k ←— x ] t)
 \end{code}
+We take advantage of Agda's ability to use mixfix operators to make the opening and closing
+operations look like the notation used in the prose.
 
-Of the nine axioms in \citet{pitts_locally_2023}, we only need three: axioms 1, 2, and 5. As before,
-the function bodies are provided in appendix A [TODO: Appendix].
+\citet{pitts_locally_2023} shows that nine axioms need to be fulfilled for a set to be considered a
+locally nameless set. For our terms we only need three: axioms 1, 2, and 5. As before, the function
+bodies are provided in appendix A [TODO: Appendix].
 \begin{code}
 ax1 : ∀ (i : ℕ) (a b : List Char) (t : Term)
   → [ i —→ a ] ([ i —→ b ] t) ≡ [ i —→ b ] t
@@ -737,14 +778,15 @@ ax1-cor : ∀ (i k : ℕ) (a : List Char) (t : Term)
 ax2 : ∀ (i j : ℕ) (x : List Char) (t : Term)
   → [ i ←— x ] ([ j ←— x ] t) ≡ [ j ←— x ] t
 
-ax5 : ∀ (i j : ℕ) (a b : List Char) (t : Term) → (i≢j : i ≢ j)
+ax5 : ∀ (i j : ℕ) (a b : List Char) (t : Term)
+  → (i≢j : i ≢ j)
   → [ i —→ a ] ([ j —→ b ] t) ≡ [ j —→ b ] ([ i —→ a ] t)
 \end{code}
 
 \subsection{Fresh variables}
-Fresh variables are those whose identifier (i.e. \text{String}) hasn't already been used for any
-free variables in a term. We will exploit this when proving properties of substitution. Free
-variables can be built recursively.
+Fresh variables are those whose identifier (i.e. \texttt{List Char}) hasn't already been used for
+any free variables in a term. We will exploit this when proving properties of substitution. Free
+variables can be collected recursively.
 \begin{code}
 fv : Term → List (List Char)
 fv (free x) = x ∷ []
@@ -755,8 +797,8 @@ fv ‵zero = []
 fv (‵suc t) = fv t
 \end{code}
 
-A variable is also fresh when closing a term with the index 0 using this variable will not change
-the term. These two definitions imply each other.
+A variable is also fresh if a term remains unchanged after it is closed at index $0$ using the
+variable. This definition and the previous one imply each other.
 \begin{code}
 _#_ : List Char → Term → Set
 x # t = [ 0 ←— x ] t ≡ t
@@ -784,11 +826,11 @@ x # t = [ 0 ←— x ] t ≡ t
 
 \subsection{Local Closure}
 A term is said to be \textit{locally closed} up to level $i$ if it remains unchanged after opening
-it at $i$ with a string. We write (for some $i \in \nat$ and term $M$),
+it at index $i$ with a string. We write (for some $i \in \nat$ and term $M$),
 \begin{equation*}
   i \succ M \triangleq \forall j \geq i, \; \cof a , \; [j \to a] M = M.  
 \end{equation*}
-If it is locally closed at level $0$, we simply call it \textit{locally closed}.
+If it is locally closed at level $0$, we simply call it \textit{locally closed}. As mentioned in \citet{pitts_locally_2023}, the predicate that \citet{chargueraud_locally_2012} calls `body' is equivalent to $1 \succ M$ for some term $M$.
 
 \begin{code}
 _≻_ : ℕ → Term → Set
@@ -798,9 +840,8 @@ LocallyClosed_ : Term → Set
 LocallyClosed t = 0 ≻ t
 \end{code}
 
-We can show some interesting properties which will be used later. These are named after the lemma
-number used by \citet{pitts_locally_2023}.
-
+We can show some interesting lemmas which will also be needed later. These are named after the lemma
+number used in \citet{pitts_locally_2023}.
 \begin{code}
 lemma2·6 : ∀ {i j : ℕ} {t : Term}
   → j ≥ i
@@ -819,7 +860,6 @@ lemma2·7-1 : ∀ {i : ℕ} {x y : List Char} {t : Term}
   → [ i —→ x ] t ≡ t
     ----------------
   → [ i —→ y ] t ≡ t
--- Function body in appendix.
 
 lemma2·7-2 : ∀ {i j : ℕ} {x : List Char} {t : Term}
   → j ≥ i
@@ -846,10 +886,11 @@ lemma2·13 : ∀ {t : Term} {a : List Char} {i : ℕ} (j : ℕ)
 
 \citet{pitts_locally_2023} uses an existential quantification for this property instead of the
 cofinite quantification I used. To show that these two are equivalent, we'll use a recursively
-defined local closure predicate (as is done in \citet{chargueraud_locally_2012}). By showing an iff
-relation between the cofinite and recursive definitions, since \citet{pitts_locally_2023} also shows
-an iff relation between the existential and recursive definitions, we can prove that the two
-different quantifications imply each other. It can also help prove local closure properties of terms.
+defined local closure predicate (as is done in \citet{chargueraud_locally_2012}). It's sufficient
+for us to show an iff relation between the cofinite and recursive definitions, since
+\citet{pitts_locally_2023} shows an iff relation between the existential and recursive definitions
+(proposition 4.3); thus, we can prove that the two different quantification definitions imply each
+other.
 
 \begin{code}
 data Lc-at : ℕ → Term → Set where
@@ -872,7 +913,11 @@ data Lc-at : ℕ → Term → Set where
 
 ≻⇒lc-at : ∀ (i : ℕ) (t : Term) → i ≻ t → Lc-at i t
 lc-at⇒≻ : ∀ (i : ℕ) (t : Term) → Lc-at i t → i ≻ t
+\end{code}
 
+We can also use this recrusive definition to show some other properties of the locally closed syntax
+which will be very convenient in the future.
+\begin{code}
 bound-never-lc : ∀ (n : ℕ) → ¬ LocallyClosed (bound n)
 free-lc : ∀ {x : List Char} → LocallyClosed (free x)
 i≻ƛt⇒si≻t : ∀ {i : ℕ} {t : Term} → i ≻ (ƛ t) → suc i ≻ t
@@ -882,8 +927,7 @@ i≻ƛt⇒si≻t : ∀ {i : ℕ} {t : Term} → i ≻ (ƛ t) → suc i ≻ t
 \end{code}
 
 \subsection{Substitution of terms}
-We can substitute terms with this recursive definition.
-
+We can substitute terms for free variables with this recursive definition.
 \begin{code}
 [_:=_]_ : List Char → Term → Term → Term
 [ x := u ] (free y) with x ≟lchar y
@@ -896,8 +940,10 @@ We can substitute terms with this recursive definition.
 [ x := u ] (‵suc t) = ‵suc ([ x := u ] t)
 \end{code}
 
-While there are many interesting theorems about substitution, we only need these.
-
+While there are many interesting properties of substitution (and a few are omitted here and left in
+the appendix in section \ref{appendix:substitution_proofs}), we only need this one which shows how
+substitution interacts with term opening. It is named following what it's called in
+\citet{chargueraud_locally_2012}.
 \begin{code}
 subst-open-var : ∀ {u : Term} {x y : List Char} {i : ℕ} (t : Term)
   → x ≢ y
@@ -910,11 +956,11 @@ subst-open-lc : ∀ {t u : Term} {x y : List Char}
   → [ x := u ] ([ 0 —→ y ] t) ≡ [ 0 —→ y ] ([ x := u ] t)
 \end{code}
 
-\subsection{Types and contexts}
-
-We will use \texttt{‵ℕ} as the base type to work together with the \texttt{‵zero} and \texttt{‵suc}
-primitives. Other than the base type, we also have function (arrow) types. We will closely follow
-what is done in \citet{wadler_programming_2022}.
+\subsection{Typing}
+\label{section:typing_stlc}
+\paragraph*{Types and contexts.} We will use \texttt{‵ℕ} as the base type to work together with the
+\texttt{‵zero} and \texttt{‵suc} primitives. Other than the base type, we also have function (arrow)
+types. We will closely follow what is done in \citet{wadler_programming_2022}.
 \begin{code}
 data Type : Set where
   ‵ℕ : Type
@@ -925,9 +971,10 @@ data Context : Set where
   _,_⦂_ : Context → List Char → Type → Context
 \end{code}
 
-Aydemir et al. (2008) and Charguéraud (2012) include a predicate to tell when a context is `ok',
-that is, that there are no duplicate names. Instead of worrying about keeping track of the strings
-in the context, we can use `shadowing' (always using the latest matching variable in the context).
+\citet{aydemir_engineering_2008} and \citet{chargueraud_locally_2012} include a predicate to tell
+when a context is `ok', that is, that there are no duplicate names. Instead of worrying about
+keeping track of the strings in the context, we can use `shadowing' (always using the latest
+matching variable in the context).
 
 To access the context, we can use these accessors. We use H and T to mirror the \texttt{List.Any}
 construct's `here' and `there'.
@@ -945,7 +992,8 @@ data _∋_⦂_ : Context → List Char → Type → Set where
     → Γ , y ⦂ B ∋ x ⦂ A
 \end{code}
 
-Like in \citet{wadler_programming_2022}, we can use some helper functions.
+Like in \citet{wadler_programming_2022}, we can use some helper functions to try and use Agda's type
+inference to find the required evidence itself.
 \begin{code}
 H′ : ∀ {Γ x A}
   → Γ , x ⦂ A ∋ x ⦂ A
@@ -966,11 +1014,16 @@ domain ∅ = []
 domain (Γ , x ⦂ A) = x ∷ domain Γ
 \end{code}
 
-We use a cofinite quantifier for $\lambda$-abstractions. In \citet{wadler_programming_2022}, they
-add the bound variable to the context and then evaluate the expression as if it were a free
-variable. Here, we open the term to replace it with a free variable. We need to find a \texttt{List
-Char} which isn't in the context yet, otherwise we would shadow it. Since bound variables become
-free, we don't have a typing judgement for bound variables.
+\paragraph*{Type judgements.} The type judgements are the same as in
+\citet[chapter~Lambda]{wadler_programming_2022}, so we won't go into much detail here. The one
+difference is how we define $\lambda$-abstraction, where we use a cofinite quantifier.
+
+In \citet[chapter~Lambda]{wadler_programming_2022}, $\lambda$-abstractions are handled as follows:
+the bound variable is added to the context and the expression is typechecked with the bound variable
+now treated as if it were free. Here, we open the term to replace it with a free variable (and then
+we add this free variable to the context). Thus, we need to find a \texttt{List Char} which isn't in
+the context yet, otherwise we would shadow a previous variable with the same identifier. Since bound
+variables become free, we don't have a typing judgement for bound variables.
 \begin{code}
 data _⊢_⦂_ : Context → Term → Type → Set where
   ⊢free : ∀ {Γ x A}
@@ -1007,15 +1060,18 @@ data _⊢_⦂_ : Context → Term → Type → Set where
 ≡-with-⊢ ⊢t refl = ⊢t
 \end{code}
 
-As a consequence of these judgements, only locally closed terms are well-typed.
-
+As a consequence of these type judgements, only locally closed terms are well-typed. As before, the
+proof is in section \ref{appendix:types_proofs}.
 \begin{code}
 ⊢⇒lc : ∀ {Γ t A} → Γ ⊢ t ⦂ A → LocallyClosed t
--- Function body in appendix.
 \end{code}
 
-As an example, we can show that these two terms are well-typed.
-
+Using the type judgements, we can show that these two terms are well-typed. Using more familiar
+notation, we would write this as $x \colon \nat \vdash (\lambda \colon \nat \to \nat. 0x) \colon \nat$
+and $\vdash (\lambda \colon \nat. \lambda \colon \nat \to \nat. 01) \colon \nat \to (\nat
+\to \nat) \to \nat$ respectively, or using only the named representation, $x \colon \nat \vdash
+(\lambda a \colon \nat \to \nat. ax) \colon \nat$ and $\vdash (\lambda x \colon \nat. \lambda
+f \colon \nat \to \nat. fx) \colon \nat \to (\nat \to \nat) \to \nat$.
 \begin{code}
 _ : (∅ , ⟪ "x" ⟫ ⦂ ‵ℕ) ⊢ (ƛ (bound 0)) · (free ⟪ "x" ⟫) ⦂ ‵ℕ
 _ = ⊢· (⊢ƛ И⟨ ⟪ "x" ⟫ ∷ [] , (λ a → ⊢free H′) ⟩) (⊢free H′)
@@ -1027,34 +1083,38 @@ ex-for-all-contexts {Γ} = ⊢ƛ (
     , (λ b {b∉} → ⊢· (⊢free (H′)) (⊢free (T (∉⇒≢ (here refl) b∉) H′))) ⟩ )) ⟩)
 \end{code}
 
-\subsection{Type context properties}
-
-Since the type judgements are very similar to those in regular (named) simply typed lambda calculus,
-we have many of the same properties as in \citet{wadler_programming_2022}.
-
+\subsection{Typing properties}
+Since the type judgements are very similar to those in named simply typed lambda calculus,
+we have many of the same properties as in \citet[chapter~Lambda]{wadler_programming_2022}.
 \begin{code}
+-- Extending contexts.
 ext : ∀ {Γ Δ}
   → (∀ {x A}     →         Γ ∋ x ⦂ A →         Δ ∋ x ⦂ A)
   → (∀ {x y A B} → Γ , y ⦂ B ∋ x ⦂ A → Δ , y ⦂ B ∋ x ⦂ A)
 
+-- Renaming (aka. "rebasing") of contexts.
 rename : ∀ {Γ Δ}
   → (∀ {x A} → Γ ∋ x ⦂ A → Δ ∋ x ⦂ A)
   → (∀ {M A} → Γ ⊢ M ⦂ A → Δ ⊢ M ⦂ A)
 
+-- Weakening of contexts.
 weaken : ∀ {Γ t A}
   → ∅ ⊢ t ⦂ A
   → Γ ⊢ t ⦂ A
 weaken {Γ} ⊢A = rename (λ ()) ⊢A
 
+-- Swapping variables in a context.
 swap : ∀ {Γ x y t A B C}
   → x ≢ y
   → Γ , y ⦂ B , x ⦂ A ⊢ t ⦂ C
   → Γ , x ⦂ A , y ⦂ B ⊢ t ⦂ C
 
+-- Dropping shadowed variables.
 drop : ∀ {Γ x M A B C}
   → Γ , x ⦂ A , x ⦂ B ⊢ M ⦂ C
   → Γ , x ⦂ B ⊢ M ⦂ C
 
+-- subst-open-var adapted to work with judgements.
 subst-open-context : ∀ {Γ A} {t u : Term} {x y : List Char}
   → x ≢ y
   → LocallyClosed u
@@ -1063,11 +1123,16 @@ subst-open-context : ∀ {Γ A} {t u : Term} {x y : List Char}
 \end{code}
 
 \chapter{Substitution and Evaluation in STLC}
-TODO: intro sentence.
+The remaining properties of STLC, including creating an evaluator, were missing from my submission
+to TSPL. Since it is a necessary prelude to System F, this new work is presented here. As explained
+in section \ref{section:evaluation_strategy}, one evaluation strategy is weak-head reduction. We
+follow the methods presented in \citet[chapter~Properties]{wadler_programming_2022} and
+\citet[section~5]{chargueraud_locally_2012}, as they have also used weak-head reduction. Thus,
+evaluation will be restricted to closed terms only (those without free variables).
 
 \section{Substitution}
-Substitution.
-
+We need to show that substituting preserves types. As mentioned, we restrict ourselves to only
+substituting closed terms.
 \begin{code}
 {-# TERMINATING #-}
 subst : ∀ {Γ x t u A B}
@@ -1097,8 +1162,25 @@ subst ⊢u ⊢zero = ⊢zero
 subst ⊢u (⊢suc ⊢t) = ⊢suc (subst ⊢u ⊢t)
 \end{code}
 
-Substituting a term for an index is, confusingly, also called `opening' by
-\citet{chargueraud_locally_2012}.
+The property is proven by induction on the type judgement of the term \texttt{M}. Agda cannot
+determine the termination of this function, and the problematic call is when the type judgement is a
+$\lambda$-abstraction \texttt{ƛ M}. Specifically, it highlights the problematic code to be
+\texttt{subst ⊢u (swap a≢y (Иe₂ a {a∉Иe₁}))}. Thus, I will only detail that step (technically, Agda
+also complains about a problematic call for the application case, but this is caused by the
+problematic $\lambda$-abstraction case).
+
+Since we are inducting on the type judgement, the inductive hypothesis for a term \texttt{ƛ M} of
+type \texttt{A ⇒ A'} states that the property $P$ holds for $P(\texttt{И⟨ Иe₁ , Иe₂ ⟩})$. Let
+\texttt{b} be an appropriate \texttt{List Char} to supply to \texttt{Иe₂}, then it will return a
+proof that \texttt{Γ , x ⦂ A , b ⦂ A' ⊢ [ 0 —→ b ] t ⦂ B}. In this case, the \texttt{subst} function
+is called on \texttt{Иe₂} (with a \texttt{swap} function applied, but since this function doesn't
+call \texttt{subst} and only operates on the context, this call is irrelevant to this termination
+issue). Since we are deconstructing the type judgement and are calling \texttt{subst} on the term
+\texttt{Иe₂} which makes up the input type judgement, this function call corresponds to the
+inductive hypothesis, and is thus valid.
+
+Substituting a term for an index is similar to the definition of the other substitution. This is,
+confusingly, also called `opening' by \citet{chargueraud_locally_2012}.
 \begin{code}
 [_:→_]_ : ℕ → Term → Term → Term
 [ k :→ u ] (free x) = free x
@@ -1111,8 +1193,8 @@ Substituting a term for an index is, confusingly, also called `opening' by
 [ k :→ u ] (‵suc t) = ‵suc ([ k :→ u ] t)
 \end{code}
 
-Using an index $i$ to open with a string \texttt{x} is the same as using the index substitution with
-the term \texttt{free x}.
+Using an index $i$ to open with $x \in \texttt{List Char}$ is the same as using the index
+substitution with the term \texttt{free $x$}.
 \begin{code}
 —→≡:→free : ∀ {i : ℕ} {x : List Char} (t : Term)
   → [ i —→ x ] t ≡ [ i :→ free x ] t
@@ -1128,7 +1210,9 @@ the term \texttt{free x}.
 \end{code}
 
 There are quite a few more properties of index substitution which \citet{chargueraud_locally_2012}
-proves, but the only relevant one for evaluation is \texttt{subst-intro}.
+proves, but the only relevant one for evaluation is \texttt{subst-intro}. It proves that
+substituting a term for an index is the same as first opening the term with an $x \in \texttt{List
+Char}$ and then using the free variable substitution using this $x$.
 \begin{code}
 subst-intro : ∀ {x : List Char} {i : ℕ} (t u : Term)
   → x # t
@@ -1167,9 +1251,8 @@ subst-op {t = t} {u = u} ⊢u (⊢ƛ И⟨ Иe₁ , Иe₂ ⟩) =
 \end{code}
 
 \section{Evaluation}
-We follow \citet{wadler_programming_2022} and \citet{chargueraud_locally_2012} and introduce
-evaluation with weak-head normal form. Thus, only $\lambda$-abstractions are values, together with
-the two primitives that were introduced.
+Using weak-head reduction, only $\lambda$-abstractions are values, together with the two primitives
+that were introduced.
 \begin{code}
 data Value : Term → Set where
   V-ƛ : ∀ {t} → Value (ƛ t)
@@ -1177,7 +1260,13 @@ data Value : Term → Set where
   V-suc : ∀ {t} → Value t → Value (‵suc t)
 \end{code}
 
-Terms can be reduced [TODO]
+\citet{chargueraud_locally_2012} adds another requirement for $\lambda$-abstractions: $1 \succ M$,
+or in other words, that $\lambda M$ is locally closed. However since we are only evaluating
+well-typed terms, and all well-typed terms are locally closed (see section
+\ref{section:typing_stlc}). So this requirement isn't necessary here.
+
+\citet{chargueraud_locally_2012} gives rules for reduction using locally closed terms. These are
+encoded in Agda below.
 \begin{code}
 data _—→_ : Term → Term → Set where
   ξ₁ : ∀ {t₁ t₁' t₂}
@@ -1202,11 +1291,13 @@ data _—→_ : Term → Term → Set where
       -------
     → (ƛ t) · u —→ [ 0 :→ u ] t
 \end{code}
+Once again, the requirements for local closure could be removed, but I decided to keep them to
+follow the rules presented in \citet{chargueraud_locally_2012}.
 
-TODO: Explain.
-
-Following \citet{wadler_programming_2022}, we can take a step like so.
-
+Following \citet{wadler_programming_2022}, we define some convenience functions, namely, reflexive
+and transitive closure properties which will help reason about taking a reduction step. These follow
+similar syntax to how equality reasoning is written in the Agda standard library
+\citep{the_agda_community_agda_2024}.
 \begin{code}
 infix  2 _—↠_
 infix  1 begin'_
@@ -1233,8 +1324,8 @@ begin'_ : ∀ {M N}
 begin' M—↠N = M—↠N
 \end{code}
 
-First, we show that all well-typed terms satisfy progress.
-
+There are two important properties which are required to implement evaluation. Progress, that terms
+can always take a step, or are a value and are thus finished reducing, is presented below.
 \begin{code}
 data Progress (t : Term) : Set where
   step : ∀ {t'}
@@ -1263,7 +1354,7 @@ progress (⊢suc ⊢t) with progress ⊢t
 ... | done val  = done (V-suc val)
 \end{code}
 
-Now to show preservation.
+And preservation, that types are preserved when reducing.
 \begin{code}
 preserve : ∀ {t t' A}
   → ∅ ⊢ t ⦂ A
@@ -1276,8 +1367,11 @@ preserve (⊢· ⊢t₁ ⊢t₂) (β x x₁) = subst-op ⊢t₂ ⊢t₁
 preserve (⊢suc ⊢t) (ξ-suc t→t') = ⊢suc (preserve ⊢t t→t')
 \end{code}
 
-And finally, to make an evaluator.
-
+While STLC is not Turing complete \cite{church_formulation_1940}, we don't need to worry about the
+halting problem. Still, we could try to evaluate a program that is very, very long. Rather than
+reasoning about whether we can evaluate all programs, we can simply define a record which limits
+evaluation to a certain number of reduction steps. Then we can use the preserve and progress
+properties to make an \texttt{eval} function.
 \begin{code}
 record Gas : Set where
   eta-equality
@@ -1286,28 +1380,47 @@ record Gas : Set where
     amount : ℕ
 
 data Finished (t : Term) : Set where
-  done :
-      Value t
-    → Finished t
-
-  out-of-gas :
-    Finished t
+  done : Value t → Finished t
+  out-of-gas : Finished t
 
 data Steps (t : Term) : Set where
-  steps : ∀ {t'}
-    → t —↠ t'
-    → Finished t'
-    → Steps t
+  steps : ∀ {t'} → t —↠ t' → Finished t' → Steps t
 
-eval : ∀ {t A}
-  → Gas
-  → ∅ ⊢ t ⦂ A
-  → Steps t
+eval : ∀ {t A} → Gas → ∅ ⊢ t ⦂ A → Steps t
 eval {t} (gas zero) ⊢t = steps (t ∎') out-of-gas
 eval {t} (gas (suc n)) ⊢t with progress ⊢t
 ... | done V-t = steps (t ∎') (done V-t)
 ... | step {t'} t→t' with eval (gas n) (preserve ⊢t t→t')
 ...   | steps t'→u fin-u = steps (t —→⟨ t→t' ⟩ t'→u) fin-u
+\end{code}
+
+We provide an example for evaluation. First, we require a a type derivation for $2+2$. We would show
+that it evaluates to $4$, but because the evaluation proof requires more than eleven thousand lines
+of code, it is omitted. But we encourage the reader to try it out for themselves. The proofs of
+\texttt{⊢two} and \texttt{⊢plus} are long and are placed in section instead.
+
+\begin{code}
+two : Term
+two = ƛ ƛ bound 1 · (bound 1 · bound 0)
+
+plus : Term
+plus = ƛ ƛ ƛ ƛ bound 3 · bound 1 · (bound 2 · bound 1 · bound 0)
+
+suc' : Term
+suc' = ƛ ‵suc (bound 0)
+
+⊢two : ∅ ⊢ two ⦂ (‵ℕ ⇒ ‵ℕ) ⇒ ‵ℕ ⇒ ‵ℕ
+
+⊢plus : ∀ {Γ A} → Γ ⊢ plus ⦂
+  ((A ⇒ A) ⇒ A ⇒ A) ⇒ ((A ⇒ A) ⇒ A ⇒ A) ⇒ ((A ⇒ A) ⇒ A ⇒ A)
+
+⊢suc' : ∀ {Γ} → Γ ⊢ suc' ⦂ ‵ℕ ⇒ ‵ℕ
+⊢suc' = ⊢ƛ И⟨ [] , (λ _ → ⊢suc (⊢free H′)) ⟩
+
+⊢2+2 : ∅ ⊢ plus · two · two · suc' · ‵zero ⦂ ‵ℕ
+⊢2+2 = ⊢· (⊢· (⊢· (⊢· ⊢plus  ⊢two) ⊢two) ⊢suc') ⊢zero
+
+-- Using Emacs, normalise "eval (gas 100) ⊢2+2" by pressing C-c C-n.
 \end{code}
 
 \chapter{System F}
@@ -1408,6 +1521,8 @@ All¬⇒¬Any {xs = x ∷ xs} (¬Px All.∷ All¬P) (there Pxs) =
 
 \section{Prior work submitted for TSPL}
 
+\subsection{Functions on lists and creating strings}
+\label{appendix:list_functions}
 \begin{code}
 All≤⇒<⇒All< : ∀ {n m : ℕ} (xs : List ℕ)
   → n < m
@@ -1480,7 +1595,10 @@ new-list-correct xss a = All¬⇒¬Any (go xss a)
         helper (xs ∷ xss) ys (lenxs<lenys All.∷ all<) =
           sym-≢ (len≠⇒≠ xs ys (<⇒≢ lenxs<lenys))
             All.∷ helper xss ys all<
+\end{code}
 
+\subsection{Locally nameless set axioms}
+\begin{code}
 -- ax1 : ∀ (i : ℕ) (a b : List Char) (t : Term)
 --   → [ i —→ a ] ([ i —→ b ] t) ≡ [ i —→ b ] t
 ax1 i a b (free x) = refl
@@ -1539,7 +1657,10 @@ ax5 i j a b (t₁ · t₂) i≢j
   rewrite ax5 i j a b t₁ (i≢j) | ax5 i j a b t₂ (i≢j) = refl
 ax5 i j a b ‵zero i≢j = refl
 ax5 i j a b (‵suc t) i≢j rewrite ax5 i j a b t i≢j = refl
+\end{code}
 
+\subsection{Fresh variables}
+\begin{code}
 -- #⇒∉fv : ∀ (x : List Char) (t : Term) → x # t → x ∉ fv t
 #⇒∉fv x (free y) x#t with x ≟lchar y
 ... | yes x≡y with () ← x#t
@@ -1612,8 +1733,11 @@ ax5 i j a b (‵suc t) i≢j rewrite ax5 i j a b t i≢j = refl
 --     -------
 --   → x # t
 #-‵suc {x} t x#‵suc-t = ∉fv⇒# x t (#⇒∉fv x (‵suc t) x#‵suc-t)
+\end{code}
 
-
+\subsection{Local closure}
+\label{appendix:local_closure_proofs}
+\begin{code}
 -- lemma2·7-1 : ∀ {i : ℕ} {x y : List Char} {t : Term}
 --   → [ i —→ x ] t ≡ t
 --     ----------------
@@ -1780,6 +1904,8 @@ i≻ƛt⇒si≻t {i} {t} lc-t with ≻⇒lc-at i (ƛ t) lc-t
 ... | lc-at-‵suc lc-at-i = lc-at⇒≻ i t lc-at-i
 \end{code}
 
+\subsection{Substitution of terms}
+\label{appendix:substitution_proofs}
 During the development, I ended up proving more locally nameless substitution theorems than I
 needed, so some haven't been referenced above. These aren't strictly needed.
 
@@ -1878,7 +2004,11 @@ subst-lc : ∀ {t u : Term} (x : List Char)
     --------------------------
   → LocallyClosed [ x := u ] t
 subst-lc = subst-≻
+\end{code}
 
+\subsection{Types and typing properties}
+\label{appendix:types_proofs}
+\begin{code}
 -- ⊢⇒lc : ∀ {Γ t A} → Γ ⊢ t ⦂ A → LocallyClosed t
 ⊢⇒lc {Γ} {t} {A} (⊢free Γ∋A) = free-lc
 ⊢⇒lc {Γ} {ƛ t} {A} (⊢ƛ И⟨ Иe₁ ,  Иe₂ ⟩) j =
@@ -1950,15 +2080,70 @@ subst-open-context {t = t} x≢y lc-u sub-open =
   ≡-with-⊢ sub-open (subst-open-var t x≢y lc-u)
 \end{code}
 
+\subsection{Evaluation}
+\label{appendix:evaluation_proofs}
+\begin{code}
+-- ⊢two : ∅ ⊢ two ⦂ (‵ℕ ⇒ ‵ℕ) ⇒ ‵ℕ ⇒ ‵ℕ
+⊢two = ⊢ƛ
+  И⟨ []
+  , (λ a → ⊢ƛ
+    И⟨ (a ∷ [])
+    , (λ b {b∉} →
+      ⊢·
+      (⊢free (T (sym-≢ (∉∷[]⇒≢ b∉)) H′))
+      (⊢· (⊢free (T (sym-≢ (∉∷[]⇒≢ b∉)) H′)) (⊢free (H′)))) ⟩) ⟩
+
+-- ⊢plus : ∀ {Γ A} → Γ ⊢ plus ⦂
+-- ((A ⇒ A) ⇒ A ⇒ A) ⇒ ((A ⇒ A) ⇒ A ⇒ A) ⇒ ((A ⇒ A) ⇒ A ⇒ A)
+⊢plus = ⊢ƛ
+  И⟨ []
+  , (λ a → ⊢ƛ
+    И⟨ a ∷ []
+    , (λ b {b∉} → ⊢ƛ
+      И⟨ a ∷ b ∷ []
+      , (λ c {c∉} → ⊢ƛ
+        И⟨ a ∷ b ∷ c ∷ []
+        , (λ d {d∉} →
+        ⊢·
+          (⊢·
+            (⊢free (T (a≢d d∉) (T (a≢c c∉) (T (a≢b b∉) H′))))
+            (⊢free (T (c≢d d∉) (H′))))
+          (⊢·
+            (⊢·
+              (⊢free (T (b≢d d∉) (T (b≢c c∉) H′)))
+              (⊢free (T (c≢d d∉) H′)))
+            (⊢free H′))) ⟩) ⟩) ⟩) ⟩
+  where
+    a≢d : ∀ {a b c d} → d ∉ a ∷ b ∷ c ∷ [] → a ≢ d
+    a≢d d∉ = sym-≢ (∉∷[]⇒≢ (proj₁ (∉-++ d∉)))
+    a≢c : ∀ {a b c} → c ∉ a ∷ b ∷ [] → a ≢ c
+    a≢c c∉ = sym-≢ (∉∷[]⇒≢ (proj₁ (∉-++ c∉)))
+    a≢b : ∀ {a b} → b ∉ a ∷ [] → a ≢ b
+    a≢b b∉ = sym-≢ (∉∷[]⇒≢ b∉)
+    c≢d : ∀ {a b c d} → d ∉ a ∷ b ∷ c ∷ [] → c ≢ d
+    c≢d {a} {b} d∉ =
+      sym-≢ (∉∷[]⇒≢ (proj₂ (∉-++ {xs = a ∷ b ∷ []} d∉)))
+    b≢d : ∀ {a b c d} → d ∉ a ∷ b ∷ c ∷ [] → b ≢ d
+    b≢d {a} {b} d∉ =
+      sym-≢ (∉∷[]⇒≢ (proj₂ (
+        ∉-++
+          {xs = a ∷ []}
+          (proj₁ (∉-++ {xs = a ∷ b ∷ []} d∉)))))
+    b≢c : ∀ {a b c} → c ∉ a ∷ b ∷ [] → b ≢ c
+    b≢c {a} c∉ = sym-≢ (∉∷[]⇒≢ (proj₂ (∉-++ {xs = a ∷ []} c∉)))
+\end{code}
+
 \chapter{Compilation instructions}
 \label{appendix:compilation_instructions}
 
 This document is a literate Agda file. It has been tested to work with
 \begin{itemize}
   \item Agda 2.7.0,
-  \item the Agda Standard Library 2.1 [TODO: Cite],
+  \item the Agda Standard Library 2.1 \citep{the_agda_community_agda_2024},
   \item XeLaTeX 3.141592653-2.6-0.999996 (TeX Live 2024/Arch Linux 2024.2-4).
 \end{itemize}
+
+The full source code is available at [TO BE MADE PUBLIC LATER].
 
 Since this document uses the Minted package [TODO: cite], XeLaTeX needs to be run with the
 \texttt{--shell-escape} option. While Agda does provide its own typesetting of Agda code, it uses a
