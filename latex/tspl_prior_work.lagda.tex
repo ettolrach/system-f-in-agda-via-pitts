@@ -449,11 +449,8 @@ Note, for this next property, \texttt{open-rec-lc-lemma}, in the paper
 
 \texttt{[ i —→ u ] ([ j —→ v ] t) ≡ [ i —→ u ] t}
 
-However, in the Coq source code, the assumption is as below (notice that the right side of the
-equality is \texttt{[ j —→ v ] t}). I decided to use the assumption as in the Coq source code. Link
-to the source code:
-\url{https://github.com/charguer/formalmetacoq/blob/ab4d006e468e352efd16d8e3fd89ad74a23d889d/ln/Lambda_JAR_paper.v#L321}
-
+However, in the Coq source code \citep{chargueraud_lambda_jar_paperv_2023}, the assumption is as below (notice that the right side of the
+equality is \texttt{[ j —→ v ] t}). I decided to use the assumption as in the Coq source code.
 \begin{code}
   open-rec-lc-lemma : ∀ {t : Term} {i j : ℕ} {u v : List Char}
     → i ≢ j

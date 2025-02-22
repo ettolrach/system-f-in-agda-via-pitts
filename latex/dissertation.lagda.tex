@@ -551,13 +551,7 @@ before.
 I have previously submitted some work on STLC using locally nameless representation for a course
 called \textit{Types and Semantics of Programming Languages}. I have presented my prior work in
 appendix \ref{appendix:tspl}. There are some new additions to this work which are presented in the
-next chapter. To use the prior work, we need to import the appropriate modules.
-
-\begin{code}
-open import plfa_adaptions
-open import tspl_prior_work
-open import cofinite
-\end{code}
+next chapter.
 
 \chapter{Substitution and Evaluation in STLC}
 The remaining properties of STLC, including creating an evaluator, were missing from my submission
@@ -566,37 +560,43 @@ in section \ref{section:evaluation_strategy}, one evaluation strategy is weak-he
 follow the methods presented in \citet[chapter~Properties]{wadler_programming_2022} and
 \citet[section~5]{chargueraud_locally_2012}, as they have also used weak-head reduction. Thus,
 evaluation will be restricted to closed terms only (those without free variables).
+\begin{code}
+module chapter3 where
+  open import plfa_adaptions
+  open import tspl_prior_work
+  open import cofinite
+\end{code}
 
 \section{Substitution}
 We need to show that substituting preserves types. As mentioned, we restrict ourselves to only
 substituting closed terms.
 \begin{code}
-{-# TERMINATING #-}
-subst : ∀ {Γ x t u A B}
-  → ∅ ⊢ u ⦂ A
-  → Γ , x ⦂ A ⊢ t ⦂ B
-    --------------------
-  → Γ ⊢ [ x := u ] t ⦂ B
-subst {x = y} ⊢u (⊢free {x = x} (H refl)) with y ≟lchar y
-... | yes _   = weaken ⊢u
-... | no  y≢y = contradiction refl y≢y
-subst {x = y} ⊢u (⊢free {x = x} (T x≢y ∋x)) with y ≟lchar x
-... | yes y≡x = contradiction (sym y≡x) x≢y
-... | no  _   = ⊢free ∋x
-subst {x = x} {t = ƛ t} ⊢u (⊢ƛ И⟨ Иe₁ , Иe₂ ⟩) =
-  ⊢ƛ И⟨ x ∷ Иe₁
-      , (λ a {a∉} →
-        let a≢y   = ∉∷[]⇒≢ (proj₁ (∉-++ a∉))
-            a∉Иe₁ = proj₂ (∉-++ a∉)
-        in subst-open-context
-          {t = t}
-          (sym-≢ a≢y)
-          (⊢⇒lc ⊢u)
-          (subst ⊢u (swap a≢y (Иe₂ a {a∉Иe₁}))) )
-      ⟩
-subst ⊢u (⊢· ⊢t₁ ⊢t₂) = ⊢· (subst ⊢u ⊢t₁) (subst ⊢u ⊢t₂)
-subst ⊢u ⊢zero = ⊢zero
-subst ⊢u (⊢suc ⊢t) = ⊢suc (subst ⊢u ⊢t)
+  {-# TERMINATING #-}
+  subst : ∀ {Γ x t u A B}
+    → ∅ ⊢ u ⦂ A
+    → Γ , x ⦂ A ⊢ t ⦂ B
+      --------------------
+    → Γ ⊢ [ x := u ] t ⦂ B
+  subst {x = y} ⊢u (⊢free {x = x} (H refl)) with y ≟lchar y
+  ... | yes _   = weaken ⊢u
+  ... | no  y≢y = contradiction refl y≢y
+  subst {x = y} ⊢u (⊢free {x = x} (T x≢y ∋x)) with y ≟lchar x
+  ... | yes y≡x = contradiction (sym y≡x) x≢y
+  ... | no  _   = ⊢free ∋x
+  subst {x = x} {t = ƛ t} ⊢u (⊢ƛ И⟨ Иe₁ , Иe₂ ⟩) =
+    ⊢ƛ И⟨ x ∷ Иe₁
+        , (λ a {a∉} →
+          let a≢y   = ∉∷[]⇒≢ (proj₁ (∉-++ a∉))
+              a∉Иe₁ = proj₂ (∉-++ a∉)
+          in subst-open-context
+            {t = t}
+            (sym-≢ a≢y)
+            (⊢⇒lc ⊢u)
+            (subst ⊢u (swap a≢y (Иe₂ a {a∉Иe₁}))) )
+        ⟩
+  subst ⊢u (⊢· ⊢t₁ ⊢t₂) = ⊢· (subst ⊢u ⊢t₁) (subst ⊢u ⊢t₂)
+  subst ⊢u ⊢zero = ⊢zero
+  subst ⊢u (⊢suc ⊢t) = ⊢suc (subst ⊢u ⊢t)
 \end{code}
 
 The property is proven by induction on the type judgement of the term \texttt{M}. Agda cannot
@@ -619,31 +619,31 @@ inductive hypothesis, and is thus valid.
 Substituting a term for an index is similar to the definition of the other substitution. This is,
 confusingly, also called `opening' by \citet{chargueraud_locally_2012}.
 \begin{code}
-[_:→_]_ : ℕ → Term → Term → Term
-[ k :→ u ] (free x) = free x
-[ k :→ u ] (bound i) with k ≟ℕ i
-... | yes _ = u
-... | no  _ = bound i
-[ k :→ u ] (ƛ t) = ƛ [ (suc k) :→ u ] t
-[ k :→ u ] (t₁ · t₂) = [ k :→ u ] t₁ · [ k :→ u ] t₂
-[ k :→ u ] ‵zero = ‵zero
-[ k :→ u ] (‵suc t) = ‵suc ([ k :→ u ] t)
+  [_:→_]_ : ℕ → Term → Term → Term
+  [ k :→ u ] (free x) = free x
+  [ k :→ u ] (bound i) with k ≟ℕ i
+  ... | yes _ = u
+  ... | no  _ = bound i
+  [ k :→ u ] (ƛ t) = ƛ [ (suc k) :→ u ] t
+  [ k :→ u ] (t₁ · t₂) = [ k :→ u ] t₁ · [ k :→ u ] t₂
+  [ k :→ u ] ‵zero = ‵zero
+  [ k :→ u ] (‵suc t) = ‵suc ([ k :→ u ] t)
 \end{code}
 
 Using an index $i$ to open with $x \in \texttt{List Char}$ is the same as using the index
 substitution with the term \texttt{free $x$}.
 \begin{code}
-—→≡:→free : ∀ {i : ℕ} {x : List Char} (t : Term)
-  → [ i —→ x ] t ≡ [ i :→ free x ] t
-—→≡:→free {i} {x} (free y) = refl
-—→≡:→free {i} {x} (bound k) with i ≟ℕ k
-... | yes _ = refl
-... | no  _ = refl
-—→≡:→free {i} {x} (ƛ t) = cong ƛ_ (—→≡:→free t)
-—→≡:→free {i} {x} (t₁ · t₂) =
-  cong₂ _·_ (—→≡:→free t₁) (—→≡:→free t₂)
-—→≡:→free {i} {x} ‵zero = refl
-—→≡:→free {i} {x} (‵suc t) = cong ‵suc_ (—→≡:→free t)
+  —→≡:→free : ∀ {i : ℕ} {x : List Char} (t : Term)
+    → [ i —→ x ] t ≡ [ i :→ free x ] t
+  —→≡:→free {i} {x} (free y) = refl
+  —→≡:→free {i} {x} (bound k) with i ≟ℕ k
+  ... | yes _ = refl
+  ... | no  _ = refl
+  —→≡:→free {i} {x} (ƛ t) = cong ƛ_ (—→≡:→free t)
+  —→≡:→free {i} {x} (t₁ · t₂) =
+    cong₂ _·_ (—→≡:→free t₁) (—→≡:→free t₂)
+  —→≡:→free {i} {x} ‵zero = refl
+  —→≡:→free {i} {x} (‵suc t) = cong ‵suc_ (—→≡:→free t)
 \end{code}
 
 There are quite a few more properties of index substitution which \citet{chargueraud_locally_2012}
@@ -651,50 +651,50 @@ proves, but the only relevant one for evaluation is \texttt{subst-intro}. It pro
 substituting a term for an index is the same as first opening the term with an $x \in \texttt{List
 Char}$ and then using the free variable substitution using this $x$.
 \begin{code}
-subst-intro : ∀ {x : List Char} {i : ℕ} (t u : Term)
-  → x # t
-  → [ i :→ u ] t ≡ [ x := u ] ([ i —→ x ] t)
-subst-intro {x} (free y) u x#t with x ≟lchar y
-... | yes refl with () ← x#t
-... | no  x≢y  = refl
-subst-intro {x} {i} (bound j) u x#t with i ≟ℕ j
-... | no  i≢j  = refl
-... | yes refl with x ≟lchar x
-...   | yes refl = refl
-...   | no  x≢x  = contradiction refl x≢x
-subst-intro (ƛ t) u x#ƛt = cong ƛ_ (subst-intro t u (#-ƛ t x#ƛt))
-subst-intro {x} (t₁ · t₂) u x#t =
-  let ⟨ x#t₁ , x#t₂ ⟩ = #-· t₁ t₂ x#t in
-    cong₂ _·_ (subst-intro t₁ u x#t₁) (subst-intro t₂ u x#t₂)
-subst-intro ‵zero u x#t = refl
-subst-intro (‵suc t) u x#st =
-  cong ‵suc_ (subst-intro t u (#-‵suc t x#st))
+  subst-intro : ∀ {x : List Char} {i : ℕ} (t u : Term)
+    → x # t
+    → [ i :→ u ] t ≡ [ x := u ] ([ i —→ x ] t)
+  subst-intro {x} (free y) u x#t with x ≟lchar y
+  ... | yes refl with () ← x#t
+  ... | no  x≢y  = refl
+  subst-intro {x} {i} (bound j) u x#t with i ≟ℕ j
+  ... | no  i≢j  = refl
+  ... | yes refl with x ≟lchar x
+  ...   | yes refl = refl
+  ...   | no  x≢x  = contradiction refl x≢x
+  subst-intro (ƛ t) u x#ƛt = cong ƛ_ (subst-intro t u (#-ƛ t x#ƛt))
+  subst-intro {x} (t₁ · t₂) u x#t =
+    let ⟨ x#t₁ , x#t₂ ⟩ = #-· t₁ t₂ x#t in
+      cong₂ _·_ (subst-intro t₁ u x#t₁) (subst-intro t₂ u x#t₂)
+  subst-intro ‵zero u x#t = refl
+  subst-intro (‵suc t) u x#st =
+    cong ‵suc_ (subst-intro t u (#-‵suc t x#st))
 \end{code}
 
 Since we need to replace bound variables for free ones to perform a $\beta$-reduction, we should
 prove that this substitution preserves types.
 \begin{code}
-subst-op : ∀ {Γ t u A B}
-  → ∅ ⊢ u ⦂ A
-  → Γ ⊢ ƛ t ⦂ A ⇒ B
-    --------------------
-  → Γ ⊢ [ 0 :→ u ] t ⦂ B
-subst-op {t = t} {u = u} ⊢u (⊢ƛ И⟨ Иe₁ , Иe₂ ⟩) =
-  let x                  = fresh (fv t ++ Иe₁)
-      ⟨ x∉fv-t , x∉Иe₁ ⟩ = ∉-++ {xs = fv t} {ys = Иe₁}
-                              (fresh-correct (fv t ++ Иe₁))
-  in ≡-with-⊢ (subst ⊢u (Иe₂ x {x∉Иe₁}))
-    (sym (subst-intro t u (∉fv⇒# x t (x∉fv-t))))
+  subst-op : ∀ {Γ t u A B}
+    → ∅ ⊢ u ⦂ A
+    → Γ ⊢ ƛ t ⦂ A ⇒ B
+      --------------------
+    → Γ ⊢ [ 0 :→ u ] t ⦂ B
+  subst-op {t = t} {u = u} ⊢u (⊢ƛ И⟨ Иe₁ , Иe₂ ⟩) =
+    let x                  = fresh (fv t ++ Иe₁)
+        ⟨ x∉fv-t , x∉Иe₁ ⟩ = ∉-++ {xs = fv t} {ys = Иe₁}
+                                (fresh-correct (fv t ++ Иe₁))
+    in ≡-with-⊢ (subst ⊢u (Иe₂ x {x∉Иe₁}))
+      (sym (subst-intro t u (∉fv⇒# x t (x∉fv-t))))
 \end{code}
 
 \section{Evaluation}
 Using weak-head reduction, only $\lambda$-abstractions are values, together with the two primitives
 that were introduced.
 \begin{code}
-data Value : Term → Set where
-  V-ƛ : ∀ {t} → Value (ƛ t)
-  V-zero : Value ‵zero
-  V-suc : ∀ {t} → Value t → Value (‵suc t)
+  data Value : Term → Set where
+    V-ƛ : ∀ {t} → Value (ƛ t)
+    V-zero : Value ‵zero
+    V-suc : ∀ {t} → Value t → Value (‵suc t)
 \end{code}
 
 \citet{chargueraud_locally_2012} adds another requirement for $\lambda$-abstractions: $1 \succ M$,
@@ -705,28 +705,29 @@ well-typed terms, and all well-typed terms are locally closed (see section
 \citet{chargueraud_locally_2012} gives rules for reduction using locally closed terms. These are
 encoded in Agda below.
 \begin{code}
-data _—→_ : Term → Term → Set where
-  ξ₁ : ∀ {t₁ t₁' t₂}
-    → t₁ —→ t₁'
-    → LocallyClosed t₂
-      -------------------
-    → t₁ · t₂ —→ t₁' · t₂
+  infix 4 _—→_
+  data _—→_ : Term → Term → Set where
+    ξ₁ : ∀ {t₁ t₁' t₂}
+      → t₁ —→ t₁'
+      → LocallyClosed t₂
+        -------------------
+      → t₁ · t₂ —→ t₁' · t₂
 
-  ξ₂ : ∀ {t₁ t₂ t₂'}
-    → t₂ —→ t₂'
-      ---------
-    → t₁ · t₂ —→ t₁ · t₂'
+    ξ₂ : ∀ {t₁ t₂ t₂'}
+      → t₂ —→ t₂'
+        ---------
+      → t₁ · t₂ —→ t₁ · t₂'
 
-  ξ-suc : ∀ {t t'}
-    → t —→ t'
-      ------------------
-    → ‵suc t —→ ‵suc t'
+    ξ-suc : ∀ {t t'}
+      → t —→ t'
+        ------------------
+      → ‵suc t —→ ‵suc t'
 
-  β : ∀ {t u}
-    → 1 ≻ t
-    → Value u
-      -------
-    → (ƛ t) · u —→ [ 0 :→ u ] t
+    β : ∀ {t u}
+      → 1 ≻ t
+      → Value u
+        -------
+      → (ƛ t) · u —→ [ 0 :→ u ] t
 \end{code}
 Once again, the requirements for local closure could be removed, but I decided to keep them to
 follow the rules presented in \citet{chargueraud_locally_2012}.
@@ -735,73 +736,76 @@ Following \citet{wadler_programming_2022}, we define some convenience functions,
 and transitive closure properties which will help reason about taking a reduction step. These follow
 similar syntax to how equality reasoning is written in the Agda standard library
 \citep{the_agda_community_agda_2024}.
+\begin{comment}
 \begin{code}
-infix  2 _—↠_
-infix  1 begin'_
-infixr 2 _—→⟨_⟩_
-infix  3 _∎'
+  infix  2 _—↠_
+  infix  1 begin'_
+  infixr 2 _—→⟨_⟩_
+  infix  3 _∎'
+\end{code}
+\end{comment}
+\begin{code}
+  data _—↠_ : Term → Term → Set where
+    _∎' : ∀ M
+        ---------
+      → M —↠ M
 
-data _—↠_ : Term → Term → Set where
-  _∎' : ∀ M
-      ---------
-    → M —↠ M
+    step—→ : ∀ L {M N}
+      → M —↠ N
+      → L —→ M
+        ---------
+      → L —↠ N
 
-  step—→ : ∀ L {M N}
+  pattern _—→⟨_⟩_ L L—→M M—↠N = step—→ L M—↠N L—→M
+
+  begin'_ : ∀ {M N}
     → M —↠ N
-    → L —→ M
-      ---------
-    → L —↠ N
-
-pattern _—→⟨_⟩_ L L—→M M—↠N = step—→ L M—↠N L—→M
-
-begin'_ : ∀ {M N}
-  → M —↠ N
-    ------
-  → M —↠ N
-begin' M—↠N = M—↠N
+      ------
+    → M —↠ N
+  begin' M—↠N = M—↠N
 \end{code}
 
 There are two important properties which are required to implement evaluation. Progress, that terms
 can always take a step, or are a value and are thus finished reducing, is presented below.
 \begin{code}
-data Progress (t : Term) : Set where
-  step : ∀ {t'}
-    → t —→ t'
+  data Progress (t : Term) : Set where
+    step : ∀ {t'}
+      → t —→ t'
+        ----------
+      → Progress t
+
+    done :
+        Value t
+        ----------
+      → Progress t
+
+  progress : ∀ {t A}
+    → ∅ ⊢ t ⦂ A
       ----------
     → Progress t
-
-  done :
-      Value t
-      ----------
-    → Progress t
-
-progress : ∀ {t A}
-  → ∅ ⊢ t ⦂ A
-    ----------
-  → Progress t
-progress (⊢ƛ x) = done V-ƛ
-progress (⊢· ⊢t₁ ⊢t₂) with progress ⊢t₁
-... | step t₁→t₁' = step (ξ₁ t₁→t₁' (⊢⇒lc ⊢t₂))
-... | done V-ƛ with progress ⊢t₂
-...   | step t₂→t₂' = step (ξ₂ t₂→t₂')
-...   | done val    = step (β (i≻ƛt⇒si≻t (⊢⇒lc ⊢t₁)) val)
-progress ⊢zero = done V-zero
-progress (⊢suc ⊢t) with progress ⊢t
-... | step t→t' = step (ξ-suc t→t')
-... | done val  = done (V-suc val)
+  progress (⊢ƛ x) = done V-ƛ
+  progress (⊢· ⊢t₁ ⊢t₂) with progress ⊢t₁
+  ... | step t₁→t₁' = step (ξ₁ t₁→t₁' (⊢⇒lc ⊢t₂))
+  ... | done V-ƛ with progress ⊢t₂
+  ...   | step t₂→t₂' = step (ξ₂ t₂→t₂')
+  ...   | done val    = step (β (i≻ƛt⇒si≻t (⊢⇒lc ⊢t₁)) val)
+  progress ⊢zero = done V-zero
+  progress (⊢suc ⊢t) with progress ⊢t
+  ... | step t→t' = step (ξ-suc t→t')
+  ... | done val  = done (V-suc val)
 \end{code}
 
 And preservation, that types are preserved when reducing.
 \begin{code}
-preserve : ∀ {t t' A}
-  → ∅ ⊢ t ⦂ A
-  → t —→ t'
-    ----------
-  → ∅ ⊢ t' ⦂ A
-preserve (⊢· ⊢t₁ ⊢t₂) (ξ₁ t→t' _) = ⊢· (preserve ⊢t₁ t→t') ⊢t₂
-preserve (⊢· ⊢t₁ ⊢t₂) (ξ₂ t→t') = ⊢· ⊢t₁  (preserve ⊢t₂ t→t')
-preserve (⊢· ⊢t₁ ⊢t₂) (β x x₁) = subst-op ⊢t₂ ⊢t₁
-preserve (⊢suc ⊢t) (ξ-suc t→t') = ⊢suc (preserve ⊢t t→t')
+  preserve : ∀ {t t' A}
+    → ∅ ⊢ t ⦂ A
+    → t —→ t'
+      ----------
+    → ∅ ⊢ t' ⦂ A
+  preserve (⊢· ⊢t₁ ⊢t₂) (ξ₁ t→t' _) = ⊢· (preserve ⊢t₁ t→t') ⊢t₂
+  preserve (⊢· ⊢t₁ ⊢t₂) (ξ₂ t→t') = ⊢· ⊢t₁  (preserve ⊢t₂ t→t')
+  preserve (⊢· ⊢t₁ ⊢t₂) (β x x₁) = subst-op ⊢t₂ ⊢t₁
+  preserve (⊢suc ⊢t) (ξ-suc t→t') = ⊢suc (preserve ⊢t t→t')
 \end{code}
 
 While STLC is not Turing complete \citep{church_formulation_1940}, we don't need to worry about the
@@ -810,59 +814,134 @@ reasoning about whether we can evaluate all programs, we can simply define a rec
 evaluation to a certain number of reduction steps. Then we can use the preserve and progress
 properties to make an \texttt{eval} function.
 \begin{code}
-record Gas : Set where
-  eta-equality
-  constructor gas
-  field
-    amount : ℕ
+  record Gas : Set where
+    eta-equality
+    constructor gas
+    field
+      amount : ℕ
 
-data Finished (t : Term) : Set where
-  done : Value t → Finished t
-  out-of-gas : Finished t
+  data Finished (t : Term) : Set where
+    done : Value t → Finished t
+    out-of-gas : Finished t
 
-data Steps (t : Term) : Set where
-  steps : ∀ {t'} → t —↠ t' → Finished t' → Steps t
+  data Steps (t : Term) : Set where
+    steps : ∀ {t'} → t —↠ t' → Finished t' → Steps t
 
-eval : ∀ {t A} → Gas → ∅ ⊢ t ⦂ A → Steps t
-eval {t} (gas zero) ⊢t = steps (t ∎') out-of-gas
-eval {t} (gas (suc n)) ⊢t with progress ⊢t
-... | done V-t = steps (t ∎') (done V-t)
-... | step {t'} t→t' with eval (gas n) (preserve ⊢t t→t')
-...   | steps t'→u fin-u = steps (t —→⟨ t→t' ⟩ t'→u) fin-u
+  eval : ∀ {t A} → Gas → ∅ ⊢ t ⦂ A → Steps t
+  eval {t} (gas zero) ⊢t = steps (t ∎') out-of-gas
+  eval {t} (gas (suc n)) ⊢t with progress ⊢t
+  ... | done V-t = steps (t ∎') (done V-t)
+  ... | step {t'} t→t' with eval (gas n) (preserve ⊢t t→t')
+  ...   | steps t'→u fin-u = steps (t —→⟨ t→t' ⟩ t'→u) fin-u
 \end{code}
 
 We provide an example for evaluation. First, we require a type derivation for $2+2$. We would show
 that it evaluates to $4$, but because the evaluation proof requires more than eleven thousand lines
 of code, it is omitted. But we encourage the reader to try it out for themselves. The proofs of
-\texttt{⊢two} and \texttt{⊢plus} are long and are placed in section instead.
+\texttt{⊢two} and \texttt{⊢plus} are long and are omitted (but present in the source file).
 
 \begin{code}
-two : Term
-two = ƛ ƛ bound 1 · (bound 1 · bound 0)
+  two : Term
+  two = ƛ ƛ bound 1 · (bound 1 · bound 0)
 
-plus : Term
-plus = ƛ ƛ ƛ ƛ bound 3 · bound 1 · (bound 2 · bound 1 · bound 0)
+  plus : Term
+  plus = ƛ ƛ ƛ ƛ bound 3 · bound 1 · (bound 2 · bound 1 · bound 0)
 
-suc' : Term
-suc' = ƛ ‵suc (bound 0)
+  suc' : Term
+  suc' = ƛ ‵suc (bound 0)
 
-⊢two : ∅ ⊢ two ⦂ (‵ℕ ⇒ ‵ℕ) ⇒ ‵ℕ ⇒ ‵ℕ
+  ⊢two : ∅ ⊢ two ⦂ (‵ℕ ⇒ ‵ℕ) ⇒ ‵ℕ ⇒ ‵ℕ
+  -- omitted.
 
-⊢plus : ∀ {Γ A} → Γ ⊢ plus ⦂
-  ((A ⇒ A) ⇒ A ⇒ A) ⇒ ((A ⇒ A) ⇒ A ⇒ A) ⇒ ((A ⇒ A) ⇒ A ⇒ A)
+  ⊢plus : ∀ {Γ A} → Γ ⊢ plus ⦂
+    ((A ⇒ A) ⇒ A ⇒ A) ⇒ ((A ⇒ A) ⇒ A ⇒ A) ⇒ ((A ⇒ A) ⇒ A ⇒ A)
+  -- omitted
 
-⊢suc' : ∀ {Γ} → Γ ⊢ suc' ⦂ ‵ℕ ⇒ ‵ℕ
-⊢suc' = ⊢ƛ И⟨ [] , (λ _ → ⊢suc (⊢free H′)) ⟩
+  ⊢suc' : ∀ {Γ} → Γ ⊢ suc' ⦂ ‵ℕ ⇒ ‵ℕ
+  ⊢suc' = ⊢ƛ И⟨ [] , (λ _ → ⊢suc (⊢free H′)) ⟩
 
-⊢2+2 : ∅ ⊢ plus · two · two · suc' · ‵zero ⦂ ‵ℕ
-⊢2+2 = ⊢· (⊢· (⊢· (⊢· ⊢plus  ⊢two) ⊢two) ⊢suc') ⊢zero
+  ⊢2+2 : ∅ ⊢ plus · two · two · suc' · ‵zero ⦂ ‵ℕ
+  ⊢2+2 = ⊢· (⊢· (⊢· (⊢· ⊢plus  ⊢two) ⊢two) ⊢suc') ⊢zero
 
--- Using Emacs, normalise "eval (gas 100) ⊢2+2" by pressing
--- C-c C-n.
+  -- Using Emacs, normalise "eval (gas 100) ⊢2+2" by pressing
+  -- C-c C-n.
 \end{code}
+\begin{comment}
+\begin{code}
+  ⊢two = ⊢ƛ
+    И⟨ []
+    , (λ a → ⊢ƛ
+      И⟨ (a ∷ [])
+      , (λ b {b∉} →
+        ⊢·
+        (⊢free (T (sym-≢ (∉∷[]⇒≢ b∉)) H′))
+        (⊢· (⊢free (T (sym-≢ (∉∷[]⇒≢ b∉)) H′)) (⊢free (H′)))) ⟩) ⟩
+
+  ⊢plus = ⊢ƛ
+    И⟨ []
+    , (λ a → ⊢ƛ
+      И⟨ a ∷ []
+      , (λ b {b∉} → ⊢ƛ
+        И⟨ a ∷ b ∷ []
+        , (λ c {c∉} → ⊢ƛ
+          И⟨ a ∷ b ∷ c ∷ []
+          , (λ d {d∉} →
+          ⊢·
+            (⊢·
+              (⊢free (T (a≢d d∉) (T (a≢c c∉) (T (a≢b b∉) H′))))
+              (⊢free (T (c≢d d∉) (H′))))
+            (⊢·
+              (⊢·
+                (⊢free (T (b≢d d∉) (T (b≢c c∉) H′)))
+                (⊢free (T (c≢d d∉) H′)))
+              (⊢free H′))) ⟩) ⟩) ⟩) ⟩
+    where
+      a≢d : ∀ {a b c d} → d ∉ a ∷ b ∷ c ∷ [] → a ≢ d
+      a≢d d∉ = sym-≢ (∉∷[]⇒≢ (proj₁ (∉-++ d∉)))
+      a≢c : ∀ {a b c} → c ∉ a ∷ b ∷ [] → a ≢ c
+      a≢c c∉ = sym-≢ (∉∷[]⇒≢ (proj₁ (∉-++ c∉)))
+      a≢b : ∀ {a b} → b ∉ a ∷ [] → a ≢ b
+      a≢b b∉ = sym-≢ (∉∷[]⇒≢ b∉)
+      c≢d : ∀ {a b c d} → d ∉ a ∷ b ∷ c ∷ [] → c ≢ d
+      c≢d {a} {b} d∉ =
+        sym-≢ (∉∷[]⇒≢ (proj₂ (∉-++ {xs = a ∷ b ∷ []} d∉)))
+      b≢d : ∀ {a b c d} → d ∉ a ∷ b ∷ c ∷ [] → b ≢ d
+      b≢d {a} {b} d∉ =
+        sym-≢ (∉∷[]⇒≢ (proj₂ (
+          ∉-++
+            {xs = a ∷ []}
+            (proj₁ (∉-++ {xs = a ∷ b ∷ []} d∉)))))
+      b≢c : ∀ {a b c} → c ∉ a ∷ b ∷ [] → b ≢ c
+      b≢c {a} c∉ = sym-≢ (∉∷[]⇒≢ (proj₂ (∉-++ {xs = a ∷ []} c∉)))
+\end{code}
+\end{comment}
 
 \chapter{System F}
-TODO.
+Combining System F with the locally nameless representation was previously described by \citet{chargueraud_locally_2012}.
+\begin{code}
+module chapter4 where
+\end{code}
+
+\section{Syntax of types and terms}
+In System F, types become part of the syntax, as they no become part of how terms are built. In
+previous Agda formalisations, these pre-types are called `kind's \citep{hutton_system_2019}. We
+follow \citet[section~5.4]{chargueraud_locally_2012} for the implementation of and implement the
+syntax of kinds and terms like so.
+\begin{code}
+  data Kind : Set where
+    k-free_  : Kind -- Free type variables.
+    k-bound_ : Kind -- Bound type variables.
+    k-⇒      : Kind -- Arrow types.
+    k-∀      : Kind -- "For all" type.
+
+  data Term : Set where
+    free_  : List Char → Term
+    bound_ : ℕ → Term
+    ƛ_     : Term → Term
+    _·_    : Term → Term → Term
+    ‵zero  : Term
+    ‵suc_  : Term → Term
+\end{code}
 
 \chapter{Conclusions}
 
@@ -903,59 +982,6 @@ again. I decided to include the type signatures anyway for clarity.
 \chapter{Prior work submitted for TSPL}
 \label{appendix:tspl}
 \input{tspl_prior_work.lagda}
-
-\chapter{STLC Evaluation}
-\label{appendix:evaluation_proofs}
-\begin{code}
--- ⊢two : ∅ ⊢ two ⦂ (‵ℕ ⇒ ‵ℕ) ⇒ ‵ℕ ⇒ ‵ℕ
-⊢two = ⊢ƛ
-  И⟨ []
-  , (λ a → ⊢ƛ
-    И⟨ (a ∷ [])
-    , (λ b {b∉} →
-      ⊢·
-      (⊢free (T (sym-≢ (∉∷[]⇒≢ b∉)) H′))
-      (⊢· (⊢free (T (sym-≢ (∉∷[]⇒≢ b∉)) H′)) (⊢free (H′)))) ⟩) ⟩
-
--- ⊢plus : ∀ {Γ A} → Γ ⊢ plus ⦂
--- ((A ⇒ A) ⇒ A ⇒ A) ⇒ ((A ⇒ A) ⇒ A ⇒ A) ⇒ ((A ⇒ A) ⇒ A ⇒ A)
-⊢plus = ⊢ƛ
-  И⟨ []
-  , (λ a → ⊢ƛ
-    И⟨ a ∷ []
-    , (λ b {b∉} → ⊢ƛ
-      И⟨ a ∷ b ∷ []
-      , (λ c {c∉} → ⊢ƛ
-        И⟨ a ∷ b ∷ c ∷ []
-        , (λ d {d∉} →
-        ⊢·
-          (⊢·
-            (⊢free (T (a≢d d∉) (T (a≢c c∉) (T (a≢b b∉) H′))))
-            (⊢free (T (c≢d d∉) (H′))))
-          (⊢·
-            (⊢·
-              (⊢free (T (b≢d d∉) (T (b≢c c∉) H′)))
-              (⊢free (T (c≢d d∉) H′)))
-            (⊢free H′))) ⟩) ⟩) ⟩) ⟩
-  where
-    a≢d : ∀ {a b c d} → d ∉ a ∷ b ∷ c ∷ [] → a ≢ d
-    a≢d d∉ = sym-≢ (∉∷[]⇒≢ (proj₁ (∉-++ d∉)))
-    a≢c : ∀ {a b c} → c ∉ a ∷ b ∷ [] → a ≢ c
-    a≢c c∉ = sym-≢ (∉∷[]⇒≢ (proj₁ (∉-++ c∉)))
-    a≢b : ∀ {a b} → b ∉ a ∷ [] → a ≢ b
-    a≢b b∉ = sym-≢ (∉∷[]⇒≢ b∉)
-    c≢d : ∀ {a b c d} → d ∉ a ∷ b ∷ c ∷ [] → c ≢ d
-    c≢d {a} {b} d∉ =
-      sym-≢ (∉∷[]⇒≢ (proj₂ (∉-++ {xs = a ∷ b ∷ []} d∉)))
-    b≢d : ∀ {a b c d} → d ∉ a ∷ b ∷ c ∷ [] → b ≢ d
-    b≢d {a} {b} d∉ =
-      sym-≢ (∉∷[]⇒≢ (proj₂ (
-        ∉-++
-          {xs = a ∷ []}
-          (proj₁ (∉-++ {xs = a ∷ b ∷ []} d∉)))))
-    b≢c : ∀ {a b c} → c ∉ a ∷ b ∷ [] → b ≢ c
-    b≢c {a} c∉ = sym-≢ (∉∷[]⇒≢ (proj₂ (∉-++ {xs = a ∷ []} c∉)))
-\end{code}
 
 \chapter{Compilation instructions}
 \label{appendix:compilation_instructions}
