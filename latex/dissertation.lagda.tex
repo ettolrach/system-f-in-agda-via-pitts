@@ -194,12 +194,6 @@ module dissertation where
 \section{Agda}
 Agda is a dependently-typed functional programming language based on Martin-Löf type theory, which
 makes it suitable as a proof-assistant using intuitionistic logic \citep{norell_towards_2007}.
-% Its
-% syntax is very similar to Haskell, and in fact, the two are closely related; the Agda compiler is a
-% transpiler to Haskell, and the Haskell standard library can be used in Agda
-% \citep{kusee_compiling_2017}. Yet, Agda has stricter limitations on recursive functions and some
-% other such language features which, if included, would make it harder to reason about proofs
-% \citep{berghofer_brief_2009}.
 
 In Agda, a lot of definitions are done inductively, or in computing terms, using recursion. For
 example, following the Peano axioms for the natural numbers $\nat$ \citep{boolos_freges_1995}, we
@@ -236,9 +230,8 @@ is associative would use recursion, which corresponds to induction, as shown bel
   +-assoc (suc m) n p = cong suc (+-assoc m n p)
 \end{code}
 
-We will need to import a lot of functions from the Agda standard library
-\citep{the_agda_community_agda_2024}. These imports are omitted here, but are available in the full
-source file (see appendix \ref{appendix:compilation_instructions}).
+Imports from the standard library \citep{the_agda_community_agda_2024} are omitted, but are
+available in the full source file (see appendix \ref{appendix:compilation_instructions}).
 \begin{comment}
 \begin{code}
 -- Data types (naturals, strings, characters)
@@ -811,7 +804,7 @@ preserve (⊢· ⊢t₁ ⊢t₂) (β x x₁) = subst-op ⊢t₂ ⊢t₁
 preserve (⊢suc ⊢t) (ξ-suc t→t') = ⊢suc (preserve ⊢t t→t')
 \end{code}
 
-While STLC is not Turing complete \cite{church_formulation_1940}, we don't need to worry about the
+While STLC is not Turing complete \citep{church_formulation_1940}, we don't need to worry about the
 halting problem. Still, we could try to evaluate a program that is very, very long. Rather than
 reasoning about whether we can evaluate all programs, we can simply define a record which limits
 evaluation to a certain number of reduction steps. Then we can use the preserve and progress
@@ -838,7 +831,7 @@ eval {t} (gas (suc n)) ⊢t with progress ⊢t
 ...   | steps t'→u fin-u = steps (t —→⟨ t→t' ⟩ t'→u) fin-u
 \end{code}
 
-We provide an example for evaluation. First, we require a a type derivation for $2+2$. We would show
+We provide an example for evaluation. First, we require a type derivation for $2+2$. We would show
 that it evaluates to $4$, but because the evaluation proof requires more than eleven thousand lines
 of code, it is omitted. But we encourage the reader to try it out for themselves. The proofs of
 \texttt{⊢two} and \texttt{⊢plus} are long and are placed in section instead.
@@ -905,11 +898,11 @@ Since some of these functions were already declared above, it would be an error 
 again. I decided to include the type signatures anyway for clarity.
 
 \section{PLFA adaption}
-\include{plfa_adaptions.lagda}
+\input{plfa_adaptions.lagda}
 
 \chapter{Prior work submitted for TSPL}
 \label{appendix:tspl}
-\include{tspl_prior_work.lagda}
+\input{tspl_prior_work.lagda}
 
 \chapter{STLC Evaluation}
 \label{appendix:evaluation_proofs}
