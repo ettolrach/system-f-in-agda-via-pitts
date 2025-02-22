@@ -192,12 +192,11 @@ module dissertation where
 \chapter{Background}
 
 \section{Agda}
-Agda is a dependently-typed functional programming language based on Martin-Löf type theory, which
+Agda is a dependently-typed functional programming language based on Martin--Löf type theory, which
 makes it suitable as a proof-assistant using intuitionistic logic \citep{norell_towards_2007}.
 
-In Agda, a lot of definitions are done inductively, or in computing terms, using recursion. For
-example, following the Peano axioms for the natural numbers $\nat$ \citep{boolos_freges_1995}, we
-may define them like so.
+In Agda, most definitions are done inductively, that is, using recursion. For example, following the
+Peano axioms for the natural numbers $\nat$ \citep{boolos_freges_1995}, we may define them like so.
 
 \begin{code}
 module Example where
@@ -207,13 +206,13 @@ module Example where
 \end{code}
 
 
-\paragraph*{Propositions as types.} A connection which was first noted by William A. Howard in 1969
+\paragraph*{Propositions as types.} First noted by William A. Howard in 1969
 \citep{howard_formulae-as-types_1980}, there is a direct correspondence between proofs and programs.
-\citet{wadler_propositions_2015} calls this correspondence \textit{propositions as types}, and it's
-called the Curry-Howard correspondence elsewhere. Thanks to this correspondence, a correct Agda
+\citet{wadler_propositions_2015} calls this correspondence \textit{propositions as types}, known as
+the Curry-Howard correspondence by some authors. Thanks to this correspondence, a correct Agda
 function with the appropriate type signature matching the claim (proposition) suffices for a proof.
-This is the idea behind proof assistants (aka. theorem provers) in general. So a proof that addition
-is associative would use recursion, which corresponds to induction, as shown below.
+For example, a proof that addition is associative would use recursion, which corresponds to
+induction, as shown below.
 
 \begin{code}
   -- We can import from the standard library, here we're using
@@ -277,12 +276,6 @@ xs ≟lchar ys = ≡-dec (_≟char_) xs ys
 
 open DecPropMembership _≟lchar_ using (_∈_; _∉_; _∈?_)
 \end{code}
-
-Include some infixes.
-
-\begin{code}
-infix 4 _—→_
-\end{code}
 \end{comment}
 
 \section{Cofinite Quantification}
@@ -298,27 +291,15 @@ looks and works similarly to familiar functional programming languages, yet its 
 minimal as possible while still being Turing-complete. Although Turing machines would be invented
 after the $\lambda$-calculus \citep{turing_computable_1937}, `turing-complete' has become a
 shorthand for `universal method of computation'. Such a universal method was not Church's initial
-goal, but is why we're still interested in the $\lambda$-calculus. A brief summary is provided here,
-a more complete study can be found in \cite{pierce_types_2002}.
-
-We have the following BNF grammar for any $\lambda$-calculus term $t$.
-\begin{center}
-\begin{bnf}
-  $t$ ::=
-  | $x$ : variables
-  | $\lambda \, x. t$ : ($\lambda$)-abstractions
-  | $t_1 t_2$ : function application
-\end{bnf}
-\end{center}
-
-Function application is left-associative (so for all abstractions $f$, $f a b = (f a) b$), and
-$\lambda$-abstractions extend as far as possible (e.g. $\lambda f. f a b = \lambda \, f. (f a b)$).
+goal, but is why we're still interested in the $\lambda$-calculus.
 
 The $\lambda$-calculus includes three reductions. $\alpha$-conversion is the renaming of variables
 such that the semantics of the program are not changed; terms which are semantically identical but
-use different variable names are called $\alpha$-equivalent, which forms an equivalence relation.
-$\beta$-reduction describes the idea of function application. The evaluation rules for the
-$\lambda$-calculus are as follows \citep{wadler_programming_2022}.
+use different variable names are called $\alpha$-equivalent, which forms an equivalence relation
+\citep{pierce_types_2002}.
+
+$\beta$-reduction describes function application. The evaluation rules for the $\lambda$-calculus
+are as follows \citep{wadler_programming_2022}.
 
 \begin{align}
 \label{equation:untyped_beta_rules}
@@ -330,18 +311,19 @@ $\lambda$-calculus are as follows \citep{wadler_programming_2022}.
 \end{split}
 \end{align}
 
-Finally, we have $\eta$-reduction; for all $\lambda$-abstractions $\lambda \, x. f x$, we have that
-$\lambda \, x. f x \mapsto_{\eta} f$ (this is the idea of function extensionality).
+Finally, we have $\eta$-reduction; for all $\lambda$-abstractions $\lambda \, x. L x$, we have that
+$\lambda \, x. f x \mapsto_{\eta} f$.
 
 If further $\beta$-reducations do not simplify a term, we say that it is in its \textit{normal
 form}. We shall represent an arbitrary number of successive $\beta$-reductions using the Kleene star
 $\mapsto_{\beta^{\star}}$. The Church-Rosser theorem states that for any term $L$, if it
 $\beta$-reduces to two terms $M$ and $N$, then there exists a common term $L'$ which both $M$ and
-$N$ eventually $\beta$-reduce to \citep{church_properties_1936}.
+$N$ eventually $\beta$-reduce to \citep{church_properties_1936}. This will be an important
+consideration when choosing an evaluation strategy (see section \ref{section:evaluation_strategy}.)
 
 Notably, some terms may not have a normal form. A well-known example is \textit{little omega} $\omega
 \triangleq \lambda \, x. (x x)$ and \textit{omega} (sometimes called the \textit{omega combinator})
-$\Omega \triangleq \omega \omega)$. $\Omega$ when applied to itself doesn't reduce any further.
+$\Omega \, \triangleq \, \omega \omega)$. $\Omega$ when applied to itself doesn't reduce any further.
 
 \begin{equation*}
   (\lambda \, x. (x x)) (\lambda \, x. (x x)) \quad
@@ -356,25 +338,26 @@ We say that these terms \textit{do not have a normal form}.
 
 \subsection{The simply-typed lambda-calculus}
 The simply-typed $\lambda$-calculus (STLC for short and sometimes given the symbol
-$\lambda^{\rightarrow}$) is an extension of the untyped $\lambda$-calculus described above that was
-developed by \citet{church_formulation_1940} which requires each term to have a \textit{type}. Terms
+$\lambda^{\rightarrow}$) is an extension of the untyped $\lambda$-calculus developed by Alonzo
+\citet{church_formulation_1940}. It requires each term to have a \textit{type}. In the STLC, terms
 which do not have a normal form cannot be given a type, thus, all expressions will eventually reduce
 to an irreducible expression---their normal form. This is also called \textit{strong normalisation}
 \citep{pierce_types_2002}. However, this means we can longer represent all of the terms of the
-untyped $\lambda$-calculus, thus, the STLC is not Turing-complete.
+untyped $\lambda$-calculus (such as $\Omega$), thus, the STLC is not Turing-complete.
 
-While Church originally used $\iota$ and $\sigma$ for base types, we will use $\nat$, for reasons
-given in section \ref{appendix:typing_stlc}. Without base types, our computational model becomes
-\textit{degenerate} (that is, there are no terms) \citep{pierce_types_2002}. As well as the base
-type, we also have a function (or arrow) type. For some type $\tau$, writing $\tau \to \tau$ means
-that this term can be applied using a term of type $\tau$ and result in a type $\tau$.
+In the STLC, some base types need to be chosen. These are indeterminates which are not given
+definitions. While Church originally used the symbols $\iota$ and $\sigma$ for base types, we will
+use $\nat$, for reasons given in section \ref{section:evaluation_strategy}. Without base types, our
+computational model becomes \textit{degenerate} (that is, there are no terms)
+\citep{pierce_types_2002}. As well as the base type, we also have a function (or arrow) type. For
+some types $\tau$ and $\sigma$, writing $\tau \to \sigma$ means that this term can be applied using
+a term of type $\tau$ and result in a type $\sigma$.
 
 We will also need a \textit{type context} (also called \textit{type environment}), which will
-usually be given the symbol $\Gamma$ or $\Delta$ and is separated using $\vdash$. This is a map from
-variables to types $\Gamma \colon V \to T$ (`map' in the computing sense, it is not a complete map
-as one might call a homomorphism). Types are written next to terms using a colon. If our context
-contained the mapping $x \colon \nat$, then we could write a function which applies its argument to
-$x$ like so,
+usually be given the symbol $\Gamma$ or $\Delta$ and is separated using $\vdash$. This is a partial
+map from variables to types $\Gamma \colon V \to T$. Types are written next to terms using a colon.
+If our context contained the mapping $x \colon \nat$, then we could write a function which applies
+its argument to $x$ like so,
 \begin{equation*}
   x \colon \nat \in \Gamma \vdash (\lambda \, f \colon \nat \to \nat . f x) \colon \nat.
 \end{equation*}
@@ -392,9 +375,9 @@ languages call \textit{generics}. For an anachronistic example, in Rust, we coul
 which applies a function twice to an argument.
 
 \begin{minted}[samepage]{rust}
-fn twice<A, F>(f: F, x: A) -> A
+fn twice<T, F>(f: F, x: T) -> T
 where
-    F: Fn(A) -> A,
+    F: Fn(T) -> T,
 {
     f(f(x))
 }
@@ -404,7 +387,7 @@ Since we used a \textit{type parameter} in the function's type signature, in thi
 \texttt{T}, we can use any appropriate function which has the type signature $\texttt{T} \to
 \texttt{T}$. One such function is \texttt{u64::isqrt}, the (flooring) square root function. If this
 function was invoked with \texttt{twice(u64::isqrt, 81)}, its output would be \texttt{3}. In this
-case, the compiler is clever enough to infer that the type for \texttt{A} should be \texttt{u64}, so
+case, the compiler can infer that the type for \texttt{T} should be \texttt{u64}, so
 we don't need to specify it manually.
 
 System F is the STLC equipped with \textit{polymorphic types}, another term for type parameters. It
@@ -416,9 +399,10 @@ was independently discovered by Jean-Yves \citet{girard_interpretation_1972} and
   \colon \forall T . (T \to T) \to T \to T.
 \end{equation*}
 
-If we wanted to use this function and be explicit about what type we're using, we could instantiate
-it using [square brackets]. For instance,
-
+Like in the Rust example, if we wanted to use this function, we would usually need to explicitly
+perform a type application to specify what type we're using, though if it can be understood by the
+reader from context, we will omit it. We write type applications using [square brackets]. For
+instance,
 \begin{align*}
   s \colon \nat \to \nat, z \colon \nat \in \Gamma \vdash
   &(\Lambda \, T. \lambda \, f \colon T \to T . \lambda \, x \colon T . f (f x))[\nat] s z \colon \nat\\
@@ -441,15 +425,15 @@ $y$.
   x \colon \nat, y \colon \nat \to \nat \in \Gamma \vdash (\lambda \, y \colon \nat \to \nat. y x) \colon \nat.
 \end{equation*}
 
-It's unclear whether we are referring to the local $y$ or the $y$ in the cotntext. We can use an
+It's unclear whether we are referring to the local $y$ or the $y$ in the context. We can use an
 $\alpha$-conversion and resolve this issue, applying $y \mapsto_{\alpha} f$ to the inner expression,
 \begin{equation*}
   x \colon \nat, y \colon \nat \to \nat \in \Gamma \vdash \lambda \, f. f x \colon \nat,
 \end{equation*}
 which solves the problem. We can add further assumptions to our context without affecting the
 semantics of the expression (for example, adding $k \colon \nat$ to $\Gamma$ doesn't cause any
-problems). This is called weakening-invariance (taken from proof theory, where extra assumptions
-make a theorem weaker).
+problems) \cite{pitts_locally_2023}. I shall call this proeprty weakening-invariance (taken from
+proof theory, where extra assumptions make a theorem weaker \citep{buss_handbook_1998}).
 
 Since we have these $\alpha$-equivalent expressions, we can say that we have \textit{quotient}
 inductive definitions \citep{aydemir_engineering_2008}, so we have both an inductive definition of
@@ -468,7 +452,7 @@ remove the $y$, then we need to reindex the $2$ to a $1$:
 \begin{equation*}
   x \colon \nat, \in \Gamma \vdash (\lambda \, 0 1) \colon \nat,
 \end{equation*}
-We have lost weakening invariance \citep{aydemir_engineering_2008}.
+We have lost weakening-invariance \citep{aydemir_engineering_2008}.
 
 \subsection{Locally Nameless Representation}
 Using \textit{locally nameless representation}, we can get both purely inductive definitions
@@ -504,9 +488,10 @@ Closing works similarly, and is the inverse of opening:
 
 A term is said to be \textit{locally closed} up to level $i$ if it remains unchanged after opening
 it at index $i$ with a string. We write (for some $i \in \nat$ and term $M$),
-\begin{equation*}
+\begin{equation}
+  \label{equation:local_closure}
   i \succ M \triangleq \forall j \geq i, \; \cof a , \; [j \to a] M = M.  
-\end{equation*}
+\end{equation}
 If it is locally closed at level $0$, we simply call it \textit{locally closed}. See
 \ref{appendix:local_closure_proofs} for the Agda development.
 
@@ -920,6 +905,7 @@ of code, it is omitted. But we encourage the reader to try it out for themselves
 Combining System F with the locally nameless representation was previously described by \citet{chargueraud_locally_2012}.
 \begin{code}
 module chapter4 where
+  open import cofinite
 \end{code}
 
 \section{Syntax of types and terms}
@@ -929,19 +915,113 @@ follow \citet[section~5.4]{chargueraud_locally_2012} for the implementation of a
 syntax of kinds and terms like so.
 \begin{code}
   data Kind : Set where
-    k-free_  : Kind -- Free type variables.
-    k-bound_ : Kind -- Bound type variables.
-    k-⇒      : Kind -- Arrow types.
-    k-∀      : Kind -- "For all" type.
+    k-free_  : List Char → Kind   -- Free type variables.
+    k-bound_ : ℕ → Kind           -- Bound type variables.
+    _k-⇒_      : Kind → Kind → Kind -- Arrow types.
+    k-∀      : Kind → Kind → Kind -- "For all" type.
 
   data Term : Set where
     free_  : List Char → Term
     bound_ : ℕ → Term
-    ƛ_     : Term → Term
+    -- λ terms now have a type bound. E.g. λ: K. M
+    ƛ_,_   : Kind → Term → Term
     _·_    : Term → Term → Term
     ‵zero  : Term
     ‵suc_  : Term → Term
+
+  _ : suc zero ≡ suc zero
+  _ = refl
 \end{code}
+
+\section{Opening} In System F, we only require the opening operation
+\citep{chargueraud_locally_2012}. There are three kinds of opening:
+\begin{itemize}
+  \item opening a kind at an index by replacing the bound type variable at that index with a free type variable,
+  \item opening a term at an index by replacing the bound type variable at that index in the term with a free type variable, and
+  \item opening a term at an index by replacing the bound variable at that index with a free variable.
+\end{itemize}
+In the
+STLC, we only need to define the one opening operation because there aren't any types in the syntax.
+\begin{code}
+  k-k[_—→_]_ : ℕ → List Char → Kind → Kind
+  k-k[ i —→ x ] (k-free y) = k-free y
+  k-k[ i —→ x ] (k-bound n) with i ≟ℕ n
+  ... | yes _ = k-free x
+  ... | no  _ = k-bound n
+  k-k[ i —→ x ] (J k-⇒ K) = (k-k[ i —→ x ] J) k-⇒ (k-k[ i —→ x ] K)
+  k-k[ i —→ x ] k-∀ J K = k-∀ (k-k[ i —→ x ] J) (k-k[ suc i —→ x ] K)
+
+  k-t[_—→_]_ : ℕ → List Char → Term → Term
+  k-t[ i —→ x ] (free y) = free y
+  k-t[ i —→ x ] (bound n) = bound n
+  k-t[ i —→ x ] (ƛ K , L) = ƛ (k-k[ i —→ x ] K) , (k-t[ i —→ x ] L)
+  k-t[ i —→ x ] (L · M) = (k-t[ i —→ x ] L) · (k-t[ i —→ x ] M)
+  k-t[ i —→ x ] ‵zero = ‵zero
+  k-t[ i —→ x ] (‵suc L) = ‵suc k-t[ i —→ x ] L
+
+  t-t[_—→_] : ℕ → List Char → Term → Term
+  t-t[ i —→ x ] (free y) = free y
+  t-t[ i —→ x ] (bound n) with i ≟ℕ n
+  ... | yes _ = free x
+  ... | no  _ = bound n
+  t-t[ i —→ x ] (ƛ K , L) = ƛ K , t-t[ i —→ x ] L
+  t-t[ i —→ x ] (L · M) = (t-t[ i —→ x ] L) · (t-t[ i —→ x ] M)
+  t-t[ i —→ x ] ‵zero = ‵zero
+  t-t[ i —→ x ] (‵suc L) = ‵suc t-t[ i —→ x ] L
+\end{code}
+
+\begin{comment}
+However, I may use a different approach at some point and need to use closing. Just in case, I'll
+define it here.
+\begin{code}
+  k-k[_←—_]_ : ℕ → List Char → Kind → Kind
+  k-k[ i ←— x ] (k-free y) with x ≟lchar y
+  ... | yes _ = k-bound i
+  ... | no  _ = k-free y
+  k-k[ i ←— x ] (k-bound n) = k-bound n
+  k-k[ i ←— x ] (J k-⇒ K) = (k-k[ i ←— x ] J) k-⇒ (k-k[ i ←— x ] K)
+  k-k[ i ←— x ] k-∀ J K = k-∀ (k-k[ i ←— x ] J) (k-k[ suc i ←— x ] K)
+
+  k-t[_←—_]_ : ℕ → List Char → Term → Term
+  k-t[ i ←— x ] (free y) = free y
+  k-t[ i ←— x ] (bound n) = bound n
+  k-t[ i ←— x ] (ƛ K , L) = ƛ (k-k[ i ←— x ] K) , (k-t[ i ←— x ] L)
+  k-t[ i ←— x ] (L · M) = (k-t[ i ←— x ] L) · (k-t[ i ←— x ] M)
+  k-t[ i ←— x ] ‵zero = ‵zero
+  k-t[ i ←— x ] (‵suc L) = ‵suc k-t[ i ←— x ] L
+
+  t-t[_←—_] : ℕ → List Char → Term → Term
+  t-t[ i ←— x ] (free y) with x ≟lchar y
+  ... | yes _ = bound i
+  ... | no  _ = free y
+  t-t[ i ←— x ] (bound n) = bound n
+  t-t[ i ←— x ] (ƛ K , L) = ƛ K , t-t[ i ←— x ] L
+  t-t[ i ←— x ] (L · M) = (t-t[ i ←— x ] L) · (t-t[ i ←— x ] M)
+  t-t[ i ←— x ] ‵zero = ‵zero
+  t-t[ i ←— x ] (‵suc L) = ‵suc t-t[ i ←— x ] L
+\end{code}
+\end{comment}
+
+\section{Local closure}
+
+Like before, a term or kind locally closed at level $i$ if it remains unchanged after opening it at
+$i$, see equation \ref{equation:local_closure}.
+\begin{code}
+  _≻k_ : ℕ → Kind → Set
+  i ≻k K = (j : ℕ) ⦃ _ : j ≥ i ⦄ → И a , (k-k[ j —→ a ] K ≡ K)
+
+  _≻t_ : ℕ → Term → Set
+  i ≻t L = (j : ℕ) ⦃ _ : j ≥ i ⦄ → И a , (t-t[ j —→ a ] L ≡ L)
+
+  K-LocallyClosed : Kind → Set
+  K-LocallyClosed K = 0 ≻k K
+
+  T-LocallyClosed : Term → Set
+  T-LocallyClosed T = 0 ≻t T
+\end{code}
+
+[TODO: Use Pitts' definition of local closure to somehow abstract over these two similar local
+closure predicates?]
 
 \chapter{Conclusions}
 
