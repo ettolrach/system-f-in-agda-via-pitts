@@ -626,10 +626,9 @@ We can substitute terms for free variables with this recursive definition.
   [ x := u ] (‵suc t) = ‵suc ([ x := u ] t)
 \end{code}
 
-While there are many interesting properties of substitution (and a few are omitted here and left in
-the appendix in section \ref{appendix:substitution_proofs}), we only need this one which shows how
-substitution interacts with term opening. It is named following what it's called in
-\citet{chargueraud_locally_2012}.
+While there are many additional properties of free-variable substitution, as proven by
+\citet{chargueraud_locally_2012}, we only need this one which shows how substitution interacts with
+term opening. It is named following what it's called in \citet{chargueraud_locally_2012}.
 \begin{code}
   subst-open-var : ∀ {u : Term} {x y : List Char} {i : ℕ} (t : Term)
     → x ≢ y

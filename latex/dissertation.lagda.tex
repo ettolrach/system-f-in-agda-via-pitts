@@ -438,11 +438,12 @@ proof theory, where extra assumptions make a theorem weaker \citep{buss_handbook
 Since we have these $\alpha$-equivalent expressions, we can say that we have \textit{quotient}
 inductive definitions \citep{aydemir_engineering_2008}, so we have both an inductive definition of
 the $\lambda$-calculus, but also (infinitely) many $\alpha$-equivalence classes which we need to
-deal with. In some proof assistants, this makes proofs difficult \citep{pitts_locally_2023}.
+deal with. In some proof assistants, this makes proofs difficult, as they don't handle quotient
+definitions well \citep{pitts_locally_2023}.
 
-We can solve this by using \textit{De Bruijn indices} which ensure that no matter what variables we
-have in our context, we don't have any local variable names which could cause issues. In fact, we
-can't perform $\alpha$-conversions anymore. In our example,
+We can solve this by using \textit{De Bruijn indices}, which ensure that no matter what variables we
+have in our context, we don't have any local variable names which could cause issues in terms of
+accidental shadowing. In fact, we can't perform $\alpha$-conversions anymore. In our example,
 \begin{equation*}
   x \colon \nat, y \colon \nat \to \nat \in \Gamma \vdash (\lambda \, 0 2) \colon \nat.
 \end{equation*}
@@ -452,11 +453,12 @@ remove the $y$, then we need to reindex the $2$ to a $1$:
 \begin{equation*}
   x \colon \nat, \in \Gamma \vdash (\lambda \, 0 1) \colon \nat,
 \end{equation*}
-We have lost weakening-invariance \citep{aydemir_engineering_2008}.
+We have lost weakening-invariance \citep{aydemir_engineering_2008}. This leaves a demand for a
+syntax which solves both the issue of quotient definitions and weakening-invariance.
 
 \subsection{Locally Nameless Representation}
 Using \textit{locally nameless representation}, we can get both purely inductive definitions
-\textit{and} weakening-invariance. Free variables will use variable names while bound variables will
+\textit{and} weakening-invariance, fregesee variables will use variable names while bound variables will
 use indices. Our example becomes
 \begin{equation*}
   x \colon \nat, \in \Gamma \vdash (\lambda \, 0 x) \colon \nat,
@@ -470,10 +472,13 @@ As part of using locally nameless terms, common operations and properties (calle
 by \citet{aydemir_engineering_2008}) need to be defined for the target language. A recent article by
 Andrew \citet{pitts_locally_2023} uses Agda to explore an abstraction of this representation called
 locally nameless sets, and shows that this infrastructure can be defined in a syntax-agnostic way.
+The drawback of using this representation is that we need to define infrastructure before we can
+prove interesting properties (such as progress). But usually, this drawback is too small to
+outweight the benefits.
 
-The two fundamental operations on locally nameless terms is term opening and term closing. Term
-opening will replace all occurences of a bound variable with a free variable, written $[i \to x] M$,
-for example,
+The two fundamental operations on locally nameless terms is \textit{term opening} and \textit{term
+closing}. Term opening will replace all occurences of a bound variable with a free variable, written
+$[i \to x] M$, for example,
 \begin{equation*}
   [0 \to y] (\lambda \, 0 q (\lambda \, 1 t 0)) \mapsto (\lambda \, y q (\lambda \, y t 0)).
 \end{equation*}
@@ -481,13 +486,15 @@ Every occurence of the bound variable $0$ is replaced with the free variable $y$
 go under a new $\lambda$-abstraction, we have to increment this index to $1$ to keep referring to
 the same bound variable.
 
-Closing works similarly, and is the inverse of opening:
+Closing works similarly, and is the inverse of opening (i.e. it converts free variables to a given
+index). For example, here we close the term $(\lambda \, y q (\lambda \, y t 0))$ at index $0$ with
+the free variable $y$:
 \begin{equation*}
   [0 \rightarrow y] (\lambda \, y q (\lambda \, y t 0)) \mapsto (\lambda \, 0 q (\lambda \, 1 t 0)).
 \end{equation*}
 
 A term is said to be \textit{locally closed} up to level $i$ if it remains unchanged after opening
-it at index $i$ with a string. We write (for some $i \in \nat$ and term $M$),
+it at index $i$ with an arbitrary string. We write (for some $i \in \nat$ and term $M$),
 \begin{equation}
   \label{equation:local_closure}
   i \succ M \triangleq \forall j \geq i, \; \cof a , \; [j \to a] M = M.  
@@ -495,17 +502,17 @@ it at index $i$ with a string. We write (for some $i \in \nat$ and term $M$),
 If it is locally closed at level $0$, we simply call it \textit{locally closed}. See
 \ref{appendix:local_closure_proofs} for the Agda development.
 
-More detail can be read in \citet{chargueraud_locally_2012} or section
-\ref{appendix:opening_and_closing}.
+A specific definition of local closure for the STLC is given in \citet{chargueraud_locally_2012} or
+section \ref{appendix:opening_and_closing}.
 
 \section{Evaluation strategy}
 \label{section:evaluation_strategy}
+The idea of reducible expressions, called a \textit{redex}, was introduced by Church
+\cite[p.~56]{pierce_types_2002}. We refer to any expression of the form $(\lambda \, x. M) N$ as a
+redex, since we can perform a $\beta$-reduction (see equation \ref{equation:untyped_beta_rules}).
+
 There are several ways of evaluating the $\lambda$-calculus. The main question is whether to treat
 $\lambda$-abstractions as values, or to reduce these if they are a redex.
-
-The idea of reducible expressions, called a \textit{redex}, was introduced by Church
-\citet[p.~56]{pierce_types_2002}. We refer to any expression of the form $(\lambda \, x. M) N$ as a
-redex, since we can perform a $\beta$-reduction.
 
 When evaluating, we need to consider some terms to be \textit{values}. These cannot be reduced any
 further. One method is to consider $\lambda$-abstractions to be values and to only evaluated
@@ -513,7 +520,7 @@ further. One method is to consider $\lambda$-abstractions to be values and to on
 reduction, and the values are called weak-head normal forms \citep{wadler_programming_2022}. This
 method is also used by popular programming languages such as Haskell \citep{hutchison_sharing_2005}.
 The definition of $\lambda$-calculus as Church first described it uses what is nowadays referred to
-as full normalisation \citep{wadler_programming_2022}. The reduction rule which is missing in
+as \textit{full normalisation} \citep{wadler_programming_2022}. The reduction rule which is absent in
 weak-head reduction is the $\zeta$ rule (see equation \ref{equation:untyped_beta_rules} on page
 \pageref{equation:untyped_beta_rules}), or \textit{reducing under a $\lambda$-abstraction}.
 
@@ -526,6 +533,9 @@ another, simpler, method is to introduce primitives \citep{wadler_programming_20
 primitives are a small subset of Scott and Plotkin's Programming Computable Functions (PCF)
 \citep{plotkin_lcf_1977}, described in section \ref{section:stlc_terms}.
 
+Weak-head reduction was used by \citet{chargueraud_locally_2012} and
+\citet[chapter~Lambda]{wadler_programming_2022}, so we choose to follow the same approach here.
+
 \section{Prior research}
 System F was previously formalised in Agda by \citet{hutton_system_2019}. However, the authors of
 that paper formalised a variant of System F with language extensions known as \textit{System
@@ -534,7 +544,7 @@ This paper will use the locally nameless representation, which hasn't been used 
 before.
 
 I have previously submitted some work on STLC using locally nameless representation for a course
-called \textit{Types and Semantics of Programming Languages}. I have presented my prior work in
+called \textit{Types and Semantics of Programming Languages} (TSPL). I have presented my prior work in
 appendix \ref{appendix:tspl}. There are some new additions to this work which are presented in the
 next chapter.
 
@@ -552,9 +562,15 @@ module chapter3 where
   open import cofinite
 \end{code}
 
+The syntax that the Agda formalisation uses and the syntax that is commonly used may be different.
+For example, usually, we would simply write $\lambda x. x$ for the identity function. But because
+$\lambda$ is a reserved keyword in Agda, we need to use a different symbol. Thus, we will use
+substitutes, like ƛ for $\lambda$, or $\cdot$ for function application (which is usually left
+implicit). For more information, please refer to \citet{wadler_programming_2022}.
+
 \section{Substitution}
 We need to show that substituting preserves types. As mentioned, we restrict ourselves to only
-substituting closed terms.
+closed terms for substitution.
 \begin{code}
   {-# TERMINATING #-}
   subst : ∀ {Γ x t u A B}
@@ -587,9 +603,9 @@ substituting closed terms.
 The property is proven by induction on the type judgement of the term \texttt{M}. Agda cannot
 determine the termination of this function, and the problematic call is when the type judgement is a
 $\lambda$-abstraction \texttt{ƛ M}. Specifically, it highlights the problematic code to be
-\texttt{subst ⊢u (swap a≢y (Иe₂ a {a∉Иe₁}))}. Thus, I will only detail that step (technically, Agda
-also complains about a problematic call for the application case, but this is caused by the
-problematic $\lambda$-abstraction case).
+\texttt{subst ⊢u (swap a≢y (Иe₂ a {a∉Иe₁}))}. Thus, I will only detail that
+step\footnote{Technically, the Agda compiler also highlits a problematic call for the application
+case, but this is caused by the problematic $\lambda$-abstraction case, so is irrelevant.}.
 
 Since we are inducting on the type judgement, the inductive hypothesis for a term \texttt{ƛ M} of
 type \texttt{A ⇒ A'} states that the property $P$ holds for $P(\texttt{И⟨ Иe₁ , Иe₂ ⟩})$. Let
@@ -601,8 +617,9 @@ issue). Since we are deconstructing the type judgement and are calling \texttt{s
 \texttt{Иe₂} which makes up the input type judgement, this function call corresponds to the
 inductive hypothesis, and is thus valid.
 
-Substituting a term for an index is similar to the definition of the other substitution. This is,
-confusingly, also called `opening' by \citet{chargueraud_locally_2012}.
+Substituting a term for an index is similar to the definition of the free-variable substitution
+(defined in appendix \ref{appendix:substitution_proofs}). This is, confusingly, also called
+`opening' by \citet{chargueraud_locally_2012}.
 \begin{code}
   [_:→_]_ : ℕ → Term → Term → Term
   [ k :→ u ] (free x) = free x
@@ -683,11 +700,11 @@ that were introduced.
 \end{code}
 
 \citet{chargueraud_locally_2012} adds another requirement for $\lambda$-abstractions: $1 \succ M$,
-or in other words, that $\lambda M$ is locally closed. However since we are only evaluating
+or in other words, that $\lambda M$ is locally closed. However, since we are only evaluating
 well-typed terms, and all well-typed terms are locally closed (see section
-\ref{appendix:type_judgements}). So this requirement isn't necessary here.
+\ref{appendix:type_judgements}), this requirement isn't necessary here.
 
-\citet{chargueraud_locally_2012} gives rules for reduction using locally closed terms. These are
+We follow the rules for small-step reduction given in \citet{chargueraud_locally_2012}. These are
 encoded in Agda below.
 \begin{code}
   infix 4 _—→_
@@ -714,8 +731,8 @@ encoded in Agda below.
         -------
       → (ƛ t) · u —→ [ 0 :→ u ] t
 \end{code}
-Once again, the requirements for local closure could be removed, but I decided to keep them to
-follow the rules presented in \citet{chargueraud_locally_2012}.
+Once again, the requirements for local closure could be removed, but they are kept here to follow
+the rules presented in \citet{chargueraud_locally_2012}.
 
 Following \citet{wadler_programming_2022}, we define some convenience functions, namely, reflexive
 and transitive closure properties which will help reason about taking a reduction step. These follow
@@ -750,8 +767,8 @@ similar syntax to how equality reasoning is written in the Agda standard library
   begin' M—↠N = M—↠N
 \end{code}
 
-There are two important properties which are required to implement evaluation. Progress, that terms
-can always take a step, or are a value and are thus finished reducing, is presented below.
+There are two important properties which are required to implement evaluation. Progress (that terms
+can always take a step, or are a value and are thus finished reducing) is presented below.
 \begin{code}
   data Progress (t : Term) : Set where
     step : ∀ {t'}
@@ -793,11 +810,12 @@ And preservation, that types are preserved when reducing.
   preserve (⊢suc ⊢t) (ξ-suc t→t') = ⊢suc (preserve ⊢t t→t')
 \end{code}
 
-While STLC is not Turing complete \citep{church_formulation_1940}, we don't need to worry about the
-halting problem. Still, we could try to evaluate a program that is very, very long. Rather than
-reasoning about whether we can evaluate all programs, we can simply define a record which limits
-evaluation to a certain number of reduction steps. Then we can use the preserve and progress
-properties to make an \texttt{eval} function.
+Since STLC is not Turing complete \citep{church_formulation_1940}, we don't need to worry about
+programs which don't terminate. Still, the evaluation function needs to receive a timeout argument,
+as it would otherwise not be guaranteed that it would terminate. Thus, we define a record which
+limits evaluation to a certain number of reduction steps. Then we can use the preserve and progress
+properties to make an \texttt{eval} function. This is the same definition as
+\citet{wadler_programming_2022} uses, so the explanation is ommitted here.
 \begin{code}
   record Gas : Set where
     eta-equality
@@ -824,7 +842,6 @@ We provide an example for evaluation. First, we require a type derivation for $2
 that it evaluates to $4$, but because the evaluation proof requires more than eleven thousand lines
 of code, it is omitted. But we encourage the reader to try it out for themselves. The proofs of
 \texttt{⊢two} and \texttt{⊢plus} are long and are omitted (but present in the source file).
-
 \begin{code}
   two : Term
   two = ƛ ƛ bound 1 · (bound 1 · bound 0)
