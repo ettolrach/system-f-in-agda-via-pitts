@@ -662,22 +662,20 @@ term opening. It is named following what it's called in \citet{chargueraud_local
 During the development, I ended up proving more locally nameless substitution theorems than I
 needed, so some haven't been referenced above. These aren't strictly needed.
 
-\begin{code}
+\begin{code}    
   subst-fresh : ∀ {t u : Term} {x : List Char}
-    → x # t
+    → x ∉ fv t
     → [ x := u ] t ≡ t
-  subst-fresh {free y} {u} {x} x#t with x ≟lchar y
-  ... | yes _ with () ← x#t
-  ... | no  _ = refl
-  subst-fresh {bound i} {u} {x} x#t = refl
-  subst-fresh {ƛ t} {u} x#t =
-    cong ƛ_ (subst-fresh (#-ƛ t x#t))
-  subst-fresh {t₁ · t₂} {u} {x} x#· =
-    let ⟨ x#t₁ , x#t₂ ⟩ = #-· t₁ t₂ x#· in
-      cong₂ _·_ (subst-fresh x#t₁) (subst-fresh x#t₂)
-  subst-fresh {‵zero} {u} x#t = refl
-  subst-fresh {‵suc t} {u} x#t =
-    cong ‵suc_ (subst-fresh (#-‵suc t x#t))
+  subst-fresh {free y} {u} {x} x∉ with x ≟lchar y
+  ... | yes refl = ⊥-elim (x∉ (here refl))
+  ... | no  _    = refl
+  subst-fresh {bound i} {u} {x} x∉ = refl
+  subst-fresh {ƛ t} {u} {x} x∉ = cong ƛ_ (subst-fresh x∉)
+  subst-fresh {t₁ · t₂} {u} {x} x∉ =
+    let ⟨ x∉t₁ , x∉t₂ ⟩ = ∉-++ x∉ in
+      cong₂ _·_ (subst-fresh x∉t₁) (subst-fresh x∉t₂)
+  subst-fresh {‵zero} {u} {x} x∉ = refl
+  subst-fresh {‵suc t} {u} {x} x∉ = cong ‵suc_ (subst-fresh x∉)
 
   subst-≻ : ∀ {t u : Term} {i : ℕ} (x : List Char)
     → i ≻ t

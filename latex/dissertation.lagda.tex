@@ -111,9 +111,6 @@
 \NewCommandCopy{\endmintedcopy}{\endminted}
 % Adapted from https://tex.stackexchange.com/a/488451/202867
 \renewenvironment{code}{\mintedcopy[breaklines,breaksymbolleft=\;]{agda}}{\endmintedcopy}
-% \let\oldcode\code
-% % Adapted from https://tex.stackexchange.com/a/488451/202867
-% \def\code{\minted{agda}}
 
 \begin{document}
 \begin{preliminary}
@@ -923,25 +920,24 @@ Combining System F with the locally nameless representation was previously descr
 \begin{code}
 module chapter4 where
   open import cofinite
+  open import tspl_prior_work
+    using (suc-preserves-≢; sym-≢; fresh; fresh-correct)
 \end{code}
 
 \section{Syntax of types and terms}
-In System F, types become part of the syntax, as they no become part of how terms are built. In
-previous Agda formalisations, these pre-types are called `kind's \citep{hutton_system_2019}. We
-follow \citet[section~5.4]{chargueraud_locally_2012} for the implementation of and implement the
-syntax of kinds and terms like so.
+In System F, types become part of the syntax, as they no become part of how terms are built.
 \begin{code}
-  data Kind : Set where
-    k-free_  : List Char → Kind   -- Free type variables.
-    k-bound_ : ℕ → Kind           -- Bound type variables.
-    _k-⇒_      : Kind → Kind → Kind -- Arrow types.
-    k-∀      : Kind → Kind → Kind -- "For all" type.
+  data Type : Set where
+    t-free_  : List Char → Type   -- Free type variables.
+    t-bound_ : ℕ → Type           -- Bound type variables.
+    _t-⇒_    : Type → Type → Type -- Arrow types.
+    t-∀      : Type → Type → Type -- "For all" type.
 
   data Term : Set where
     free_  : List Char → Term
     bound_ : ℕ → Term
     -- λ terms now have a type bound. E.g. λ: K. M
-    ƛ_,_   : Kind → Term → Term
+    ƛ_,_   : Type → Term → Term
     _·_    : Term → Term → Term
     ‵zero  : Term
     ‵suc_  : Term → Term
@@ -950,72 +946,75 @@ syntax of kinds and terms like so.
   _ = refl
 \end{code}
 
-\section{Opening} In System F, we only require the opening operation
-\citep{chargueraud_locally_2012}. There are three kinds of opening:
+\section{Opening}
+In System F, we only require the opening operation \citep{chargueraud_locally_2012}. There are three
+kinds of opening:
 \begin{itemize}
-  \item opening a kind at an index by replacing the bound type variable at that index with a free type variable,
-  \item opening a term at an index by replacing the bound type variable at that index in the term with a free type variable, and
-  \item opening a term at an index by replacing the bound variable at that index with a free variable.
+  \item opening a kind at an index by replacing the bound type variable at that index with a free
+        type variable,
+  \item opening a term at an index by replacing the bound type variable at that index in the term
+        with a free type variable, and
+  \item opening a term at an index by replacing the bound variable at that index with a free
+        variable.
 \end{itemize}
-In the
-STLC, we only need to define the one opening operation because there aren't any types in the syntax.
+
 \begin{code}
-  k-k[_—→_]_ : ℕ → List Char → Kind → Kind
-  k-k[ i —→ x ] (k-free y) = k-free y
-  k-k[ i —→ x ] (k-bound n) with i ≟ℕ n
-  ... | yes _ = k-free x
-  ... | no  _ = k-bound n
-  k-k[ i —→ x ] (J k-⇒ K) = (k-k[ i —→ x ] J) k-⇒ (k-k[ i —→ x ] K)
-  k-k[ i —→ x ] k-∀ J K = k-∀ (k-k[ i —→ x ] J) (k-k[ suc i —→ x ] K)
+  ty-ty[_—→_]_ : ℕ → List Char → Type → Type
+  ty-ty[ i —→ x ] (t-free y) = t-free y
+  ty-ty[ i —→ x ] (t-bound n) with i ≟ℕ n
+  ... | yes _ = t-free x
+  ... | no  _ = t-bound n
+  ty-ty[ i —→ x ] (A t-⇒ B) = (ty-ty[ i —→ x ] A) t-⇒ (ty-ty[ i —→ x ] B)
+  ty-ty[ i —→ x ] t-∀ A B = t-∀ (ty-ty[ i —→ x ] A) (ty-ty[ suc i —→ x ] B)
 
-  k-t[_—→_]_ : ℕ → List Char → Term → Term
-  k-t[ i —→ x ] (free y) = free y
-  k-t[ i —→ x ] (bound n) = bound n
-  k-t[ i —→ x ] (ƛ K , L) = ƛ (k-k[ i —→ x ] K) , (k-t[ i —→ x ] L)
-  k-t[ i —→ x ] (L · M) = (k-t[ i —→ x ] L) · (k-t[ i —→ x ] M)
-  k-t[ i —→ x ] ‵zero = ‵zero
-  k-t[ i —→ x ] (‵suc L) = ‵suc k-t[ i —→ x ] L
+  ty-tm[_—→_]_ : ℕ → List Char → Term → Term
+  ty-tm[ i —→ x ] (free y) = free y
+  ty-tm[ i —→ x ] (bound n) = bound n
+  ty-tm[ i —→ x ] (ƛ A , L) = ƛ (ty-ty[ i —→ x ] A) , (ty-tm[ i —→ x ] L)
+  ty-tm[ i —→ x ] (L · M) = (ty-tm[ i —→ x ] L) · (ty-tm[ i —→ x ] M)
+  ty-tm[ i —→ x ] ‵zero = ‵zero
+  ty-tm[ i —→ x ] (‵suc L) = ‵suc ty-tm[ i —→ x ] L
 
-  t-t[_—→_] : ℕ → List Char → Term → Term
-  t-t[ i —→ x ] (free y) = free y
-  t-t[ i —→ x ] (bound n) with i ≟ℕ n
+  tm-tm[_—→_]_ : ℕ → List Char → Term → Term
+  tm-tm[ i —→ x ] (free y) = free y
+  tm-tm[ i —→ x ] (bound n) with i ≟ℕ n
   ... | yes _ = free x
   ... | no  _ = bound n
-  t-t[ i —→ x ] (ƛ K , L) = ƛ K , t-t[ i —→ x ] L
-  t-t[ i —→ x ] (L · M) = (t-t[ i —→ x ] L) · (t-t[ i —→ x ] M)
-  t-t[ i —→ x ] ‵zero = ‵zero
-  t-t[ i —→ x ] (‵suc L) = ‵suc t-t[ i —→ x ] L
+  tm-tm[ i —→ x ] (ƛ K , L) = ƛ K , tm-tm[ (suc i) —→ x ] L
+  tm-tm[ i —→ x ] (L · M) = (tm-tm[ i —→ x ] L) · (tm-tm[ i —→ x ] M)
+  tm-tm[ i —→ x ] ‵zero = ‵zero
+  tm-tm[ i —→ x ] (‵suc L) = ‵suc tm-tm[ i —→ x ] L
 \end{code}
 
 \begin{comment}
 However, I may use a different approach at some point and need to use closing. Just in case, I'll
 define it here.
 \begin{code}
-  k-k[_←—_]_ : ℕ → List Char → Kind → Kind
-  k-k[ i ←— x ] (k-free y) with x ≟lchar y
-  ... | yes _ = k-bound i
-  ... | no  _ = k-free y
-  k-k[ i ←— x ] (k-bound n) = k-bound n
-  k-k[ i ←— x ] (J k-⇒ K) = (k-k[ i ←— x ] J) k-⇒ (k-k[ i ←— x ] K)
-  k-k[ i ←— x ] k-∀ J K = k-∀ (k-k[ i ←— x ] J) (k-k[ suc i ←— x ] K)
+  ty-ty[_←—_]_ : ℕ → List Char → Type → Type
+  ty-ty[ i ←— x ] (t-free y) with x ≟lchar y
+  ... | yes _ = t-bound i
+  ... | no  _ = t-free y
+  ty-ty[ i ←— x ] (t-bound n) = t-bound n
+  ty-ty[ i ←— x ] (A t-⇒ B) = (ty-ty[ i ←— x ] A) t-⇒ (ty-ty[ i ←— x ] B)
+  ty-ty[ i ←— x ] t-∀ A B = t-∀ (ty-ty[ i ←— x ] A) (ty-ty[ suc i ←— x ] B)
 
-  k-t[_←—_]_ : ℕ → List Char → Term → Term
-  k-t[ i ←— x ] (free y) = free y
-  k-t[ i ←— x ] (bound n) = bound n
-  k-t[ i ←— x ] (ƛ K , L) = ƛ (k-k[ i ←— x ] K) , (k-t[ i ←— x ] L)
-  k-t[ i ←— x ] (L · M) = (k-t[ i ←— x ] L) · (k-t[ i ←— x ] M)
-  k-t[ i ←— x ] ‵zero = ‵zero
-  k-t[ i ←— x ] (‵suc L) = ‵suc k-t[ i ←— x ] L
+  ty-tm[_←—_]_ : ℕ → List Char → Term → Term
+  ty-tm[ i ←— x ] (free y) = free y
+  ty-tm[ i ←— x ] (bound n) = bound n
+  ty-tm[ i ←— x ] (ƛ A , L) = ƛ (ty-ty[ i ←— x ] A) , (ty-tm[ i ←— x ] L)
+  ty-tm[ i ←— x ] (L · M) = (ty-tm[ i ←— x ] L) · (ty-tm[ i ←— x ] M)
+  ty-tm[ i ←— x ] ‵zero = ‵zero
+  ty-tm[ i ←— x ] (‵suc L) = ‵suc ty-tm[ i ←— x ] L
 
-  t-t[_←—_] : ℕ → List Char → Term → Term
-  t-t[ i ←— x ] (free y) with x ≟lchar y
+  tm-tm[_←—_]_ : ℕ → List Char → Term → Term
+  tm-tm[ i ←— x ] (free y) with x ≟lchar y
   ... | yes _ = bound i
   ... | no  _ = free y
-  t-t[ i ←— x ] (bound n) = bound n
-  t-t[ i ←— x ] (ƛ K , L) = ƛ K , t-t[ i ←— x ] L
-  t-t[ i ←— x ] (L · M) = (t-t[ i ←— x ] L) · (t-t[ i ←— x ] M)
-  t-t[ i ←— x ] ‵zero = ‵zero
-  t-t[ i ←— x ] (‵suc L) = ‵suc t-t[ i ←— x ] L
+  tm-tm[ i ←— x ] (bound n) = bound n
+  tm-tm[ i ←— x ] (ƛ A , L) = ƛ A , tm-tm[ (suc i) ←— x ] L
+  tm-tm[ i ←— x ] (L · M) = (tm-tm[ i ←— x ] L) · (tm-tm[ i ←— x ] M)
+  tm-tm[ i ←— x ] ‵zero = ‵zero
+  tm-tm[ i ←— x ] (‵suc L) = ‵suc tm-tm[ i ←— x ] L
 \end{code}
 \end{comment}
 
@@ -1023,22 +1022,196 @@ define it here.
 
 Like before, a term or kind locally closed at level $i$ if it remains unchanged after opening it at
 $i$, see equation \ref{equation:local_closure}.
+
+\begin{comment}
 \begin{code}
-  _≻k_ : ℕ → Kind → Set
-  i ≻k K = (j : ℕ) ⦃ _ : j ≥ i ⦄ → И a , (k-k[ j —→ a ] K ≡ K)
+  _≻k_ : ℕ → Type → Set
+  i ≻k A = (j : ℕ) ⦃ _ : j ≥ i ⦄ → И a , (ty-ty[ j —→ a ] A ≡ A)
 
   _≻t_ : ℕ → Term → Set
-  i ≻t L = (j : ℕ) ⦃ _ : j ≥ i ⦄ → И a , (t-t[ j —→ a ] L ≡ L)
+  i ≻t L = (j : ℕ) ⦃ _ : j ≥ i ⦄ → И a , (tm-tm[ j —→ a ] L ≡ L)
 
-  K-LocallyClosed : Kind → Set
-  K-LocallyClosed K = 0 ≻k K
+  K-LocallyClosed : Type → Set
+  K-LocallyClosed A = 0 ≻k A
 
   T-LocallyClosed : Term → Set
   T-LocallyClosed T = 0 ≻t T
 \end{code}
+\end{comment}
 
-[TODO: Use Pitts' definition of local closure to somehow abstract over these two similar local
-closure predicates?]
+To make future proofs simpler, we will make use of Agda's instances, which are similar to
+typeclasses in Haskell or traits in Rust or Scala. We will follow how \citet{pitts_locally_2023}
+defined locally nameless sets, but require fewer of the locally nameless set axioms to be fulfilled
+(as we'll only need axioms 1 and 5).
+
+Thanks to using instances, we can prove the local closure properties for both kinds of local
+closure.
+\begin{code}
+  record Lns (A : Set) : Set where
+    infix 5 [_—→_]_
+    field
+      -- We only need opening.
+      [_—→_]_ : ℕ → List Char → A → A
+      ax1 : ∀ (i : ℕ) (a b : List Char) (L : A)
+        → [ i —→ a ] ([ i —→ b ] L) ≡ [ i —→ b ] L
+      ax5 : ∀ (i j : ℕ) (a b : List Char) (L : A)
+        → (i≢j : i ≢ j)
+        → [ i —→ a ] ([ j —→ b ] L) ≡ [ j —→ b ] ([ i —→ a ] L)
+    -- Local closure definition.
+    _≻_ : ℕ → A → Set
+    i ≻ L = (j : ℕ) ⦃ _ : j ≥ i ⦄ → И a , ([ j —→ a ] L ≡ L)
+    LocallyClosed : A → Set
+    LocallyClosed L = 0 ≻ L
+    -- Local closure lemmas.
+    lemma2·6 : ∀ {i j : ℕ} {L : A}
+      → j ≥ i   → i ≻ L
+        ---------------
+      → j ≻ L
+    lemma2·6 j≥i i≻L k = i≻L k ⦃ ≤-trans j≥i it ⦄
+
+    lemma2·7-1 : ∀ {i : ℕ} {x y : List Char} {L : A}
+      → [ i —→ x ] L ≡ L
+        ----------------
+      → [ i —→ y ] L ≡ L
+    lemma2·7-1 {i} {x} {y} {L} assump =
+      begin
+        [ i —→ y ] L
+      ≡⟨ sym (cong ([ i —→ y ]_) assump) ⟩
+        [ i —→ y ] ([ i —→ x ] L)
+      ≡⟨ ax1 i y x L ⟩
+        [ i —→ x ] L
+      ≡⟨ assump ⟩
+        L
+      ∎
+      
+    lemma2·7-2 : ∀ {i j : ℕ} {x : List Char} {L : A}
+      → j ≥ i → i ≻ L
+        ----------------
+      → [ j —→ x ] L ≡ L
+    lemma2·7-2 {j = j} j≥i i≻L =
+      let И⟨ Иe₁ , Иe₂ ⟩ = i≻L j ⦃ j≥i ⦄ in
+        lemma2·7-1 (Иe₂ (fresh Иe₁) {fresh-correct Иe₁})
+
+    lemma2·13 : ∀ {L : A} {x : List Char} {i : ℕ} (j : ℕ)
+      → j ≥ i      → i ≻ L
+        ------------------
+      → i ≻ ([ j —→ x ] L)
+    lemma2·13 {L} {x} j j≥i i≻L k
+      with j ≟ℕ k | Иe₁ (i≻L j ⦃ j≥i ⦄)
+    ... | yes refl | l = И⟨ l , (λ a → ax1 j a x L) ⟩
+    ... | no  j≢k  | l = И⟨ l , (λ a → 
+      begin
+        [ k —→ a ] ([ j —→ x ] L)
+      ≡⟨ ax5 k j a x L (sym-≢ j≢k) ⟩
+        [ j —→ x ] ([ k —→ a ] L)
+      ≡⟨ cong [ j —→ x ]_ (lemma2·7-2 it i≻L) ⟩
+        [ j —→ x ] L
+      ∎) ⟩
+
+  open Lns
+\end{code}
+
+Now we simply prove axioms 1 and 5 for both kinds of opening, and we get the lemmas above for both.
+\begin{code}
+  ax1-type : ∀ (i : ℕ) (a b : List Char) (A : Type)
+    → ty-ty[ i —→ a ] (ty-ty[ i —→ b ] A) ≡ ty-ty[ i —→ b ] A
+  ax1-type i a b (t-free x) = refl
+  ax1-type i a b (t-bound k) with i ≟ℕ k
+  ... | yes _   = refl
+  ... | no  i≢k with i ≟ℕ k
+  ... | yes refl = contradiction refl i≢k
+  ... | no  _    = refl
+  ax1-type i a b (A t-⇒ B)
+    rewrite ax1-type i a b A | ax1-type i a b B = refl
+  ax1-type i a b (t-∀ A B)
+    rewrite ax1-type i a b A | ax1-type (suc i) a b B = refl
+
+  ax5-type : ∀ (i j : ℕ) (a b : List Char) (A : Type)
+    → (i≢j : i ≢ j)
+    → ty-ty[ i —→ a ] (ty-ty[ j —→ b ] A)
+      ≡ ty-ty[ j —→ b ] (ty-ty[ i —→ a ] A)
+  ax5-type i j a b (t-free x) i≢j = refl
+  ax5-type i j a b (t-bound k) i≢j with j ≟ℕ k
+  ... | yes refl with i ≟ℕ k
+  ... |   yes refl = contradiction refl i≢j
+  ... |   no  i≢k  with j ≟ℕ j
+  ... |     yes refl = refl
+  ... |     no  j≢j  = contradiction refl j≢j
+  ax5-type i j a b (t-bound k) i≢j | no j≢k with i ≟ℕ k
+  ... | yes refl = refl
+  ... | no  i≢k  with j ≟ℕ k
+  ... |   yes refl = contradiction refl j≢k
+  ... |   no  _    = refl
+  ax5-type i j a b (A t-⇒ B) i≢j
+    rewrite ax5-type i j a b A i≢j | ax5-type i j a b B i≢j = refl
+  ax5-type i j a b (t-∀ A B) i≢j
+    rewrite ax5-type i j a b A i≢j
+      | ax5-type (suc i) (suc j) a b B (suc-preserves-≢ i≢j)
+          = refl
+  
+  instance
+    LnsType : Lns Type
+    LnsType = record
+      { [_—→_]_ = ty-ty[_—→_]_
+      ; ax1 = ax1-type
+      ; ax5 = ax5-type }
+\end{code}
+
+The proof for \texttt{Term} is very similar and omitted here (see the source file for the full proof).
+\begin{code}
+  ax1-term : ∀ (i : ℕ) (a b : List Char) (L : Term)
+    → tm-tm[ i —→ a ] (tm-tm[ i —→ b ] L) ≡ tm-tm[ i —→ b ] L
+  -- omitted.
+  ax5-term : ∀ (i j : ℕ) (a b : List Char) (L : Term)
+    → (i≢j : i ≢ j)
+    → tm-tm[ i —→ a ] (tm-tm[ j —→ b ] L)
+        ≡ tm-tm[ j —→ b ] (tm-tm[ i —→ a ] L)
+  -- omitted.
+
+  instance
+    LnsTerm : Lns Term
+    LnsTerm = record
+      { [_—→_]_ = tm-tm[_—→_]_
+      ; ax1 = ax1-term
+      ; ax5 = ax5-term }
+\end{code}
+
+\begin{comment}
+\begin{code}
+  ax1-term i a b (free x) = refl
+  ax1-term i a b (bound k) with i ≟ℕ k
+  ... | yes refl = refl
+  ... | no  i≢k  with i ≟ℕ k
+  ... |   yes refl = contradiction refl i≢k
+  ... |   no  _    = refl
+  ax1-term i a b (ƛ A , L) rewrite ax1-term (suc i) a b L = refl
+  ax1-term i a b (L · M)
+    rewrite ax1-term i a b L | ax1-term i a b M = refl
+  ax1-term i a b ‵zero = refl
+  ax1-term i a b (‵suc L) rewrite ax1-term i a b L = refl
+
+  ax5-term i j a b (free x) i≢j = refl
+  ax5-term i j a b (bound k) i≢j with j ≟ℕ k
+  ... | yes refl with i ≟ℕ j
+  ... |   yes refl = contradiction refl i≢j
+  ... |   no  i≢j with j ≟ℕ j
+  ... |     yes refl = refl
+  ... |     no  j≢j  = contradiction refl j≢j
+  ax5-term i j a b (bound k) i≢j | no j≢k with i ≟ℕ k
+  ... | yes refl = refl
+  ... | no  i≢k with j ≟ℕ k
+  ... |   yes refl = contradiction refl j≢k
+  ... |   no  j≢k  = refl
+  ax5-term i j a b (ƛ A , L) i≢j
+    rewrite ax5-term (suc i) (suc j) a b L (suc-preserves-≢ i≢j)
+      = refl
+  ax5-term i j a b (L · M) i≢j
+    rewrite ax5-term i j a b L i≢j | ax5-term i j a b M i≢j = refl
+  ax5-term i j a b ‵zero i≢j = refl
+  ax5-term i j a b (‵suc L) i≢j rewrite ax5-term i j a b L i≢j
+    = refl
+\end{code}
+\end{comment}
 
 \chapter{Conclusions}
 
