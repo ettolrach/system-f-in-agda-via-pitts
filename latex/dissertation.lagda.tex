@@ -286,7 +286,7 @@ open DecPropMembership _≟lchar_ using (_∈_; _∉_; _∈?_)
 \input{background_locally_nameless.tex}
 
 \section{Evaluation strategy}
-\label{section:evaluation_strategy}
+\label{background:evaluation_strategy}
 The idea of reducible expressions, called a \textit{redex}, was introduced by Church
 \cite[p.~56]{pierce_types_2002}. We refer to any expression of the form $(\lambda \, x. M) N$ as a
 redex, since we can perform a $\beta$-reduction (see equation \ref{equation:untyped_beta_rules}).
@@ -311,7 +311,7 @@ fact, the system is no longer Turing complete). While one could introduce specif
 can reduce under a $\lambda$-abstraction to restore this property \citep{hutchison_sharing_2005},
 another, simpler, method is to introduce primitives \citep{wadler_programming_2022}. These
 primitives are a small subset of Scott and Plotkin's Programming Computable Functions (PCF)
-\citep{plotkin_lcf_1977}, described in section \ref{section:stlc_terms}.
+\citep{plotkin_lcf_1977}, described in section \ref{appendix:stlc_terms}.
 
 Weak-head reduction was used by \citet{chargueraud_locally_2012} and
 \citet[chapter~Lambda]{wadler_programming_2022}, so we choose to follow the same approach here.
@@ -331,7 +331,7 @@ next chapter.
 \chapter{Substitution and Evaluation in STLC}
 The remaining properties of STLC, including creating an evaluator, were missing from my submission
 to TSPL. Since it is a necessary prelude to System F, this new work is presented here. As explained
-in section \ref{section:evaluation_strategy}, one evaluation strategy is weak-head reduction. We
+in section \ref{background:evaluation_strategy}, one evaluation strategy is weak-head reduction. We
 follow the methods presented in \citet[chapter~Properties]{wadler_programming_2022} and
 \citet[section~5]{chargueraud_locally_2012}, as they have also used weak-head reduction. Thus,
 evaluation will be restricted to closed terms only (those without free variables).
@@ -802,7 +802,7 @@ define it here.
 \end{comment}
 
 \section{Local closure}
-
+\label{chapter4:local_closure}
 Like before, a term or kind locally closed at level $i$ if it remains unchanged after opening it at
 $i$, see equation \ref{equation:local_closure}.
 
@@ -1046,7 +1046,7 @@ This document is a literate Agda file. It has been tested to work with
   \item XeLaTeX 3.141592653-2.6-0.999996 (TeX Live 2024/Arch Linux 2024.2-4).
 \end{itemize}
 
-The full source code is available at [TO BE MADE PUBLIC LATER].
+The full source code is available at [TODO: TO BE MADE PUBLIC LATER].
 
 Since this document uses the Minted package [TODO: cite], XeLaTeX needs to be run with the
 \texttt{--shell-escape} option. While Agda does provide its own typesetting of Agda code, it uses a

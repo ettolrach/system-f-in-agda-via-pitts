@@ -161,7 +161,7 @@ character longer. Now to prove that this function is correct:
 \end{code}
 
 \section{Syntax of terms}
-\label{section:stlc_terms}
+\label{appendix:stlc_terms}
 Since we will need to have quite a few proofs on local closure, we should define our terms.
 \begin{code}
   data Term : Set where
@@ -191,7 +191,7 @@ Since we will need to have quite a few proofs on local closure, we should define
 We have free and bound variables, $\lambda$-abstractions, and applications (written explicitly with
 a $\cdot$). Later when doing evaluation, we will only implement weak-head normalisation, so we also
 need to include two primitives \texttt{‵zero} and \texttt{‵suc}, as explained in
-\ref{section:evaluation_strategy}. To avoid name conflicts with the Agda built-in natural number
+\ref{background:evaluation_strategy}. To avoid name conflicts with the Agda built-in natural number
 keywords, a small \texttt{‵} symbol is used, following what is done in
 \citet{wadler_programming_2022}. We also exploit the injectivity of terms to help in proofs later.
 

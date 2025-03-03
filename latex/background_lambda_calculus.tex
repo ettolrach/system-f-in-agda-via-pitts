@@ -15,7 +15,7 @@ use different variable names are called $\alpha$-equivalent, which forms an equi
 $\beta$-reduction describes function application. The evaluation rules for the $\lambda$-calculus
 are as follows \citep{wadler_programming_2022}.
 
-\begin{align}
+\begin{equation}
 \label{equation:untyped_beta_rules}
 \begin{split}
 \inferrule{ }{(\lambda \, x. N)M \mapsto_{\beta} N[M/x]} \; (\beta) \quad
@@ -23,7 +23,7 @@ are as follows \citep{wadler_programming_2022}.
 \inferrule{M \mapsto_{\beta} M'}{LM \mapsto_{\beta} LM'} \; (\xi_2) \quad
 \inferrule{N \mapsto_{\beta} N'}{(\lambda \, x. N) \mapsto_{\beta} (\lambda \, x. N')} \; (\zeta)
 \end{split}
-\end{align}
+\end{equation}
 
 Finally, we have $\eta$-reduction; for all $\lambda$-abstractions $\lambda \, x. L x$, we have that
 $\lambda \, x. f x \mapsto_{\eta} f$.
@@ -33,7 +33,7 @@ form}. We shall represent an arbitrary number of successive $\beta$-reductions u
 $\mapsto_{\beta^{\star}}$. The Church-Rosser theorem states that for any term $L$, if it
 $\beta$-reduces to two terms $M$ and $N$, then there exists a common term $L'$ which both $M$ and
 $N$ eventually $\beta$-reduce to \citep{church_properties_1936}. This will be an important
-consideration when choosing an evaluation strategy (see section \ref{section:evaluation_strategy}.)
+consideration when choosing an evaluation strategy (see section \ref{background:evaluation_strategy}.)
 
 Notably, some terms may not have a normal form. A well-known example is \textit{little omega} $\omega
 \triangleq \lambda \, x. (x x)$ and \textit{omega} (sometimes called the \textit{omega combinator})
@@ -61,7 +61,7 @@ untyped $\lambda$-calculus (such as $\Omega$), thus, the STLC is not Turing-comp
 
 In the STLC, some base types need to be chosen. These are indeterminates which are not given
 definitions. While Church originally used the symbols $\iota$ and $\sigma$ for base types, we will
-use $\nat$, for reasons given in section \ref{section:evaluation_strategy}. Without base types, our
+use $\nat$, for reasons given in section \ref{background:evaluation_strategy}. Without base types, our
 computational model becomes \textit{degenerate} (that is, there are no terms)
 \citep{pierce_types_2002}. As well as the base type, we also have a function (or arrow) type. For
 some types $\tau$ and $\sigma$, writing $\tau \to \sigma$ means that this term can be applied using
