@@ -1,0 +1,93 @@
+
+\subsection{De Bruijn indices}
+\label{section:background_debruijn}
+Consider this expression,
+\begin{equation*}
+  x \colon \nat \in \Gamma \vdash (\lambda \, y \colon \nat \to \nat. y x) \colon \nat.
+\end{equation*}
+
+Suppose we move this expression into a context where we already have a bound
+$y$.
+\begin{equation*}
+  x \colon \nat, y \colon \nat \to \nat \in \Gamma \vdash (\lambda \, y \colon \nat \to \nat. y x) \colon \nat.
+\end{equation*}
+
+It's unclear whether we are referring to the local $y$ or the $y$ in the context. We can use an
+$\alpha$-conversion and resolve this issue, applying $y \mapsto_{\alpha} f$ to the inner expression,
+\begin{equation*}
+  x \colon \nat, y \colon \nat \to \nat \in \Gamma \vdash \lambda \, f. f x \colon \nat,
+\end{equation*}
+which solves the problem. We can add further assumptions to our context without affecting the
+semantics of the expression (for example, adding $k \colon \nat$ to $\Gamma$ doesn't cause any
+problems) \cite{pitts_locally_2023}. I shall call this proeprty weakening-invariance (taken from
+proof theory, where extra assumptions make a theorem weaker \citep{buss_handbook_1998}).
+
+Since we have these $\alpha$-equivalent expressions, we can say that we have \textit{quotient}
+inductive definitions \citep{aydemir_engineering_2008}, so we have both an inductive definition of
+the $\lambda$-calculus, but also (infinitely) many $\alpha$-equivalence classes which we need to
+deal with. In some proof assistants, this makes proofs difficult, as they don't handle quotient
+definitions well \citep{pitts_locally_2023}.
+
+We can solve this by using \textit{De Bruijn indices}, which ensure that no matter what variables we
+have in our context, we don't have any local variable names which could cause issues in terms of
+accidental shadowing. In fact, we can't perform $\alpha$-conversions anymore. In our example,
+\begin{equation*}
+  x \colon \nat, y \colon \nat \to \nat \in \Gamma \vdash (\lambda \, 0 2) \colon \nat.
+\end{equation*}
+
+However, if we were to change the context, we would need to change the index too. For example, if we
+remove the $y$, then we need to reindex the $2$ to a $1$:
+\begin{equation*}
+  x \colon \nat, \in \Gamma \vdash (\lambda \, 0 1) \colon \nat,
+\end{equation*}
+We have lost weakening-invariance \citep{aydemir_engineering_2008}. This leaves a demand for a
+syntax which solves both the issue of quotient definitions and weakening-invariance.
+
+\subsection{Locally Nameless Representation}
+Using \textit{locally nameless representation}, we can get both purely inductive definitions
+\textit{and} weakening-invariance, fregesee variables will use variable names while bound variables will
+use indices. Our example becomes
+\begin{equation*}
+  x \colon \nat, \in \Gamma \vdash (\lambda \, 0 x) \colon \nat,
+\end{equation*}
+or with another variable in the context,
+\begin{equation*}
+  x \colon \nat, y \colon \nat \to \nat \in \Gamma \vdash (\lambda \, 0 x) \colon \nat.
+\end{equation*}
+
+As part of using locally nameless terms, common operations and properties (called `infrastructure'
+by \citet{aydemir_engineering_2008}) need to be defined for the target language. A recent article by
+Andrew \citet{pitts_locally_2023} uses Agda to explore an abstraction of this representation called
+locally nameless sets, and shows that this infrastructure can be defined in a syntax-agnostic way.
+The drawback of using this representation is that we need to define infrastructure before we can
+prove interesting properties (such as progress). But usually, this drawback is too small to
+outweight the benefits.
+
+The two fundamental operations on locally nameless terms is \textit{term opening} and \textit{term
+closing}. Term opening will replace all occurences of a bound variable with a free variable, written
+$[i \to x] M$, for example,
+\begin{equation*}
+  [0 \to y] (\lambda \, 0 q (\lambda \, 1 t 0)) \mapsto (\lambda \, y q (\lambda \, y t 0)).
+\end{equation*}
+Every occurence of the bound variable $0$ is replaced with the free variable $y$. Note how after we
+go under a new $\lambda$-abstraction, we have to increment this index to $1$ to keep referring to
+the same bound variable.
+
+Closing works similarly, and is the inverse of opening (i.e. it converts free variables to a given
+index). For example, here we close the term $(\lambda \, y q (\lambda \, y t 0))$ at index $0$ with
+the free variable $y$:
+\begin{equation*}
+  [0 \rightarrow y] (\lambda \, y q (\lambda \, y t 0)) \mapsto (\lambda \, 0 q (\lambda \, 1 t 0)).
+\end{equation*}
+
+A term is said to be \textit{locally closed} up to level $i$ if it remains unchanged after opening
+it at index $i$ with an arbitrary string. We write (for some $i \in \nat$ and term $M$),
+\begin{equation}
+  \label{equation:local_closure}
+  i \succ M \triangleq \forall j \geq i, \; \cof a , \; [j \to a] M = M.  
+\end{equation}
+If it is locally closed at level $0$, we simply call it \textit{locally closed}. See
+\ref{appendix:local_closure_proofs} for the Agda development.
+
+A specific definition of local closure for the STLC is given in \citet{chargueraud_locally_2012} or
+section \ref{appendix:opening_and_closing}.
