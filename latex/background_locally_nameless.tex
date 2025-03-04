@@ -6,31 +6,33 @@ Consider this expression,
   x \colon \nat \in \Gamma \vdash (\lambda \, y \colon \nat \to \nat. y x) \colon \nat.
 \end{equation*}
 
-Suppose we move this expression into a context where we already have a bound
-$y$.
+Suppose we move this expression into a context where $y$ is already defined,
 \begin{equation*}
   x \colon \nat, y \colon \nat \to \nat \in \Gamma \vdash (\lambda \, y \colon \nat \to \nat. y x) \colon \nat.
 \end{equation*}
 
-It's unclear whether we are referring to the local $y$ or the $y$ in the context. We can use an
-$\alpha$-conversion and resolve this issue, applying $y \mapsto_{\alpha} f$ to the inner expression,
+It's unclear whether we are referring to the bound $y$ or the free $y$. One way to resolve this is
+to always choose the most recently declared variable. This is called \textit{shadowing}, since the
+older definitions are `in the shadow of' the most recent occurence \citep{wadler_programming_2022}.
+Another approach is to use an $\alpha$-conversion. Here we can apply $y \mapsto_{\alpha} f$ to the
+$\lambda$-abstraction,
 \begin{equation*}
-  x \colon \nat, y \colon \nat \to \nat \in \Gamma \vdash \lambda \, f. f x \colon \nat,
+  x \colon \nat, y \colon \nat \to \nat \in \Gamma \vdash (\lambda \, f. f x) \colon \nat,
 \end{equation*}
 which solves the problem. We can add further assumptions to our context without affecting the
-semantics of the expression (for example, adding $k \colon \nat$ to $\Gamma$ doesn't cause any
-problems) \cite{pitts_locally_2023}. I shall call this proeprty weakening-invariance (taken from
-proof theory, where extra assumptions make a theorem weaker \citep{buss_handbook_1998}).
+semantics of the expression \citep{pitts_locally_2023} (for example, adding $k \colon \nat$ to
+$\Gamma$ doesn't cause any name conflicts). I shall call this property weakening-invariance (taken
+from proof theory, where extra assumptions make a theorem weaker \citep{buss_handbook_1998}).
 
 Since we have these $\alpha$-equivalent expressions, we can say that we have \textit{quotient}
-inductive definitions \citep{aydemir_engineering_2008}, so we have both an inductive definition of
-the $\lambda$-calculus, but also (infinitely) many $\alpha$-equivalence classes which induce a
-quotient set. In some proof assistants, this makes proofs difficult, as they don't handle quotient
+inductive definitions \citep{aydemir_engineering_2008}; we have both an inductive definition of the
+$\lambda$-calculus, but also (infinitely) many $\alpha$-equivalence classes which induce a quotient
+set. In some proof assistants, this makes proofs difficult, as they don't handle quotient
 definitions well \citep{pitts_locally_2023}.
 
 We can solve this by using \textit{De Bruijn indices}, which ensure variables in the context don't
-cause name conflicts and accidental shadowing with bound variables. In fact, we can't perform
-$\alpha$-conversions anymore. In our example,
+cause name conflicts and accidental shadowing with bound variables. In fact, $\alpha$-conversions
+cannot be performed anymore. In our example,
 \begin{equation*}
   x \colon \nat, y \colon \nat \to \nat \in \Gamma \vdash (\lambda \, 0 2) \colon \nat.
 \end{equation*}
@@ -38,14 +40,14 @@ $\alpha$-conversions anymore. In our example,
 However, if the context changes, the indices would need to change too. For example, if we remove the
 $y$, then we need to reindex the $2$ to a $1$:
 \begin{equation*}
-  x \colon \nat, \in \Gamma \vdash (\lambda \, 0 1) \colon \nat,
+  x \colon \nat \in \Gamma \vdash (\lambda \, 0 1) \colon \nat,
 \end{equation*}
 We have lost weakening-invariance \citep{aydemir_engineering_2008}. This leaves a demand for a
 syntax which solves both the issue of quotient definitions and weakening-invariance.
 
 \subsection{Locally Nameless Representation}
 Using \textit{locally nameless representation}, we can get both purely inductive definitions
-\textit{and} weakening-invariance, free variables use variable names while bound variables use
+\textit{and} weakening-invariance. Free variables use variable names while bound variables use
 indices. Our example becomes
 \begin{equation*}
   x \colon \nat, \in \Gamma \vdash (\lambda \, 0 x) \colon \nat,
@@ -55,49 +57,87 @@ or with another variable in the context,
   x \colon \nat, y \colon \nat \to \nat \in \Gamma \vdash (\lambda \, 0 x) \colon \nat.
 \end{equation*}
 
-\paragraph*{Infrastructure.} As part of using locally nameless terms, common operations and properties (called `infrastructure'
+As part of using locally nameless terms, common operations and properties (called `infrastructure'
 by \citet{aydemir_engineering_2008}) need to be defined for the target language. A recent article by
 Andrew \citet{pitts_locally_2023} uses Agda to explore an abstraction of this representation called
 locally nameless sets, and shows that this infrastructure can be defined in a syntax-agnostic way.
-The drawback of using this representation is that we need to define infrastructure and prove some
-properties of the syntax before we can prove interesting properties of the metalangauge (such as
-progress). But usually, this drawback is too small to outweight the benefits.
 
-The two fundamental operations on locally nameless terms are \textit{term opening} and \textit{term
-closing}. Term opening will replace all occurences of a bound variable with a free variable, written
-$[i \to x] M$, for example,
+The drawback of using this representation is that we need to define infrastructure and prove some
+properties of the syntax before we can prove the properties of the metalangauge. But usually, this
+drawback is too small to outweight the benefits.
+
+\paragraph*{Opening and closing.} Two fundamental operations on locally nameless terms are
+\textit{term opening} and \textit{term closing} \citep{pitts_locally_2023}. Opening will replace all
+occurrences of a bound variable with a free variable, written $[i \to x] L$ for some De Bruijn
+index $i$, name $x$, and term $L$. For example,
 \begin{equation*}
-  [0 \to y] (0 q (\lambda \, 1 t 0)) \mapsto (y q (\lambda \, y t 0)).
+  [0 \to y] (0 q (\lambda \, 1 t 0)) \mapsto y q (\lambda \, y t 0).
 \end{equation*}
 Every occurence of the bound variable $0$ is replaced with the free variable $y$. Note how after we
 go under a new $\lambda$-abstraction, we have to increment this index to $1$ to keep referring to
 the same bound variable.
 
-Closing works similarly, and is the inverse of opening (i.e. it converts free variables to a given
-index). For example,
+Closing works similarly, and is the inverse of opening; it replaces all occurrences of a free
+variable to a given index. For example,
 \begin{equation*}
-  [0 \leftarrow y] (y q (\lambda \, y t 0)) \mapsto (0 q (\lambda \, 1 t 0)).
+  [0 \leftarrow y] (y q (\lambda \, y t 0)) \mapsto 0 q (\lambda \, 1 t 0).
 \end{equation*}
 
-A term is said to be \textit{locally closed} up to level $i$ if it remains unchanged after opening
-it at index $i$ with an arbitrary string. We write (for some $i \in \nat$ and term $M$),
+\paragraph*{Local closure.} A term is said to be \textit{locally closed} up to level $i$ if it
+remains unchanged after opening it at index $i$ with an arbitrary string. For some $i \in \nat$ and
+term $L$, we write that $L$ is locally closed at level $i$ as $i \succ L$. Formally,
 \begin{equation}
   \label{equation:local_closure}
-  i \succ M \triangleq \forall j \geq i, \; \cof a , \; [j \to a] M = M.  
+  i \succ L \triangleq \forall j \geq i, \; \cof a , \; [j \to a] L = L.
 \end{equation}
 If it is locally closed at level $0$, we simply call it \textit{locally closed}. Local closure is
 defined for System F in section \ref{chapter4:local_closure}.
 
-\paragraph*{Induction Principle.} For locally nameless terms, the induction principle is similar to
-how it is for named terms. We will demonstrate it for the STLC. For a property $P$, we need to prove
-it for the base cases: free variables and bound variables. The application case is pretty simple
-since the principle of induction allows us to receive a proof. But for the abstraction case, to
-prove $P(\lambda L)$ for some term $L$, we need to use cofinite quantification to open the term with
-some string $x$. This is because [EXPLANATION] \citep[section~4.4]{chargueraud_locally_2012}. The
-induction principle for the application and abstraction case can be represented using inference
-rules. For some lambda terms $L$ and $M$,
-
+\paragraph*{Induction Principle.} Often with locally nameless terms, the induction principle is
+similar to how it is for named terms in all cases but the $\lambda$-abstraction case. This is
+because it is often defined using cofinite quantification and opening. As an example, take type
+judgements for the STLC, defined in appendix \ref{appendix:type_judgements}. In regular notation,
+these are:
 \begin{equation}
-	\inferrule{P(L) \\ P(M)}{P(LM)} \quad
-	\inferrule{\cof x, P([0 \to x] L)}{P(\lambda \, L)}.
+\begin{gathered}
+  \inferrule
+    { }
+    {\Gamma \vdash \texttt{‵zero} \colon \nat}
+    \; (\vdash\texttt{zero})
+  \quad
+  \inferrule{x \colon A \in \Gamma}
+    {\Gamma \vdash x \colon A}
+    \; (\vdash\text{free})
+  \quad
+  \inferrule
+    {\cof x , \; (\Gamma , \, x \colon A \vdash [0 \to x] L \colon B)}
+    {\Gamma \vdash \lambda \, L \colon A \to B}
+    \; (\vdash \lambda)
+  \\
+  \inferrule
+    {\Gamma \vdash L \colon (A \to B) \\ \Gamma \vdash M \colon A}
+    {\Gamma \vdash LM \colon B}
+    \; (\vdash\text{app})
+  \quad
+  \quad
+  \inferrule
+    {\Gamma \vdash L \colon \nat}
+    {\Gamma \vdash \texttt{‵suc} \, L \colon \nat}
+    \; (\vdash\texttt{suc})
+\end{gathered}
 \end{equation}
+
+The only difference to the named representation is the rule for $\lambda$-abstractions
+($\vdash\lambda$). Like with the named representation, we intend to prove that the term $L$ is
+well-typed with a free variable $x$ added to the context in place of the bound variable
+\citep[chapter~Lambda]{wadler_programming_2022}. However, to replace the bound varaible $0$ with
+$x$, we first need to open the term $L$ with the name $x$ at index $0$. Furthermore, we are
+replacing the bound $0$ with an arbitrary name $x$, so to make sure that the choice of $x$ is
+arbitrary, we need cofinite quantification (we cannot use $\forall$ because otherwise we would run
+into unintentional shadowing of free variables in the context).
+
+So, when proving the $\lambda$-abstraction case, the induction principle would allow us to assume
+that the term $L$ is well-typed when, for cofinite $x$, the term $L$ is opened $[0 \to x] L$. Or in
+other words, given a property $P$ over type judgements, we need to prove that $\cof x , \; P(\Gamma
+, \, x \colon A \vdash [0 \to x] L \colon B) \implies P(\Gamma \vdash \lambda \, L \colon A \to B)$.
+An example of this is given in chapter \ref{chapter3:stlc_sub_and_eval}.

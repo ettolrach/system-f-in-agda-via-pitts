@@ -9,11 +9,11 @@ goal, but is why we're still interested in the $\lambda$-calculus.
 
 The $\lambda$-calculus includes three reductions. $\alpha$-conversion is the renaming of variables
 such that the semantics of the program are not changed; terms which are semantically identical but
-use different variable names are called $\alpha$-equivalent, which forms an equivalence relation
-\citep{pierce_types_2002}.
+use different variable names are called $\alpha$-equivalent, and as the name would imply, this is an
+equivalence relation \citep{pierce_types_2002}.
 
 $\beta$-reduction describes function application. The evaluation rules for the $\lambda$-calculus
-are as follows \citep{wadler_programming_2022}.
+are as follows \citep{wadler_programming_2022} (where $N[M/x]$ means replacing the term $M$ for any occurrence of $x$ in the term $N$).
 
 \begin{equation}
 \label{equation:untyped_beta_rules}
@@ -25,8 +25,8 @@ are as follows \citep{wadler_programming_2022}.
 \end{split}
 \end{equation}
 
-Finally, we have $\eta$-reduction; for all $\lambda$-abstractions $\lambda \, x. L x$, we have that
-$\lambda \, x. f x \mapsto_{\eta} f$.
+The last reduction is $\eta$-reduction; for all $\lambda$-abstractions $\lambda \, x. L x$, we have
+that $\lambda \, x. f x \mapsto_{\eta} f$.
 
 If further $\beta$-reducations do not simplify a term, we say that it is in its \textit{normal
 form}. We shall represent an arbitrary number of successive $\beta$-reductions using the Kleene star
@@ -35,9 +35,10 @@ $\beta$-reduces to two terms $M$ and $N$, then there exists a common term $L'$ w
 $N$ eventually $\beta$-reduce to \citep{church_properties_1936}. This will be an important
 consideration when choosing an evaluation strategy (see section \ref{background:evaluation_strategy}.)
 
-Notably, some terms may not have a normal form. A well-known example is \textit{little omega} $\omega
-\triangleq \lambda \, x. (x x)$ and \textit{omega} (sometimes called the \textit{omega combinator})
-$\Omega \, \triangleq \, \omega \omega)$. $\Omega$ when applied to itself doesn't reduce any further.
+Notably, some terms may not have a normal form. A well-known example is \textit{little omega}
+$\omega \triangleq \lambda \, x. (x x)$ and \textit{omega} (sometimes called the \textit{omega
+combinator}) $\Omega \, \triangleq \, \omega \omega$. When $\Omega$ is applied to itself, it doesn't
+reduce any further.
 
 \begin{equation*}
   (\lambda \, x. (x x)) (\lambda \, x. (x x)) \quad
@@ -46,23 +47,23 @@ $\Omega \, \triangleq \, \omega \omega)$. $\Omega$ when applied to itself doesn'
 
 The \textit{y-combinator} $\mathcal{Y} \triangleq (\lambda \, f. (\lambda \, x. f (x x )) (\lambda
 \, x. f (xx)))$ allows for recursion. It will $\beta$-reduce to the argument applied to itself,
-$\mathcal{Y} f \mapsto_{\beta^{\star}} f (\mathcal{Y} f)$.
+$\mathcal{Y} L \mapsto_{\beta^{\star}} L (\mathcal{Y} L)$.
 
 We say that these terms \textit{do not have a normal form}.
 
 \subsection{The simply-typed lambda-calculus}
-The simply-typed $\lambda$-calculus (STLC for short and sometimes given the symbol
-$\lambda^{\rightarrow}$) is an extension of the untyped $\lambda$-calculus developed by Alonzo
-\citet{church_formulation_1940}. It requires each term to have a \textit{type}. In the STLC, terms
-which do not have a normal form cannot be given a type, thus, all expressions will eventually reduce
-to an irreducible expression---their normal form. This is also called \textit{strong normalisation}
+The simply-typed $\lambda$-calculus (STLC, sometimes given the symbol $\lambda^{\rightarrow}$) is an
+extension of the untyped $\lambda$-calculus developed by Alonzo \citet{church_formulation_1940}. It
+requires each term to have a \textit{type}. In the STLC, terms which do not have a normal form
+cannot be given a type, thus, all expressions will eventually reduce to an irreducible
+expression---their normal form. This is also called \textit{strong normalisation}
 \citep{pierce_types_2002}. However, this means we can longer represent all of the terms of the
-untyped $\lambda$-calculus (such as $\Omega$), thus, the STLC is not Turing-complete.
+untyped $\lambda$-calculus (such as $\Omega$), thus, Turing-completeness is lost.
 
 In the STLC, some base types need to be chosen. These are indeterminates which are not given
 definitions. While Church originally used the symbols $\iota$ and $\sigma$ for base types, we will
-use $\nat$, for reasons given in section \ref{background:evaluation_strategy}. Without base types, our
-computational model becomes \textit{degenerate} (that is, there are no terms)
+use $\nat$, for reasons given in section \ref{background:evaluation_strategy}. Without base types,
+our computational model becomes \textit{degenerate} (that is, there are no terms)
 \citep{pierce_types_2002}. As well as the base type, we also have a function (or arrow) type. For
 some types $\tau$ and $\sigma$, writing $\tau \to \sigma$ means that this term can be applied using
 a term of type $\tau$ and result in a type $\sigma$.
@@ -70,8 +71,8 @@ a term of type $\tau$ and result in a type $\sigma$.
 We will also need a \textit{type context} (also called \textit{type environment}), which will
 usually be given the symbol $\Gamma$ or $\Delta$ and is separated using $\vdash$. This is a partial
 map from variables to types $\Gamma \colon V \to T$. Types are written next to terms using a colon.
-If our context contained the mapping $x \colon \nat$, then we could write a function which applies
-its argument to $x$ like so,
+For example, if the context contained the mapping $x \colon \nat$, then we could write a function
+which applies $x$ to its argument;
 \begin{equation*}
   x \colon \nat \in \Gamma \vdash (\lambda \, f \colon \nat \to \nat . f x) \colon \nat.
 \end{equation*}
@@ -97,12 +98,12 @@ where
 }
 \end{minted}
 
-Since we used a \textit{type parameter} in the function's type signature, in this case called
-\texttt{T}, we can use any appropriate function which has the type signature $\texttt{T} \to
-\texttt{T}$. One such function is \texttt{u64::isqrt}, the (flooring) square root function. If this
-function was invoked with \texttt{twice(u64::isqrt, 81)}, its output would be \texttt{3}. In this
-case, the compiler can infer that the type for \texttt{T} should be \texttt{u64}, so
-we don't need to specify it manually.
+Since we used a \textit{type parameter} in the function's type signature (here \texttt{T}), we can
+use any appropriate function which has the type signature $\texttt{T} \to \texttt{T}$. One such
+function is \texttt{u64::isqrt}, the (flooring) square root function. If this function was invoked
+with \texttt{twice(u64::isqrt, 81)}, its output would be \texttt{3}. In this case, the compiler can
+infer that the type for \texttt{T} should be \texttt{u64}, so we don't need to specify it
+explicitly.
 
 System F is the STLC equipped with \textit{polymorphic types}, another term for type parameters. It
 was independently discovered by Jean-Yves \citet{girard_interpretation_1972} and John

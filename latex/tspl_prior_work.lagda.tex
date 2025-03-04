@@ -1,10 +1,15 @@
-\section{Functions on lists and creating strings}
-\label{appendix:list_functions}
+As mentioned above, this work was previously submitted to the course \textit{Types and Semantics of
+Programming Languages}. Since the code is still required for chapter
+\ref{chapter3:stlc_sub_and_eval}, it's included here.
+
 \begin{code}
 module tspl_prior_work where
   open import plfa_adaptions
   -- Import cofinite quantification.
   open import cofinite using (Cof-syntax; Иe₁; Иe₂; И⟨_,_⟩) 
+
+  -- Standard library imports omitted (available in the full
+  -- source file).
 \end{code}
 \begin{comment}
   \begin{code}
@@ -69,6 +74,9 @@ module tspl_prior_work where
   infix  9 bound_
   \end{code}
 \end{comment}
+
+\section{Functions on lists and creating strings}
+\label{appendix:list_functions}
 \begin{code}
   All≤⇒<⇒All< : ∀ {n m : ℕ} (xs : List ℕ)
     → n < m
@@ -112,7 +120,7 @@ We will use \texttt{List Char} rather than the built-in \texttt{String} type, si
 reason with lists. The \texttt{String} type is opaque in Agda, and reasoning about length and other
 properties of \texttt{String} is more difficult than if we just used \texttt{List Char}. To generate
 arbitrary strings, we'll provide functions for \texttt{List A} for some set \texttt{A} and then use
-the specific where \texttt{A} is \texttt{Char}. The `toList` function for `String` (which I have
+the specific where \texttt{A} is \texttt{Char}. The `toList' function for `String' (which I have
 renamed to \texttt{⟪\_⟫}) can be used to convert from a \texttt{String}.
 
 \begin{code}
@@ -162,7 +170,6 @@ character longer. Now to prove that this function is correct:
 
 \section{Syntax of terms}
 \label{appendix:stlc_terms}
-Since we will need to have quite a few proofs on local closure, we should define our terms.
 \begin{code}
   data Term : Set where
     free_  : List Char → Term
@@ -834,23 +841,8 @@ variables become free, we don't have a typing judgement for bound variables.
   ≡-with-⊢ ⊢t refl = ⊢t
 \end{code}
 
-As a consequence of these type judgements, only locally closed terms are well-typed.
-\begin{code}
-  ⊢⇒lc : ∀ {Γ t A} → Γ ⊢ t ⦂ A → LocallyClosed t
-  ⊢⇒lc {Γ} {t} {A} (⊢free Γ∋A) = free-lc
-  ⊢⇒lc {Γ} {ƛ t} {A} (⊢ƛ И⟨ Иe₁ ,  Иe₂ ⟩) j =
-    И⟨ Иe₁ , (λ a {a∉} → cong ƛ_
-      (open-rec-lc-lemma
-        (λ ())
-        (open-rec-lc (⊢⇒lc (Иe₂ a {a∉}))))) ⟩
-  ⊢⇒lc {Γ} {t₁ · t₂} (⊢· ⊢A⇒B ⊢A) _ =
-    И⟨ domain Γ , (λ _ → cong₂ _·_
-      (open-rec-lc (⊢⇒lc ⊢A⇒B)) (open-rec-lc (⊢⇒lc ⊢A))) ⟩
-  ⊢⇒lc {Γ} {‵zero} ⊢zero = ‵zero-≻
-  ⊢⇒lc {Γ} {‵suc t} (⊢suc ⊢t) j =
-    И⟨ domain Γ , (λ a {a∉} →
-      cong ‵suc_ (open-rec-lc (⊢⇒lc ⊢t))) ⟩
-\end{code}
+As a consequence of these type judgements, only locally closed terms are well-typed (see the main
+chapter).
 
 Using the type judgements, we can show that these two terms are well-typed. Using more familiar
 notation, we would write this as $x \colon \nat \vdash (\lambda \colon \nat \to \nat. 0x) \colon \nat$

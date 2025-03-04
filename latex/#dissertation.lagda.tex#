@@ -328,18 +328,18 @@ only. This paper will use the locally nameless representation, which hasn't been
 in Agda before.
 
 I have previously submitted some work on STLC using locally nameless representation for a course
-called \textit{Types and Semantics of Programming Languages} (TSPL). I have presented my prior work
-in appendix \ref{appendix:tspl}. There are some new additions to this work which are presented in
-the next chapter.
+called \textit{Types and Semantics of Programming Languages} (TSPL). I have presented my prior work in
+appendix \ref{appendix:tspl}. There are some new additions to this work which are presented in the
+next chapter.
 
 \chapter{Substitution and Evaluation in STLC}
 \label{chapter3:stlc_sub_and_eval}
-The remaining properties of STLC which were not proven in \ref{appendix:tspl} include some
-substitution properties and creating an evaluator. Since it is a necessary prelude to System F, this
-new work is presented here. As explained in section \ref{background:evaluation_strategy}, one
-evaluation strategy is weak-head reduction, which is also used by
-\citet[chapter~Properties]{wadler_programming_2022} and \citet[section~5]{chargueraud_locally_2012}.
-Thus, evaluation will be restricted to closed terms only (those without free variables).
+The remaining properties of STLC, including creating an evaluator, were missing from my submission
+to TSPL. Since it is a necessary prelude to System F, this new work is presented here. As explained
+in section \ref{background:evaluation_strategy}, one evaluation strategy is weak-head reduction. We
+follow the methods presented in \citet[chapter~Properties]{wadler_programming_2022} and
+\citet[section~5]{chargueraud_locally_2012}, as they have also used weak-head reduction. Thus,
+evaluation will be restricted to closed terms only (those without free variables).
 \begin{code}
 module chapter3 where
   open import plfa_adaptions
@@ -347,11 +347,56 @@ module chapter3 where
   open import cofinite
 \end{code}
 
-To avoid name conflicts with Agda's reserved keywords, the syntax of the metalangauge is different
-to how it may be commonly written. We will use substitutes, like ƛ for $\lambda$, or $\cdot$ for
-function application (which is usually left implicit).
+The syntax that the Agda formalisation uses and the syntax that is commonly used may be different.
+For example, usually, we would simply write $\lambda x. x$ for the identity function. But because
+$\lambda$ is a reserved keyword in Agda, we need to use a different symbol. Thus, we will use
+substitutes, like ƛ for $\lambda$, or $\cdot$ for function application (which is usually left
+implicit). For more information, please refer to \citet{wadler_programming_2022}.
 
 \section{Substitution}
+The typing rules are defined in appendix \ref{appendix:type_judgements}. In regular notation,
+these are:
+\begin{equation}
+\begin{gathered}
+  \inferrule
+    { }
+    {\Gamma \vdash \texttt{‵zero} \colon \nat}
+    \; (\vdash\texttt{zero})
+  \quad
+  \inferrule{x \colon A \in \Gamma}
+    {\Gamma \vdash x \colon A}
+    \; (\vdash\text{free})
+  \quad
+  \inferrule
+    {\cof x , \; (\Gamma , \, x \colon A \vdash [0 \to x] L \colon B)}
+    {\Gamma \vdash \lambda \, L \colon A \to B}
+    \; (\vdash \lambda)
+  \\
+  \inferrule
+    {\Gamma \vdash L \colon (A \to B) \\ \Gamma \vdash M \colon A}
+    {\Gamma \vdash LM \colon B}
+    \; (\vdash\text{app})
+  \quad
+  \quad
+  \inferrule
+    {\Gamma \vdash L \colon \nat}
+    {\Gamma \vdash \texttt{‵suc} \, L \colon \nat}
+    \; (\vdash\texttt{suc})
+\end{gathered}
+\end{equation}
+
+Most of the cases are the same as they are in the named representation. The only interesting rule is
+the one for $\lambda$-abstractions ($\vdash\lambda$). Like with the named representation, we intend
+to prove that the term $L$ is well-typed with a free variable $x$ added to the context in place of
+the bound variable \citep[chapter~Lambda]{wadler_programming_2022}. However, to replace the bound
+varaible $0$ with $x$, we first need to open the term $L$ with the name $x$ at index $0$.
+Furthermore, we are replacing the bound $0$ with an arbitrary name $x$, so to make sure that the
+choice of $x$ is arbitrary, we need cofinite quantification (we cannot use $\forall$ because
+otherwise we would run into unintentional shadowing of free variables in the context).
+
+So, when proving the $\lambda$-abstraction case, the induction principle would allow us to assume
+that the term $L$ is well-typed when, for cofinite $x$, the term $L$ is opened $[0 \to x] L$.
+
 A good example of the induction principle for cofinite quantification is the following proof, that
 all well-typed expressions are locally closed using induction on the type judgement.
 
@@ -362,7 +407,7 @@ all well-typed expressions are locally closed using induction on the type judgem
     И⟨ Иe₁ , (λ a {a∉} → cong ƛ_
       (open-rec-lc-lemma
         (λ ())
-        (open-rec-lc (⊢⇒lc (Иe₂ a {a∉}))))) ⟩
+        (open-rec-lc (⊢⇒lc (Иe₂ {!!} {a∉}))))) ⟩
   ⊢⇒lc {Γ} {t₁ · t₂} (⊢· ⊢A⇒B ⊢A) _ =
     И⟨ domain Γ , (λ _ → cong₂ _·_
       (open-rec-lc (⊢⇒lc ⊢A⇒B)) (open-rec-lc (⊢⇒lc ⊢A))) ⟩
@@ -372,7 +417,8 @@ all well-typed expressions are locally closed using induction on the type judgem
       cong ‵suc_ (open-rec-lc (⊢⇒lc ⊢t))) ⟩
 \end{code}
 
-Recall the definition of local closure (see equation \ref{equation:local_closure}). In Agda,
+Recall the definition of local closure (see equation \ref{equation:local_closure}). In Agda, this is
+written like so.
 \begin{minted}{agda}
   _≻_ : ℕ → Term → Set
   i ≻ t = (j : ℕ) ⦃ _ : j ≥ i ⦄ → И a , ([ j —→ a ] t ≡ t)
@@ -383,12 +429,9 @@ $t$ unchanged. This is why each case includes the extra \texttt{j} argument.
 For all except the $\lambda$-abstraction case, the inductive hypothesis is straight-forward. For
 $\lambda$-abstractions, we are given a list \texttt{Иe₁} and a property \texttt{Иe₂} which states
 that $(\Gamma , \, x \colon A \vdash [0 \to x] t \colon B)$ for some \texttt{List Char} $x \not \in
-\texttt{Иe₁}$. We need to provide a proof that $\lambda \, t$ is locally closed. By including the
-argument \texttt{j}, we now only need to show that $\cof a, \; (\lambda \, ([j + 1 \to a] t) =
-\lambda \, t)$. The inductive hypothesis allows us to call \texttt{⊢⇒lc} on \texttt{Иe₂}, or in
-other words, it implies that for cofinite $a$, the term $[0 \to a] t$ is locally closed. After
-applying the inductive hypothesis, the proof is a consequence of a previous lemma
-\texttt{open-rec-lc} which was proven in appendix \ref{appendix:tspl}.
+\texttt{Иe₁}$. We need to provide a proof that $\cof a, \; (\lambda \, ([j + 1 \to a] t) = \lambda
+\, t)$. The inductive hypothesis allows us to call \texttt{⊢⇒lc} on \texttt{Иe₂}, or in other words, it implies that. This is a consequence of a previous lemma \texttt{open-rec-lc} which was proven in appendix
+\ref{appendix:tspl}.
 
 Now we need show that substituting preserves types. As mentioned, we restrict ourselves to only
 closed terms for substitution.
@@ -633,8 +676,8 @@ And preservation, that types are preserved when reducing.
 
 Since STLC is not Turing complete \citep{church_formulation_1940}, we don't need to worry about
 programs which don't terminate. Still, the evaluation function needs to receive a timeout argument,
-as otherwise, Agda cannot determine that it would terminate. Thus, we define a record which limits
-evaluation to a certain number of reduction steps. Then we can use the preserve and progress
+as it would otherwise not be guaranteed that it would terminate. Thus, we define a record which
+limits evaluation to a certain number of reduction steps. Then we can use the preserve and progress
 properties to make an \texttt{eval} function. This is the same definition as
 \citet{wadler_programming_2022} uses, so the explanation is ommitted here.
 \begin{code}
