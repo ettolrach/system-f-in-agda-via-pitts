@@ -18,8 +18,8 @@ module tspl_prior_work where
     renaming (_≟_ to _≟ℕ_)
   open import Data.Nat.Properties using (≤-refl; ≤-trans; ≤-<-trans; <-≤-trans; ≤-antisym; ≤-total;
     +-mono-≤; n≤1+n; m≤n⇒m≤1+n; suc-injective; <⇒≢; ≰⇒>; ≮⇒≥)
-  open import Data.String using (String; fromList) renaming (_≟_ to _≟str_; _++_ to _++str_;
-    length to str-length; toList to ⟪_⟫)
+  open import Data.String using (String; fromList; toList) renaming (_≟_ to _≟str_;
+    _++_ to _++str_; length to str-length)
   open import Data.Char using (Char)
   open import Data.Char.Properties using () renaming (_≟_ to _≟char_)
   
@@ -120,8 +120,8 @@ We will use \texttt{List Char} rather than the built-in \texttt{String} type, si
 reason with lists. The \texttt{String} type is opaque in Agda, and reasoning about length and other
 properties of \texttt{String} is more difficult than if we just used \texttt{List Char}. To generate
 arbitrary strings, we'll provide functions for \texttt{List A} for some set \texttt{A} and then use
-the specific where \texttt{A} is \texttt{Char}. The `toList' function for `String' (which I have
-renamed to \texttt{⟪\_⟫}) can be used to convert from a \texttt{String}.
+the specific where \texttt{A} is \texttt{Char}. The `toList' function for `String' can be used to
+convert from a \texttt{String}.
 
 \begin{code}
   new-list : ∀ {A : Set} → A → List (List A) → List A
@@ -779,11 +779,11 @@ inference to find the required evidence itself.
   H′ = H refl
 
   T′ : ∀ {Γ x y A B}
-    → {x≢y : False (x ≟lchar y)}
+    → ⦃ x≢y : False (x ≟lchar y) ⦄
     → Γ ∋ x ⦂ A
       ------------------
     → Γ , y ⦂ B ∋ x ⦂ A
-  T′ {x≢y = x≢y} x = T (toWitnessFalse x≢y) x
+  T′ ⦃ x≢y = x≢y ⦄ x = T (toWitnessFalse x≢y) x
 \end{code}
 
 We need to have a function to get all the variables in the context.
@@ -851,8 +851,8 @@ and $\vdash (\lambda \colon \nat. \lambda \colon \nat \to \nat. 01) \colon \nat 
 (\lambda a \colon \nat \to \nat. ax) \colon \nat$ and $\vdash (\lambda x \colon \nat. \lambda
 f \colon \nat \to \nat. fx) \colon \nat \to (\nat \to \nat) \to \nat$.
 \begin{code}
-  _ : (∅ , ⟪ "x" ⟫ ⦂ ‵ℕ) ⊢ (ƛ (bound 0)) · (free ⟪ "x" ⟫) ⦂ ‵ℕ
-  _ = ⊢· (⊢ƛ И⟨ ⟪ "x" ⟫ ∷ [] , (λ a → ⊢free H′) ⟩) (⊢free H′)
+  _ : (∅ , (toList "x") ⦂ ‵ℕ) ⊢ (ƛ (bound 0)) · (free (toList "x")) ⦂ ‵ℕ
+  _ = ⊢· (⊢ƛ И⟨ (toList "x") ∷ [] , (λ a → ⊢free H′) ⟩) (⊢free H′)
 
   ex-for-all-contexts : ∀ {Γ} → Γ ⊢ ƛ ƛ (bound 0) · (bound 1) ⦂ (‵ℕ ⇒ (‵ℕ ⇒ ‵ℕ) ⇒ ‵ℕ)
   ex-for-all-contexts {Γ} = ⊢ƛ (

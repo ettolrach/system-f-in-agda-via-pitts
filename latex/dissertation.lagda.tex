@@ -235,8 +235,8 @@ open import Data.Nat using (ℕ; zero; suc; _<_; _≥_; _≤_; _≤?_; _<?_; z�
   renaming (_≟_ to _≟ℕ_)
 open import Data.Nat.Properties using (≤-refl; ≤-trans; ≤-<-trans; <-≤-trans; ≤-antisym; ≤-total;
   +-mono-≤; n≤1+n; m≤n⇒m≤1+n; suc-injective; <⇒≢; ≰⇒>; ≮⇒≥)
-open import Data.String using (String; fromList) renaming (_≟_ to _≟str_; _++_ to _++str_;
-  length to str-length; toList to ⟪_⟫)
+open import Data.String using (String; fromList; toList) renaming (_≟_ to _≟str_;
+  _++_ to _++str_; length to str-length)
 open import Data.Char using (Char)
 open import Data.Char.Properties using () renaming (_≟_ to _≟char_)
 
@@ -351,7 +351,7 @@ To avoid name conflicts with Agda's reserved keywords, the syntax of the metalan
 to how it may be commonly written. We will use substitutes, like ƛ for $\lambda$, or $\cdot$ for
 function application (which is usually left implicit).
 
-\section{Substitution}
+\section{Substitution Preserves Types}
 A good example of the induction principle for cofinite quantification is the following proof, that
 all well-typed expressions are locally closed using induction on the type judgement.
 
@@ -508,6 +508,49 @@ prove that this substitution preserves types.
                                 (fresh-correct (fv t ++ Иe₁))
     in ≡-with-⊢ (subst ⊢u (Иe₂ x {x∉Иe₁}))
       (sym (subst-intro t u (∉fv⇒# x t (x∉fv-t))))
+\end{code}
+
+\section{Substitution Commutes}
+Here we prove a property which...
+
+None of these functions are necessary for evaluation, so we can postulate function extensionality,
+that is, for some sets $A$ and $B$ and functions $f, g \colon A \to B$, 
+\begin{equation*}
+  (\forall x \in A, \, f(x) = g(x)) \implies f = g.
+\end{equation*}
+
+This is the 4\textsuperscript{th} axiom in the elementary
+theory of the category of sets \citep{tom_leinster_rethinking_2014}. It's known that this does not
+cause an inconsistency in Agda's system of logic \citep{wadler_programming_2022}, however, since it
+needs to be postulated, we cannot call this function. So, we leave it only defined in this module.
+
+\begin{code}
+  module substitution_commutes where
+    private postulate
+      extensionality : ∀ {A B : Set} {f g : A → B}
+        → (∀ (x : A) → f x ≡ g x)
+          -----------------------
+        → f ≡ g
+
+    free-inferred : ∀ {x : List Char} → Term
+    free-inferred {x} = free x
+
+    ctx-weaken : ∀ {Γ x y A B} → x ≢ y → Γ , y ⦂ B ∋ x ⦂ A → Γ ∋ x ⦂ A
+    ctx-weaken x≢y (H refl) = contradiction refl x≢y
+    ctx-weaken x≢y (T _ ∋x) = ∋x
+
+    exts : ∀ {Γ Δ x y A B}
+      → (Γ ∋ x ⦂ A        → ∃[ L ]        (Δ ⊢ L ⦂ A))
+        ------------------------------------------------------------
+      → (Γ , y ⦂ B ∋ x ⦂ A → ∃[ L ] (Δ , y ⦂ B ⊢ L ⦂ A))
+    exts σ (H refl) = ⟨ free-inferred , (⊢free (H refl)) ⟩
+    exts σ (T x≢y x) = ⟨ proj₁ (σ x) , rename (T {!!}) (proj₂ (σ x)) ⟩
+
+    -- subst : ∀ {Γ Δ}
+    --   → (∀ {x A} → Γ ∋ x ⦂ A → Δ ⊢ A)
+    --     -----------------------
+    --   → (∀ {x A} → Γ ⊢ A → Δ ⊢ A)
+    -- subst σ (` x)          =  σ x
 \end{code}
 
 \section{Evaluation}
