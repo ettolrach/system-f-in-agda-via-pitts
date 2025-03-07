@@ -257,6 +257,7 @@ open import Data.Empty using (⊥-elim)
 
 -- Products and exists quantifier.
 open import Data.Product using (_×_; proj₁; proj₂; ∃-syntax) renaming (_,_ to ⟨_,_⟩)
+open import Data.Sum using (_⊎_; inj₁; inj₂; [_,_])
 
 -- Lists.
 open import Data.List using (List; []; _∷_; _++_; length; filter; map; foldr; head; replicate)
@@ -525,26 +526,26 @@ cause an inconsistency in Agda's system of logic \citep{wadler_programming_2022}
 needs to be postulated, we cannot call this function. So, we leave it only defined in this module.
 
 \begin{code}
-  module substitution_commutes where
-    private postulate
-      extensionality : ∀ {A B : Set} {f g : A → B}
-        → (∀ (x : A) → f x ≡ g x)
-          -----------------------
-        → f ≡ g
+  -- module substitution_commutes where
+  --   private postulate
+  --     extensionality : ∀ {A B : Set} {f g : A → B}
+  --       → (∀ (x : A) → f x ≡ g x)
+  --         -----------------------
+  --       → f ≡ g
 
-    free-inferred : ∀ {x : List Char} → Term
-    free-inferred {x} = free x
+  --   free-inferred : ∀ {x : List Char} → Term
+  --   free-inferred {x} = free x
 
-    ctx-weaken : ∀ {Γ x y A B} → x ≢ y → Γ , y ⦂ B ∋ x ⦂ A → Γ ∋ x ⦂ A
-    ctx-weaken x≢y (H refl) = contradiction refl x≢y
-    ctx-weaken x≢y (T _ ∋x) = ∋x
+  --   ctx-weaken : ∀ {Γ x y A B} → x ≢ y → Γ , y ⦂ B ∋ x ⦂ A → Γ ∋ x ⦂ A
+  --   ctx-weaken x≢y (H refl) = contradiction refl x≢y
+  --   ctx-weaken x≢y (T _ ∋x) = ∋x
 
-    exts : ∀ {Γ Δ x y A B}
-      → (Γ ∋ x ⦂ A        → ∃[ L ]        (Δ ⊢ L ⦂ A))
-        ------------------------------------------------------------
-      → (Γ , y ⦂ B ∋ x ⦂ A → ∃[ L ] (Δ , y ⦂ B ⊢ L ⦂ A))
-    exts σ (H refl) = ⟨ free-inferred , (⊢free (H refl)) ⟩
-    exts σ (T x≢y x) = ⟨ proj₁ (σ x) , rename (T {!!}) (proj₂ (σ x)) ⟩
+  --   exts : ∀ {Γ Δ x y A B}
+  --     → (Γ ∋ x ⦂ A        → ∃[ L ]        (Δ ⊢ L ⦂ A))
+  --       ------------------------------------------------------------
+  --     → (Γ , y ⦂ B ∋ x ⦂ A → ∃[ L ] (Δ , y ⦂ B ⊢ L ⦂ A))
+  --   exts σ (H refl) = ⟨ free-inferred , (⊢free (H refl)) ⟩
+  --   exts σ (T x≢y x) = ⟨ proj₁ (σ x) , rename (T {!!}) (proj₂ (σ x)) ⟩
 
     -- subst : ∀ {Γ Δ}
     --   → (∀ {x A} → Γ ∋ x ⦂ A → Δ ⊢ A)
@@ -1079,6 +1080,191 @@ The proof for \texttt{Term} is very similar and omitted here (see the source fil
     = refl
 \end{code}
 \end{comment}
+
+\section{Free variables}
+I don't think this is needed...
+\begin{code}
+  ftv-ty : Type -> List (List Char)
+  ftv-ty (t-free x) = x ∷ []
+  ftv-ty (t-bound i) = []
+  ftv-ty (A t-⇒ B) = ftv-ty A ++ ftv-ty B
+  ftv-ty (t-∀ A B) = ftv-ty A ++ ftv-ty B
+
+  ftv-tm : Term → List (List Char)
+  ftv-tm (free x) = []
+  ftv-tm (bound i) = []
+  ftv-tm (ƛ A , L) = ftv-ty A
+  ftv-tm (L · M) = ftv-tm L ++ ftv-tm M
+  ftv-tm ‵zero = []
+  ftv-tm (‵suc L) = ftv-tm L
+
+  fv-tm : Term → List (List Char)
+  fv-tm (free x) = x ∷ []
+  fv-tm (bound i) = []
+  fv-tm (ƛ A , L) = fv-tm L
+  fv-tm (L · M) = fv-tm L ++ fv-tm M
+  fv-tm ‵zero = []
+  fv-tm (‵suc L) = fv-tm L
+
+  record FreeVariables : Set where
+    constructor ⟨fv:_,ftv:_⟩
+    field
+      fv : List (List Char)
+      ftv : List (List Char)
+\end{code}
+
+\section{Substitution of Types and Terms}
+\begin{code}
+  ty-ty[_:=_]_ : List Char → Type → Type → Type
+  ty-ty[ x := T ] (t-free y) with x ≟lchar y
+  ... | yes refl = T
+  ... | no  _    = t-free y
+  ty-ty[ x := T ] (t-bound i) = t-bound i
+  ty-ty[ x := T ] (A t-⇒ B) = (ty-ty[ x := T ] A) t-⇒ (ty-ty[ x := T ] B)
+  ty-ty[ x := T ] (t-∀ A B) = t-∀ (ty-ty[ x := T ] A) (ty-ty[ x := T ] B)
+
+  ty-tm[_:=_]_ : List Char → Type → Term → Term
+  ty-tm[ x := T ] (free y) = free y
+  ty-tm[ x := T ] (bound i) = bound i
+  ty-tm[ x := T ] (ƛ A , L) = ƛ ty-ty[ x := T ] A , (ty-tm[ x := T ] L) 
+  ty-tm[ x := T ] (L · M) = (ty-tm[ x := T ] L) · (ty-tm[ x := T ] M)
+  ty-tm[ x := T ] ‵zero = ‵zero
+  ty-tm[ x := T ] (‵suc L) = ‵suc ty-tm[ x := T ] L
+
+  tm-tm[_:=_] : List Char → Term → Term → Term
+  tm-tm[ x := N ] (free y) with x ≟lchar y
+  ... | yes refl = N
+  ... | no  _    = free y
+  tm-tm[ x := N ] (bound i) = bound i
+  tm-tm[ x := N ] (ƛ A , L) = ƛ A , tm-tm[ x := N ] L
+  tm-tm[ x := N ] (L · M) = (tm-tm[ x := N ] L) · (tm-tm[ x := N ] M)
+  tm-tm[ x := N ] ‵zero = ‵zero
+  tm-tm[ x := N ] (‵suc L) = tm-tm[ x := N ] L
+\end{code}
+
+\section{Type Environments}
+\begin{code}
+  data Kind : Set where
+    ‵ℕ : Kind
+    _⇒_ : Kind → Kind → Kind
+\end{code}
+
+We define two ways of appending to an environment.  Either, we add a free variable and its type, or
+we add a free type and its kind.
+\begin{code}
+  data Context : Set where
+    ∅ : Context
+    _,fv_⦂_ : Context → List Char → Kind → Context
+    _,ftv_⦂_ : Context → List Char → Kind → Context
+\end{code}
+
+Accessing the context is done in two different ways:
+\begin{itemize}
+  \item If a free variable is required, then the accessor is the constructor \texttt{∋fv}.
+  \item If a free type variable is required, then the accessor is the constructor \texttt{∋ftv}.
+\end{itemize}
+\begin{code}
+  data _∋fv_⦂_ : Context → List Char → Kind → Set where
+    H : ∀ {Γ x y A}
+      → x ≡ y
+        --------------------
+      → (Γ ,fv x ⦂ A) ∋fv y ⦂ A
+
+    T-fv : ∀ {Γ x y A B}
+      → x ≢ y
+      → (Γ ∋fv x ⦂ A)
+        -----------------
+      → (Γ ,fv y ⦂ B) ∋fv x ⦂ A
+
+    T-ftv : ∀ {Γ x y A K}
+      → x ≢ y
+      → Γ ∋fv x ⦂ A
+        --------------------
+      → (Γ ,ftv y ⦂ K) ∋fv x ⦂ A
+
+  H′ : ∀ {Γ x A} → (Γ ,fv x ⦂ A) ∋fv x ⦂ A
+  H′ = H refl
+
+  T-fv′ : ∀ {Γ x y A B}
+    → {x≢y : False (x ≟lchar y)}
+    → Γ ∋fv x ⦂ A
+      ------------------
+    → (Γ ,fv y ⦂ B) ∋fv x ⦂ A
+  T-fv′ { x≢y = x≢y } x = T-fv (toWitnessFalse x≢y) x
+
+  T-ftv′ : ∀ {Γ x y A B}
+    → {x≢y : False (x ≟lchar y)}
+    → Γ ∋fv x ⦂ A
+      ------------------
+    → (Γ ,ftv y ⦂ B) ∋fv x ⦂ A
+  T-ftv′ { x≢y = x≢y } x = T-ftv (toWitnessFalse x≢y) x
+
+  data _∋ftv_⦂_ : Context → List Char → Kind → Set where
+    Z : ∀ {Γ x y K}
+      → x ≡ y
+        -----------------------
+      → (Γ ,ftv x ⦂ K) ∋ftv x ⦂ K
+
+    S-ftv : ∀ {Γ x y K J}
+      → x ≢ y
+      → Γ ∋ftv x ⦂ K
+        -----------------------
+      → (Γ ,ftv y ⦂ J) ∋ftv x ⦂ K
+
+    S-fv : ∀ {Γ x y K B}
+      → x ≢ y
+      → Γ ∋ftv x ⦂ K
+        ----------------
+      → (Γ ,fv y ⦂ B) ∋ftv x ⦂ K
+
+  Z′ : ∀ {Γ x A} → (Γ ,ftv x ⦂ A) ∋ftv x ⦂ A
+  Z′ = Z refl
+
+  S-ftv′ : ∀ {Γ x y A B}
+    → {x≢y : False (x ≟lchar y)}
+    → Γ ∋ftv x ⦂ A
+      ------------------
+    → (Γ ,ftv y ⦂ B) ∋ftv x ⦂ A
+  S-ftv′ { x≢y = x≢y } x = S-ftv (toWitnessFalse x≢y) x
+
+  S-fv′ : ∀ {Γ x y A B}
+    → {x≢y : False (x ≟lchar y)}
+    → Γ ∋ftv x ⦂ A
+      ------------------
+    → (Γ ,fv y ⦂ B) ∋ftv x ⦂ A
+  S-fv′ { x≢y = x≢y } x = S-fv (toWitnessFalse x≢y) x
+\end{code}
+
+We require three ways of accessing the context (and thus three constructors) for each accessor;
+\begin{itemize}
+  \item one for when the variable is at the top of the context,
+  \item one for going deeper in the context if a free variable is on the top, and
+  \item one for going deeper in the context if a free type variable is on top.
+\end{itemize}
+
+As for the STLC, we provide some convenience functions with the \texttt{′} character to find the
+relevant evidence automatically.
+
+Here are three examples of accessing the context.
+\begin{code}
+  _ : ((∅ ,fv ('x' ∷ []) ⦂ ‵ℕ) ,ftv ('T' ∷ []) ⦂ ‵ℕ) ∋ftv ('T' ∷ []) ⦂ ‵ℕ
+  _ = Z refl
+
+  _ : ((∅ ,fv ('x' ∷ []) ⦂ ‵ℕ) ,ftv ('T' ∷ []) ⦂ ‵ℕ) ∋fv ('x' ∷ []) ⦂ ‵ℕ
+  _ = T-ftv′ (H′)
+
+  _ : ((∅ ,ftv ('F' ∷ []) ⦂ (‵ℕ ⇒ ‵ℕ)) ,fv ('x' ∷ []) ⦂ ‵ℕ) ∋ftv ('F' ∷ []) ⦂ (‵ℕ ⇒ ‵ℕ)
+  _ = S-fv′ Z′
+\end{code}
+
+\begin{code}
+  domain : Context → FreeVariables
+  domain ∅ = ⟨fv: [] ,ftv: [] ⟩
+  domain (ctx ,fv x ⦂ K) = let ⟨fv: fvs ,ftv: ftvs ⟩ = domain ctx
+    in ⟨fv: x ∷ fvs ,ftv: ftvs ⟩
+  domain (ctx ,ftv x ⦂ K) = let ⟨fv: fvs ,ftv: ftvs ⟩ = domain ctx
+    in ⟨fv: fvs ,ftv: x ∷ ftvs ⟩
+\end{code}
 
 \chapter{Conclusions}
 
