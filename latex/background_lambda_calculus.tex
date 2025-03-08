@@ -17,12 +17,14 @@ are as follows \citep{wadler_programming_2022} (where $N[M/x]$ means replacing t
 
 \begin{equation}
 \label{equation:untyped_beta_rules}
-\begin{split}
-\inferrule{ }{(\lambda \, x. N)M \mapsto_{\beta} N[M/x]} \; (\beta) \quad
-\inferrule{L \mapsto_{\beta} L'}{LM \mapsto_{\beta} L'M} \; (\xi_1) \quad\\
-\inferrule{M \mapsto_{\beta} M'}{LM \mapsto_{\beta} LM'} \; (\xi_2) \quad
-\inferrule{N \mapsto_{\beta} N'}{(\lambda \, x. N) \mapsto_{\beta} (\lambda \, x. N')} \; (\zeta)
-\end{split}
+\begin{gathered}
+  \inferrule{ }{(\lambda \, x. N)M \mapsto_{\beta} N[M/x]} \; (\beta) \quad
+  \inferrule{L \mapsto_{\beta} L'}{LM \mapsto_{\beta} L'M} \; (\xi_1) \quad\\
+  \inferrule{M \mapsto_{\beta} M'}{LM \mapsto_{\beta} LM'} \; (\xi_2) \quad
+  \inferrule
+    {N \mapsto_{\beta} N'}
+    {(\lambda \, x. N) \mapsto_{\beta} (\lambda \, x. N')} \; (\zeta)
+\end{gathered}
 \end{equation}
 
 The last reduction is $\eta$-reduction; for all $\lambda$-abstractions $\lambda \, x. L x$, we have
@@ -82,7 +84,7 @@ $(\lambda \, f. \lambda \, x. fx) \colon (\nat \to \nat) \to \nat$.
 
 In the STLC, we can't give a type to little omega, since we can't give a type to both the argument
 and the argument applied to itself ($(\lambda \, x  \colon ? . x x) \colon ??$). The typing rules for
-STLC are given in section \ref{appendix:type_judgements}.
+STLC are given in section \ref{section:background_locally_nameless} (equation \ref{equation:stlc_type_judgements}).
 
 \subsection{System F.}
 System F has been the formal background to what many modern programming

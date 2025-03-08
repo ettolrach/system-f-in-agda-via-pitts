@@ -1,0 +1,32 @@
+The idea of reducible expressions, called a \textit{redex}, was introduced by Alonzo Church
+\cite[p.~56]{pierce_types_2002}. We refer to any expression of the form $(\lambda \, x. M) N$ as a
+redex, since we can perform a $\beta$-reduction (see equation \ref{equation:untyped_beta_rules}).
+
+There are several ways of evaluating the $\lambda$-calculus. One important decision is whether to
+treat $\lambda$-abstractions as values, or to reduce these if they are a redex.
+
+When evaluating, we need to consider some terms to be \textit{values}. These cannot be reduced any
+further. One method is to consider $\lambda$-abstractions to be values and to only evaluate
+\textit{closed} terms, that is, terms without any free variables. This is called weak-head
+reduction, and the values are called weak-head normal forms \citep{wadler_programming_2022}. This
+method is also used by popular programming languages such as Haskell \citep{hutchison_sharing_2005}.
+The definition of $\lambda$-calculus as Church first described it uses what is nowadays referred to
+as \textit{full normalisation} \citep{wadler_programming_2022}. The reduction rule which is absent
+in weak-head reduction is the $\zeta$ rule (see equation \ref{equation:untyped_beta_rules}), also
+called \textit{reducing under a $\lambda$-abstraction}.
+
+Using weak-head reduction, since evaluation stops at $\lambda$-abstractions, the Church-Rosser
+property no longer applies (and, in fact, the system is no longer Turing complete). One of the early
+explorations of weak-head reduction was made by \citet{cagman_combinatory_1998}, comparing it to
+combinatory logic. They presented the necessity of another reduction rule which dictates when one
+can reduce under a $\lambda$-abstraction, which restores the Church-Rosser property
+\citep{hutchison_sharing_2005}.
+
+However, another, simpler, method is to introduce primitives \citep{wadler_programming_2022}. These
+primitives are a small subset of Dana Scott and Gordon Plotkin's Programming Computable Functions
+(PCF) \citep{plotkin_lcf_1977}; we introduce a value called \texttt{‵zero} of type $\nat$ and a
+function \texttt{‵suc} of type $\nat \to \nat$ (since these are modelled after the naturals, we use
+the base type $\nat$). Further description is in section \ref{appendix:stlc_terms}.
+
+Weak-head reduction was used by \citet{chargueraud_locally_2012} and
+\citet[chapter~Lambda]{wadler_programming_2022}, so we choose to follow the same approach here.
