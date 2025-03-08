@@ -784,7 +784,8 @@ of code, it is omitted. But we encourage the reader to try it out for themselves
 \end{comment}
 
 \chapter{System F}
-Combining System F with the locally nameless representation was previously described by \citet{chargueraud_locally_2012}.
+Combining System F with the locally nameless representation was previously described by
+\citet{chargueraud_locally_2012}.
 \begin{code}
 module chapter4 where
   open import cofinite
@@ -793,20 +794,26 @@ module chapter4 where
 \end{code}
 
 \section{Syntax of types and terms}
-In System F, types become part of the syntax, as they no become part of how terms are built.
+In System F, types become part of the syntax, as they now become a part of how terms are built.
+Note, some authors use $\Pi$ for the $∀$ type instead, such as \citet{hutton_system_2019}, and some
+use the lowercase $\lambda$ for both term and type abstraction, such as \citet{pierce_types_2002}.
+
 \begin{code}
   data Type : Set where
+    ‵ℕ      : Type               -- Base type.
     t-free_  : List Char → Type   -- Free type variables.
     t-bound_ : ℕ → Type           -- Bound type variables.
-    _t-⇒_    : Type → Type → Type -- Arrow types.
+    _⇒_    : Type → Type → Type -- Arrow types.
     t-∀      : Type → Type → Type -- "For all" type.
 
   data Term : Set where
     free_  : List Char → Term
     bound_ : ℕ → Term
-    -- λ terms now have a type bound. E.g. λ: K. M
+    -- λ terms now have a type bound. E.g. λ: T. M
     ƛ_,_   : Type → Term → Term
     _·_    : Term → Term → Term
+    Λ_     : Term → Term
+    _[_]   : Term → Type → Term
     ‵zero  : Term
     ‵suc_  : Term → Term
 
@@ -828,11 +835,12 @@ kinds of opening:
 
 \begin{code}
   ty-ty[_—→_]_ : ℕ → List Char → Type → Type
+  ty-ty[ i —→ x ] ‵ℕ = ‵ℕ
   ty-ty[ i —→ x ] (t-free y) = t-free y
   ty-ty[ i —→ x ] (t-bound n) with i ≟ℕ n
   ... | yes _ = t-free x
   ... | no  _ = t-bound n
-  ty-ty[ i —→ x ] (A t-⇒ B) = (ty-ty[ i —→ x ] A) t-⇒ (ty-ty[ i —→ x ] B)
+  ty-ty[ i —→ x ] (A ⇒ B) = (ty-ty[ i —→ x ] A) ⇒ (ty-ty[ i —→ x ] B)
   ty-ty[ i —→ x ] t-∀ A B = t-∀ (ty-ty[ i —→ x ] A) (ty-ty[ suc i —→ x ] B)
 
   ty-tm[_—→_]_ : ℕ → List Char → Term → Term
@@ -840,6 +848,8 @@ kinds of opening:
   ty-tm[ i —→ x ] (bound n) = bound n
   ty-tm[ i —→ x ] (ƛ A , L) = ƛ (ty-ty[ i —→ x ] A) , (ty-tm[ i —→ x ] L)
   ty-tm[ i —→ x ] (L · M) = (ty-tm[ i —→ x ] L) · (ty-tm[ i —→ x ] M)
+  ty-tm[ i —→ x ] (Λ L) = Λ ty-tm[ suc i —→ x ] L
+  ty-tm[ i —→ x ] (L [ A ]) = (ty-tm[ i —→ x ] L) [ (ty-ty[ i —→ x ] A) ]
   ty-tm[ i —→ x ] ‵zero = ‵zero
   ty-tm[ i —→ x ] (‵suc L) = ‵suc ty-tm[ i —→ x ] L
 
@@ -850,6 +860,8 @@ kinds of opening:
   ... | no  _ = bound n
   tm-tm[ i —→ x ] (ƛ K , L) = ƛ K , tm-tm[ (suc i) —→ x ] L
   tm-tm[ i —→ x ] (L · M) = (tm-tm[ i —→ x ] L) · (tm-tm[ i —→ x ] M)
+  tm-tm[ i —→ x ] (Λ L) = Λ (tm-tm[ i —→ x ] L)
+  tm-tm[ i —→ x ] (L [ A ]) = (tm-tm[ i —→ x ] L) [ A ]
   tm-tm[ i —→ x ] ‵zero = ‵zero
   tm-tm[ i —→ x ] (‵suc L) = ‵suc tm-tm[ i —→ x ] L
 \end{code}
@@ -859,11 +871,12 @@ However, I may use a different approach at some point and need to use closing. J
 define it here.
 \begin{code}
   ty-ty[_←—_]_ : ℕ → List Char → Type → Type
+  ty-ty[ i ←— x ] ‵ℕ = ‵ℕ
   ty-ty[ i ←— x ] (t-free y) with x ≟lchar y
   ... | yes _ = t-bound i
   ... | no  _ = t-free y
   ty-ty[ i ←— x ] (t-bound n) = t-bound n
-  ty-ty[ i ←— x ] (A t-⇒ B) = (ty-ty[ i ←— x ] A) t-⇒ (ty-ty[ i ←— x ] B)
+  ty-ty[ i ←— x ] (A ⇒ B) = (ty-ty[ i ←— x ] A) ⇒ (ty-ty[ i ←— x ] B)
   ty-ty[ i ←— x ] t-∀ A B = t-∀ (ty-ty[ i ←— x ] A) (ty-ty[ suc i ←— x ] B)
 
   ty-tm[_←—_]_ : ℕ → List Char → Term → Term
@@ -871,6 +884,8 @@ define it here.
   ty-tm[ i ←— x ] (bound n) = bound n
   ty-tm[ i ←— x ] (ƛ A , L) = ƛ (ty-ty[ i ←— x ] A) , (ty-tm[ i ←— x ] L)
   ty-tm[ i ←— x ] (L · M) = (ty-tm[ i ←— x ] L) · (ty-tm[ i ←— x ] M)
+  ty-tm[ i ←— x ] (Λ L) = Λ (ty-tm[ suc i ←— x ] L)
+  ty-tm[ i ←— x ] (L [ A ]) = (ty-tm[ i ←— x ] L) [ (ty-ty[ i ←— x ] A) ]
   ty-tm[ i ←— x ] ‵zero = ‵zero
   ty-tm[ i ←— x ] (‵suc L) = ‵suc ty-tm[ i ←— x ] L
 
@@ -881,6 +896,8 @@ define it here.
   tm-tm[ i ←— x ] (bound n) = bound n
   tm-tm[ i ←— x ] (ƛ A , L) = ƛ A , tm-tm[ (suc i) ←— x ] L
   tm-tm[ i ←— x ] (L · M) = (tm-tm[ i ←— x ] L) · (tm-tm[ i ←— x ] M)
+  tm-tm[ i ←— x ] (Λ L) = Λ (tm-tm[ i ←— x ] L)
+  tm-tm[ i ←— x ] (L [ A ]) = (tm-tm[ i ←— x ] L) [ A ]
   tm-tm[ i ←— x ] ‵zero = ‵zero
   tm-tm[ i ←— x ] (‵suc L) = ‵suc tm-tm[ i ←— x ] L
 \end{code}
@@ -983,13 +1000,14 @@ Now we simply prove axioms 1 and 5 for both kinds of opening, and we get the lem
 \begin{code}
   ax1-type : ∀ (i : ℕ) (a b : List Char) (A : Type)
     → ty-ty[ i —→ a ] (ty-ty[ i —→ b ] A) ≡ ty-ty[ i —→ b ] A
+  ax1-type i a b ‵ℕ = refl
   ax1-type i a b (t-free x) = refl
   ax1-type i a b (t-bound k) with i ≟ℕ k
   ... | yes _   = refl
   ... | no  i≢k with i ≟ℕ k
   ... | yes refl = contradiction refl i≢k
   ... | no  _    = refl
-  ax1-type i a b (A t-⇒ B)
+  ax1-type i a b (A ⇒ B)
     rewrite ax1-type i a b A | ax1-type i a b B = refl
   ax1-type i a b (t-∀ A B)
     rewrite ax1-type i a b A | ax1-type (suc i) a b B = refl
@@ -998,6 +1016,7 @@ Now we simply prove axioms 1 and 5 for both kinds of opening, and we get the lem
     → (i≢j : i ≢ j)
     → ty-ty[ i —→ a ] (ty-ty[ j —→ b ] A)
       ≡ ty-ty[ j —→ b ] (ty-ty[ i —→ a ] A)
+  ax5-type i j a b ‵ℕ i≢j = refl
   ax5-type i j a b (t-free x) i≢j = refl
   ax5-type i j a b (t-bound k) i≢j with j ≟ℕ k
   ... | yes refl with i ≟ℕ k
@@ -1010,7 +1029,7 @@ Now we simply prove axioms 1 and 5 for both kinds of opening, and we get the lem
   ... | no  i≢k  with j ≟ℕ k
   ... |   yes refl = contradiction refl j≢k
   ... |   no  _    = refl
-  ax5-type i j a b (A t-⇒ B) i≢j
+  ax5-type i j a b (A ⇒ B) i≢j
     rewrite ax5-type i j a b A i≢j | ax5-type i j a b B i≢j = refl
   ax5-type i j a b (t-∀ A B) i≢j
     rewrite ax5-type i j a b A i≢j
@@ -1055,6 +1074,8 @@ The proof for \texttt{Term} is very similar and omitted here (see the source fil
   ax1-term i a b (ƛ A , L) rewrite ax1-term (suc i) a b L = refl
   ax1-term i a b (L · M)
     rewrite ax1-term i a b L | ax1-term i a b M = refl
+  ax1-term i a b (Λ L) rewrite ax1-term i a b L = refl
+  ax1-term i a b (L [ A ]) rewrite ax1-term i a b L = refl
   ax1-term i a b ‵zero = refl
   ax1-term i a b (‵suc L) rewrite ax1-term i a b L = refl
 
@@ -1075,6 +1096,10 @@ The proof for \texttt{Term} is very similar and omitted here (see the source fil
       = refl
   ax5-term i j a b (L · M) i≢j
     rewrite ax5-term i j a b L i≢j | ax5-term i j a b M i≢j = refl
+  ax5-term i j a b (Λ L) i≢j
+    rewrite ax5-term i j a b L i≢j = refl
+  ax5-term i j a b (L [ A ]) i≢j
+    rewrite ax5-term i j a b L i≢j = refl
   ax5-term i j a b ‵zero i≢j = refl
   ax5-term i j a b (‵suc L) i≢j rewrite ax5-term i j a b L i≢j
     = refl
@@ -1085,9 +1110,10 @@ The proof for \texttt{Term} is very similar and omitted here (see the source fil
 I don't think this is needed...
 \begin{code}
   ftv-ty : Type -> List (List Char)
+  ftv-ty ‵ℕ = []
   ftv-ty (t-free x) = x ∷ []
   ftv-ty (t-bound i) = []
-  ftv-ty (A t-⇒ B) = ftv-ty A ++ ftv-ty B
+  ftv-ty (A ⇒ B) = ftv-ty A ++ ftv-ty B
   ftv-ty (t-∀ A B) = ftv-ty A ++ ftv-ty B
 
   ftv-tm : Term → List (List Char)
@@ -1095,6 +1121,8 @@ I don't think this is needed...
   ftv-tm (bound i) = []
   ftv-tm (ƛ A , L) = ftv-ty A
   ftv-tm (L · M) = ftv-tm L ++ ftv-tm M
+  ftv-tm (Λ L) = ftv-tm L
+  ftv-tm (L [ A ]) = ftv-ty A
   ftv-tm ‵zero = []
   ftv-tm (‵suc L) = ftv-tm L
 
@@ -1103,6 +1131,8 @@ I don't think this is needed...
   fv-tm (bound i) = []
   fv-tm (ƛ A , L) = fv-tm L
   fv-tm (L · M) = fv-tm L ++ fv-tm M
+  fv-tm (Λ L) = fv-tm L
+  fv-tm (L [ A ]) = fv-tm L
   fv-tm ‵zero = []
   fv-tm (‵suc L) = fv-tm L
 
@@ -1116,11 +1146,12 @@ I don't think this is needed...
 \section{Substitution of Types and Terms}
 \begin{code}
   ty-ty[_:=_]_ : List Char → Type → Type → Type
+  ty-ty[ x := T ] ‵ℕ = ‵ℕ
   ty-ty[ x := T ] (t-free y) with x ≟lchar y
   ... | yes refl = T
   ... | no  _    = t-free y
   ty-ty[ x := T ] (t-bound i) = t-bound i
-  ty-ty[ x := T ] (A t-⇒ B) = (ty-ty[ x := T ] A) t-⇒ (ty-ty[ x := T ] B)
+  ty-ty[ x := T ] (A ⇒ B) = (ty-ty[ x := T ] A) ⇒ (ty-ty[ x := T ] B)
   ty-ty[ x := T ] (t-∀ A B) = t-∀ (ty-ty[ x := T ] A) (ty-ty[ x := T ] B)
 
   ty-tm[_:=_]_ : List Char → Type → Term → Term
@@ -1128,6 +1159,8 @@ I don't think this is needed...
   ty-tm[ x := T ] (bound i) = bound i
   ty-tm[ x := T ] (ƛ A , L) = ƛ ty-ty[ x := T ] A , (ty-tm[ x := T ] L) 
   ty-tm[ x := T ] (L · M) = (ty-tm[ x := T ] L) · (ty-tm[ x := T ] M)
+  ty-tm[ x := T ] (Λ L) = Λ (ty-tm[ x := T ] L)
+  ty-tm[ x := T ] (L [ A ]) = (ty-tm[ x := T ] L) [ ty-ty[ x := T ] A ]
   ty-tm[ x := T ] ‵zero = ‵zero
   ty-tm[ x := T ] (‵suc L) = ‵suc ty-tm[ x := T ] L
 
@@ -1138,24 +1171,23 @@ I don't think this is needed...
   tm-tm[ x := N ] (bound i) = bound i
   tm-tm[ x := N ] (ƛ A , L) = ƛ A , tm-tm[ x := N ] L
   tm-tm[ x := N ] (L · M) = (tm-tm[ x := N ] L) · (tm-tm[ x := N ] M)
+  tm-tm[ x := T ] (Λ L) = Λ (tm-tm[ x := T ] L)
+  tm-tm[ x := T ] (L [ A ]) = (tm-tm[ x := T ] L) [ A ]
   tm-tm[ x := N ] ‵zero = ‵zero
   tm-tm[ x := N ] (‵suc L) = tm-tm[ x := N ] L
 \end{code}
 
 \section{Type Environments}
-\begin{code}
-  data Kind : Set where
-    ‵ℕ : Kind
-    _⇒_ : Kind → Kind → Kind
-\end{code}
+Type environments work as they did for the STLC. Note that since we're implementing System F with
+the \texttt{‵zero} and \texttt{‵suc} primitives only (and no other language extensions), we don't
+need to add free type variables to the context \citep{pierce_types_2002}. This would, however, be
+necessary if one wanted to implement System F$_{<:}$ \citep{chargueraud_locally_2012} or System
+F$_{\omega}$ \citep{hutton_system_2019}.
 
-We define two ways of appending to an environment.  Either, we add a free variable and its type, or
-we add a free type and its kind.
 \begin{code}
   data Context : Set where
     ∅ : Context
-    _,fv_⦂_ : Context → List Char → Kind → Context
-    _,ftv_⦂_ : Context → List Char → Kind → Context
+    _,_⦂_ : Context → List Char → Type → Context
 \end{code}
 
 Accessing the context is done in two different ways:
@@ -1164,75 +1196,28 @@ Accessing the context is done in two different ways:
   \item If a free type variable is required, then the accessor is the constructor \texttt{∋ftv}.
 \end{itemize}
 \begin{code}
-  data _∋fv_⦂_ : Context → List Char → Kind → Set where
+  infix  4  _∋_⦂_
+  data _∋_⦂_ : Context → List Char → Type → Set where
     H : ∀ {Γ x y A}
       → x ≡ y
         --------------------
-      → (Γ ,fv x ⦂ A) ∋fv y ⦂ A
+      → (Γ , x ⦂ A) ∋ y ⦂ A
 
-    T-fv : ∀ {Γ x y A B}
+    T : ∀ {Γ x y A B}
       → x ≢ y
-      → (Γ ∋fv x ⦂ A)
+      → (Γ ∋ x ⦂ A)
         -----------------
-      → (Γ ,fv y ⦂ B) ∋fv x ⦂ A
+      → (Γ , y ⦂ B) ∋ x ⦂ A
 
-    T-ftv : ∀ {Γ x y A K}
-      → x ≢ y
-      → Γ ∋fv x ⦂ A
-        --------------------
-      → (Γ ,ftv y ⦂ K) ∋fv x ⦂ A
-
-  H′ : ∀ {Γ x A} → (Γ ,fv x ⦂ A) ∋fv x ⦂ A
+  H′ : ∀ {Γ x A} → (Γ , x ⦂ A) ∋ x ⦂ A
   H′ = H refl
 
-  T-fv′ : ∀ {Γ x y A B}
+  T′ : ∀ {Γ x y A B}
     → {x≢y : False (x ≟lchar y)}
-    → Γ ∋fv x ⦂ A
+    → Γ ∋ x ⦂ A
       ------------------
-    → (Γ ,fv y ⦂ B) ∋fv x ⦂ A
-  T-fv′ { x≢y = x≢y } x = T-fv (toWitnessFalse x≢y) x
-
-  T-ftv′ : ∀ {Γ x y A B}
-    → {x≢y : False (x ≟lchar y)}
-    → Γ ∋fv x ⦂ A
-      ------------------
-    → (Γ ,ftv y ⦂ B) ∋fv x ⦂ A
-  T-ftv′ { x≢y = x≢y } x = T-ftv (toWitnessFalse x≢y) x
-
-  data _∋ftv_⦂_ : Context → List Char → Kind → Set where
-    Z : ∀ {Γ x y K}
-      → x ≡ y
-        -----------------------
-      → (Γ ,ftv x ⦂ K) ∋ftv x ⦂ K
-
-    S-ftv : ∀ {Γ x y K J}
-      → x ≢ y
-      → Γ ∋ftv x ⦂ K
-        -----------------------
-      → (Γ ,ftv y ⦂ J) ∋ftv x ⦂ K
-
-    S-fv : ∀ {Γ x y K B}
-      → x ≢ y
-      → Γ ∋ftv x ⦂ K
-        ----------------
-      → (Γ ,fv y ⦂ B) ∋ftv x ⦂ K
-
-  Z′ : ∀ {Γ x A} → (Γ ,ftv x ⦂ A) ∋ftv x ⦂ A
-  Z′ = Z refl
-
-  S-ftv′ : ∀ {Γ x y A B}
-    → {x≢y : False (x ≟lchar y)}
-    → Γ ∋ftv x ⦂ A
-      ------------------
-    → (Γ ,ftv y ⦂ B) ∋ftv x ⦂ A
-  S-ftv′ { x≢y = x≢y } x = S-ftv (toWitnessFalse x≢y) x
-
-  S-fv′ : ∀ {Γ x y A B}
-    → {x≢y : False (x ≟lchar y)}
-    → Γ ∋ftv x ⦂ A
-      ------------------
-    → (Γ ,fv y ⦂ B) ∋ftv x ⦂ A
-  S-fv′ { x≢y = x≢y } x = S-fv (toWitnessFalse x≢y) x
+    → (Γ , y ⦂ B) ∋ x ⦂ A
+  T′ { x≢y = x≢y } x = T (toWitnessFalse x≢y) x
 \end{code}
 
 We require three ways of accessing the context (and thus three constructors) for each accessor;
@@ -1247,25 +1232,54 @@ relevant evidence automatically.
 
 Here are three examples of accessing the context.
 \begin{code}
-  _ : ((∅ ,fv ('x' ∷ []) ⦂ ‵ℕ) ,ftv ('T' ∷ []) ⦂ ‵ℕ) ∋ftv ('T' ∷ []) ⦂ ‵ℕ
-  _ = Z refl
+  _ : ((∅ , ('x' ∷ []) ⦂ ‵ℕ) , ('t' ∷ []) ⦂ ‵ℕ) ∋ ('t' ∷ []) ⦂ ‵ℕ
+  _ = H refl
 
-  _ : ((∅ ,fv ('x' ∷ []) ⦂ ‵ℕ) ,ftv ('T' ∷ []) ⦂ ‵ℕ) ∋fv ('x' ∷ []) ⦂ ‵ℕ
-  _ = T-ftv′ (H′)
+  _ : ((∅ , ('x' ∷ []) ⦂ ‵ℕ) , ('t' ∷ []) ⦂ ‵ℕ) ∋ ('x' ∷ []) ⦂ ‵ℕ
+  _ = T (λ ()) (H refl)
 
-  _ : ((∅ ,ftv ('F' ∷ []) ⦂ (‵ℕ ⇒ ‵ℕ)) ,fv ('x' ∷ []) ⦂ ‵ℕ) ∋ftv ('F' ∷ []) ⦂ (‵ℕ ⇒ ‵ℕ)
-  _ = S-fv′ Z′
+  _ : ((∅ , ('f' ∷ []) ⦂ (‵ℕ ⇒ ‵ℕ)) , ('x' ∷ []) ⦂ ‵ℕ) ∋ ('f' ∷ []) ⦂ (‵ℕ ⇒ ‵ℕ)
+  _ = T′ H′
 \end{code}
 
 \begin{code}
-  domain : Context → FreeVariables
-  domain ∅ = ⟨fv: [] ,ftv: [] ⟩
-  domain (ctx ,fv x ⦂ K) = let ⟨fv: fvs ,ftv: ftvs ⟩ = domain ctx
-    in ⟨fv: x ∷ fvs ,ftv: ftvs ⟩
-  domain (ctx ,ftv x ⦂ K) = let ⟨fv: fvs ,ftv: ftvs ⟩ = domain ctx
-    in ⟨fv: fvs ,ftv: x ∷ ftvs ⟩
+  domain : Context → List (List Char)
+  domain ∅ = []
+  domain (ctx , x ⦂ x₁) = x ∷ domain ctx
 \end{code}
 
+\section{Type judgements}
+These rules are adapted from \citet{chargueraud_locally_2012}.
+
+\begin{code}
+  infix  4 _⊢_⦂_
+  data _⊢_⦂_ : Context → Term → Type → Set where
+    ⊢free : ∀ {Γ x A}
+      → Γ ∋ x ⦂ A
+        ----------------
+      → Γ ⊢ free x ⦂ A
+
+    ⊢ƛ : ∀ {Γ L A B}
+      → И x , (Γ , x ⦂ A ⊢ tm-tm[ 0 —→ x ] L ⦂ B)
+        ----------------------------------------
+      → Γ ⊢ ƛ A , L ⦂ (A ⇒ B)
+
+    ⊢· : ∀ {Γ L M A B}
+      → Γ ⊢ L ⦂ (A ⇒ B)
+      → Γ ⊢ M ⦂ A
+        -----------------
+      → Γ ⊢ L · M ⦂ B
+
+    ⊢Λ : ∀ {Γ L A B}
+      → И T , (Γ , T ⦂ A ⊢ ty-tm[ 0 —→ T ] L ⦂ B)
+        -----------------------------------------
+      → Γ ⊢ Λ L ⦂ t-∀ A B
+
+    -- ⊢[] : ∀ {Γ L M A B}
+    --   → Γ ⊢ L ⦂ t-∀ A B
+    --     ---------------
+    --   → Γ ⊢ L [ B ] ⦂ ty-ty[ 0 —→ B ]
+\end{code}
 \chapter{Conclusions}
 
 \section{Final Reminder}
