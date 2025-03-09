@@ -116,13 +116,14 @@ was independently discovered by Jean-Yves \citet{girard_interpretation_1972} and
   \colon \forall T . (T \to T) \to T \to T.
 \end{equation*}
 
-Like in the Rust example, if we wanted to use this function, we would usually need to explicitly
-perform a type application to specify what type we're using, though if it can be understood by the
-reader from context, we will omit it. We write type applications using [square brackets]. For
-instance,
+Unlike the Rust example, if we wanted to use this function, we would need to explicitly perform a
+type application to specify what type we're using, as otherwise type inference is required. We write
+type applications using [square brackets]. For instance,
 \begin{align*}
   s \colon \nat \to \nat, z \colon \nat \in \Gamma \vdash
   &(\Lambda \, T. \lambda \, f \colon T \to T . \lambda \, x \colon T . f (f x))[\nat] s z \colon \nat\\
   &\mapsto_{\beta} (\lambda \, f \colon \nat \to \nat . \lambda \, x \colon \nat . f (f x)) s z \colon \nat\\
   &\mapsto_{\beta^{\star}} s s z \colon \nat.
 \end{align*}
+
+The type judgements for System F are given in section \ref{chapter4:type_judgements}.
