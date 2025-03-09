@@ -234,7 +234,7 @@ available in the full source file (see appendix \ref{appendix:compilation_instru
 open import Data.Nat using (ℕ; zero; suc; _<_; _≥_; _≤_; _≤?_; _<?_; z≤n; s≤s; _⊔_)
   renaming (_≟_ to _≟ℕ_)
 open import Data.Nat.Properties using (≤-refl; ≤-trans; ≤-<-trans; <-≤-trans; ≤-antisym; ≤-total;
-  +-mono-≤; n≤1+n; m≤n⇒m≤1+n; suc-injective; <⇒≢; ≰⇒>; ≮⇒≥)
+  ≤-pred; +-mono-≤; n≤1+n; m≤n⇒m≤1+n; <⇒≢; ≰⇒>; ≮⇒≥)
 open import Data.String using (String; fromList; toList) renaming (_≟_ to _≟str_;
   _++_ to _++str_; length to str-length)
 open import Data.Char using (Char)
@@ -900,6 +900,31 @@ define it here.
   tm-tm[ i ←— x ] ‵zero = ‵zero
   tm-tm[ i ←— x ] (‵suc L) = ‵suc tm-tm[ i ←— x ] L
 \end{code}
+
+We also have this lemma we'll need later [TODO: reword].
+\begin{code}
+  tm-tm-swap-ty-tm : ∀ {L i j x y}
+    → (tm-tm[ i —→ x ] (ty-tm[ j —→ y ] L))
+      ≡ (ty-tm[ j —→ y ] (tm-tm[ i —→ x ] L))
+  tm-tm-swap-ty-tm {fr x} = refl
+  tm-tm-swap-ty-tm {# k} {i} {j}  with i ≟ℕ j
+  ... | yes refl with i ≟ℕ k
+  ...   | yes refl = refl
+  ...   | no  i≢k  = refl
+  tm-tm-swap-ty-tm {# k} {i} {j} | no  i≢j with i ≟ℕ k
+  ...   | yes refl = refl
+  ...   | no  i≢k  = refl
+  tm-tm-swap-ty-tm {ƛ A , L} {i} {j} {x} {y} =
+    cong (ƛ ty-ty[ j —→ y ] A ,_) (tm-tm-swap-ty-tm {L})
+  tm-tm-swap-ty-tm {L · M} = cong₂ _·_
+    (tm-tm-swap-ty-tm {L})
+    (tm-tm-swap-ty-tm {M})
+  tm-tm-swap-ty-tm {Λ L} = cong Λ_ (tm-tm-swap-ty-tm {L})
+  tm-tm-swap-ty-tm {L [ A ]} {i} {j} {x} {y} =
+    cong (_[ ty-ty[ j —→ y ] A ]) (tm-tm-swap-ty-tm {L})
+  tm-tm-swap-ty-tm {‵zero} = refl
+  tm-tm-swap-ty-tm {‵suc L} = cong ‵suc_ (tm-tm-swap-ty-tm {L})
+\end{code}
 \end{comment}
 
 \section{Local closure}
@@ -1551,6 +1576,37 @@ by Charguéraud [TODO: CITE].
 \section{Substitution preserves types}
 TODO: Talk.
 \begin{code}
+
+  s≻ƛ⇒≻ƛ : ∀ {L A i} → (suc i) ≻ L → i ≻ (ƛ A , L)
+  s≻ƛ⇒≻ƛ {A = A} s≻ j = let И⟨ Иe₁ , Иe₂ ⟩ = s≻ (suc j) ⦃ s≤s it ⦄
+    in И⟨ Иe₁ , (λ a {a∉} → cong (ƛ A ,_) (Иe₂ a {a∉})) ⟩
+
+  ≻ƛ⇒s≻ƛ : ∀ {L A i} → i ≻ (ƛ A , L) → (suc i) ≻ L
+  ≻ƛ⇒s≻ƛ {A = A} ≻ƛ (suc j) = let И⟨ Иe₁ , Иe₂ ⟩ = ≻ƛ (j) ⦃ ≤-pred it ⦄
+    in И⟨ Иe₁ , (λ a {a∉} → proj₂ (ƛ-inj (Иe₂ a {a∉}))) ⟩
+
+  ·-≻ : ∀ {L M i} → i ≻ (L · M) → (i ≻ L) × (i ≻ M)
+  ·-≻ {L} {M} {i} i≻ = ⟨ i≻L , i≻M ⟩
+    where
+      i≻L : i ≻ L
+      i≻L j = let И⟨ Иe₁ , Иe₂ ⟩ = i≻ j
+        in И⟨ Иe₁ , (λ a {a∉} → proj₁ (·-inj (Иe₂ a {a∉}))) ⟩
+      i≻M : i ≻ M
+      i≻M j = let И⟨ Иe₁ , Иe₂ ⟩ = i≻ j
+        in И⟨ Иe₁ , (λ a {a∉} → proj₂ (·-inj (Иe₂ a {a∉}))) ⟩
+
+  Λ-≻ : ∀ {L i} → i ≻ (Λ L) → i ≻ L
+  Λ-≻ i≻ j = let И⟨ Иe₁ , Иe₂ ⟩ = i≻ j
+    in И⟨ Иe₁ , (λ a {a∉} → Λ-inj (Иe₂ a {a∉})) ⟩
+
+  []-≻ : ∀ {L A i} → i ≻ (L [ A ]) → i ≻ L
+  []-≻ {L} {A} {i} i≻ j = let И⟨ Иe₁ , Иe₂ ⟩ = i≻ j
+    in И⟨ Иe₁ , (λ a {a∉} → proj₁ ([]-inj (Иe₂ a {a∉}))) ⟩
+
+  ‵suc-≻ : ∀ {L i} → i ≻ (‵suc L) → i ≻ L
+  ‵suc-≻ i≻ j = let И⟨ Иe₁ , Иe₂ ⟩ = i≻ j
+    in И⟨ Иe₁ , (λ a {a∉} → ‵suc-inj (Иe₂ a {a∉})) ⟩
+  
   ⊢⇒lc : ∀ {Γ L A} → Γ ⊢ L ⦂ A → LocallyClosed L
   ⊢⇒lc (⊢free x) j = И⟨ [] , (λ a → refl) ⟩
   ⊢⇒lc (⊢ƛ И⟨ Иe₁ , Иe₂ ⟩) j = И⟨ Иe₁ , (λ a {a∉} → cong₂ ƛ_,_ refl
@@ -1561,20 +1617,32 @@ TODO: Talk.
     (lemma2·7-2 z≤n (⊢⇒lc ⊢A⇒B)) (lemma2·7-2 z≤n (⊢⇒lc ⊢A))) ⟩
   ⊢⇒lc {Γ} (⊢Λ И⟨ Иe₁ , Иe₂ ⟩) j = И⟨ domain Γ ++ Иe₁ , (λ a {a∉} → cong Λ_ (lemma2·7-2 z≤n (helper z≤n (⊢⇒lc (Иe₂ a {proj₂ (∉-++ a∉)}))))) ⟩
     where
-      helper : ∀ {N i k x}
+      helper : ∀ {N i k q x}
         → k ≥ i
-        → i ≻ (ty-tm[ k —→ x ] N)
+        → i ≻ (ty-tm[ q —→ x ] N)
         → k ≻ N
       helper {fr x} {k = k} k≥i i≻ty j = i≻ty k ⦃ k≥i ⦄
       helper {# n} k≥i i≻ty = lemma2·6 k≥i i≻ty
-      helper {ƛ A , N} k≥i i≻ty j =
-        let И⟨ Иe₁ , Иe₂ ⟩ = i≻ty j ⦃ ≤-trans k≥i it ⦄
-        in И⟨ Иe₁ , (λ a {a∉} → cong (ƛ A ,_) {!helper ? (proj₂ (ƛ-inj (Иe₂ a {a∉})))!} ) ⟩
-      helper {N · N₁} k≥i i≻ty = {!!}
-      helper {Λ N} k≥i i≻ty = {!!}
-      helper {N [ x ]} k≥i i≻ty = {!!}
-      helper {‵zero} k≥i i≻ty = {!!}
-      helper {‵suc N} k≥i i≻ty = {!!}
+      helper {ƛ A , N} {i} {k} {q} {x} k≥i i≻ty j =
+        let И⟨ Иe₁ , Иe₂ ⟩ = (helper {k = suc i} (≤-refl) (≻ƛ⇒s≻ƛ i≻ty)) (suc j) ⦃ s≤s (≤-trans k≥i it) ⦄
+        in И⟨ Иe₁ , (λ a {a∉} → cong (ƛ A ,_) (Иe₂ a {a∉})) ⟩
+      helper {N · N₁} k≥i i≻ty j =
+        let ⟨ i≻L  , i≻M ⟩ = ·-≻ i≻ty
+            И⟨ L-Иe₁ , L-Иe₂ ⟩ = (helper k≥i i≻L) j
+            И⟨ M-Иe₁ , M-Иe₂ ⟩ = (helper k≥i i≻M) j
+          in И⟨ (L-Иe₁ ++ M-Иe₁) , (λ a {a∉} → cong₂ _·_
+            (L-Иe₂ a {proj₁ (∉-++ a∉)})
+            (M-Иe₂ a {proj₂ (∉-++ {xs = L-Иe₁} a∉)})) ⟩
+      helper {Λ N} k≥i i≻ty j =
+        let И⟨ Иe₁ , Иe₂ ⟩ = (helper k≥i (Λ-≻ i≻ty)) j
+        in И⟨ Иe₁ , (λ a {a∉} → cong Λ_ (Иe₂ a {a∉})) ⟩
+      helper {N [ A ]} k≥i i≻ty j = 
+        let И⟨ Иe₁ , Иe₂ ⟩ = (helper k≥i ([]-≻ i≻ty)) j
+        in И⟨ Иe₁ , (λ a {a∉} → cong _[ A ] (Иe₂ a {a∉})) ⟩
+      helper {‵zero} k≥i i≻ty j = И⟨ [] , (λ _ → refl) ⟩
+      helper {‵suc N} k≥i i≻ty j = 
+        let И⟨ Иe₁ , Иe₂ ⟩ = (helper k≥i (‵suc-≻ i≻ty)) j
+        in И⟨ Иe₁ , (λ a {a∉} → cong ‵suc_ (Иe₂ a {a∉})) ⟩
   ⊢⇒lc {L = L [ A ]} (⊢[] ⊢L) j =
     let И⟨ Иe₁ , Иe₂ ⟩ = (⊢⇒lc ⊢L) j
     in И⟨ Иe₁ , (λ a {a∉} → cong _[ A ]  (Иe₂ a {a∉})) ⟩
