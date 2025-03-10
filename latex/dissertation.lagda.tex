@@ -84,6 +84,7 @@
 \newunicodechar{β}{{\notosansmono{β}}}
 \newunicodechar{↠}{{\hack{↠}}}
 \newunicodechar{ρ}{{\notosansmono{ρ}}}
+\newunicodechar{σ}{{\notosansmono{σ}}}
 
 % Maths:
 
@@ -1259,6 +1260,9 @@ The proof for \texttt{Term} is very similar and omitted here (see the source fil
 \end{code}
 \end{comment}
 
+Sometimes, we want to be specific about which kind of local closure is being used. When it cannot be
+inferred from context which one is meant, we specify it with these auxilary functions.
+
 \begin{code}
   _≻ty_ : ℕ → Type → Set
   i ≻ty A = _≻_ ⦃ LnsType ⦄ i A
@@ -1348,6 +1352,7 @@ I don't think this is needed...
 \end{code}
 
 \section{Substitution of Types and Terms}
+As before, we can substitute a term for a free variable.
 \begin{code}
   ty-ty[_:=_]_ : List Char → Type → Type → Type
   ty-ty[ x := T ] ‵ℕ = ‵ℕ
@@ -1381,7 +1386,7 @@ I don't think this is needed...
   tm-tm[ x := N ] (‵suc L) = tm-tm[ x := N ] L
 \end{code}
 
-We should also define the alternative substitution.
+And we also have the alternative substitution; substituting a term for a bound variable.
 \begin{code}
   ty-ty[_:→_]_ : ℕ → Type → Type → Type
   ty-ty[ k :→ T ] ‵ℕ = ‵ℕ
@@ -1428,11 +1433,7 @@ F$_{\omega}$ \citep{hutton_system_2019}.
     _,_⦂_ : Context → List Char → Type → Context
 \end{code}
 
-Accessing the context is done in two different ways:
-\begin{itemize}
-  \item If a free variable is required, then the accessor is the constructor \texttt{∋fv}.
-  \item If a free type variable is required, then the accessor is the constructor \texttt{∋ftv}.
-\end{itemize}
+We use the same way to access the context as for the STLC.
 \begin{code}
   infix  4  _∋_⦂_
   data _∋_⦂_ : Context → List Char → Type → Set where
@@ -1458,14 +1459,7 @@ Accessing the context is done in two different ways:
   T′ { x≢y = x≢y } x = T (toWitnessFalse x≢y) x
 \end{code}
 
-We require three ways of accessing the context (and thus three constructors) for each accessor;
-\begin{itemize}
-  \item one for when the variable is at the top of the context,
-  \item one for going deeper in the context if a free variable is on the top, and
-  \item one for going deeper in the context if a free type variable is on top.
-\end{itemize}
-
-As for the STLC, we provide some convenience functions with the \texttt{′} character to find the
+Like before, we provide some convenience functions which use the \texttt{′} character to find the
 relevant evidence automatically.
 
 Here are three examples of accessing the context.
@@ -1480,17 +1474,12 @@ Here are three examples of accessing the context.
   _ = T′ H′
 \end{code}
 
+[TODO: necessary?]
 \begin{code}
   domain : Context → List (List Char)
   domain ∅ = []
   domain (ctx , x ⦂ x₁) = x ∷ domain ctx
 \end{code}
-
-\paragraph*{Ok environments.} We need a predicate to tell when an environment doesn't contain any
-bound type variables. Since the STLC only contains base and function types, this wasn't necessary
-before. \citet{chargueraud_locally_2012} requires that any references free type variables
-exist in the context, but because these aren't present in our contexts, this
-restriction is unneccessary.
 
 \begin{code}
 \end{code}
@@ -1511,12 +1500,12 @@ terms $L, M$):
     {\Gamma \vdash \texttt{‵suc} \, L \colon \nat}
     \; (\vdash\texttt{suc})\quad
   \inferrule
-    {x \colon A \in \Gamma}
+    {0 \succ A\\x \colon A \in \Gamma}
     {\Gamma \vdash x \colon A}
     \; (\vdash\text{free})
   \\
   \inferrule
-    {\cof x , \; (\Gamma , \, x \colon A \vdash [0 \to x] L \colon B)}
+    {0 \succ A\\\cof x , \; (\Gamma , \, x \colon A \vdash [0 \to x] L \colon B)}
     {\Gamma \vdash (\lambda \colon A. L) \colon A \to B}
     \; (\vdash\lambda)\quad
   \inferrule
@@ -1530,21 +1519,26 @@ terms $L, M$):
     \; (\vdash\Lambda)
   \quad
   \inferrule
-    {\Gamma \vdash L \colon \forall B}
+    {0 \succ A\\\Gamma \vdash L \colon \forall B}
     {\Gamma \vdash L [ A ] \colon [0 \to A] B}
     \; (\vdash[])
 \end{gathered}
 \end{equation}
 
-The first five rules are the same as they were for the STLC (with the exception that the ($\vdash
-\lambda$) case was adapted to the new syntax, it includes a `$\colon A$' after the $\lambda$ in the
-consequent). Notice how the two new rules for type abstraction are similar to the two rules for
-$\lambda$-abstraction. For the ($\vdash\Lambda$) judgement, both the term and the type need to be
-opened with the cofinite type variable $T$ because bound type variables can be referenced in both
-the term and the type. For the ($\vdash[]$) judgement, if one were to rewrite the antecedant type in
-fully named syntax, it would be $\Gamma \vdash L \colon \forall A. B$, which more closely mirrors
-the ($\vdash\text{app}$) judgement. There is only one part to the antecedant because we don't keep
-track of free type variables in the context.
+The first five rules are the same as they were for the STLC (with the exception of the locally
+closed requirement ($0 \succ A$) and that the ($\vdash \lambda$) case was adapted to the new syntax,
+it includes a `$\colon A$' after the $\lambda$ in the consequent). Notice how the two new rules for
+type abstraction are similar to the two rules for $\lambda$-abstraction. For the ($\vdash\Lambda$)
+judgement, both the term and the type need to be opened with the cofinite type variable $T$ because
+bound type variables can be referenced in both the term and the type. For the ($\vdash[]$)
+judgement, if one were to rewrite the antecedant type in fully named syntax, it would be $\Gamma
+\vdash L \colon \forall A. B$, which more closely mirrors the ($\vdash\text{app}$) judgement. There
+is only one part to the antecedant because we don't keep track of free type variables in the
+context.
+
+While \citet{chargueraud_locally_2012} requires the entire context to be well-formed (and calls this
+predicate `Ok'), this is not strictly required. Since we don't add free type variables to the
+context, we only need to make sure that the types which we use are locally closed.
 
 \begin{code}
   infix  4 _⊢_⦂_
@@ -1696,8 +1690,7 @@ Once again, these properties are similar to those in \citet{wadler_programming_2
   ≡-with-⊢ ⊢L refl = ⊢L
 \end{code}
 
-We will also need a lemma called \texttt{subst-open-context}
-by Charguéraud [TODO: CITE].
+We will also need a lemma called \texttt{subst-open-context} by \citet{chargueraud_locally_2012}.
 
 \begin{code}
   subst-open-var : ∀ {N : Term} {x y : List Char} {i : ℕ}
@@ -1735,21 +1728,14 @@ by Charguéraud [TODO: CITE].
     → Γ ⊢ tm-tm[ i —→ y ] (tm-tm[ x := N ] L) ⦂ A
   subst-open-var-ctx L x≢y i≻N assump =
     ≡-with-⊢ assump (subst-open-var L x≢y i≻N)
-
-  -- tm-tm-swap-ty-tm : ∀ {L i j x y}
-  --   → (tm-tm[ i —→ x ] (ty-tm[ j —→ y ] L))
-  --     ≡ (ty-tm[ j —→ y ] (tm-tm[ i —→ x ] L))
-
-  -- tm-tm-swap-ty-tm-ctx : ∀ {Γ A L i j x y}
-  --   → Γ ⊢ (tm-tm[ i —→ x ] (ty-tm[ j —→ y ] L)) ⦂ A
-  --   → Γ ⊢ (ty-tm[ j —→ y ] (tm-tm[ i —→ x ] L)) ⦂ A
-  -- tm-tm-swap-ty-tm-ctx {L = L} assump = ≡-with-⊢ assump (tm-tm-swap-ty-tm {L})
 \end{code}
 
 \section{Well-typed terms are locally closed}
 If the typing rules are correct, then all well-typed terms are locally closed. This is particularly
 important because a non-locally closed term has a bound variable which isn't actually bound. The
-proof of this in System F is presented below. TODO: Talk.
+proof of this in System F is presented below. TODO: Explain more.
+
+We will need some further lemmas regarding local closure.
 \begin{code}
 
   s≻ƛ⇒≻ƛ : ∀ {L A i} → (suc i) ≻tm L → i ≻tm (ƛ A , L)
@@ -1781,7 +1767,11 @@ proof of this in System F is presented below. TODO: Talk.
   ‵suc-≻ : ∀ {L i} → i ≻tm (‵suc L) → i ≻tm L
   ‵suc-≻ i≻ j = let И⟨ Иe₁ , Иe₂ ⟩ = i≻ j
     in И⟨ Иe₁ , (λ a {a∉} → ‵suc-inj (Иe₂ a {a∉})) ⟩
-  
+\end{code}
+
+An important lemma for proving that substitution preserves types is that all well-typed terms are
+locally closed.
+\begin{code}
   ⊢⇒lc : ∀ {Γ L A} → Γ ⊢ L ⦂ A → Tm-LocallyClosed L
   ⊢⇒lc (⊢free x lc-A) j = И⟨ [] , (λ a → refl) ⟩
   ⊢⇒lc (⊢ƛ lc-A И⟨ Иe₁ , Иe₂ ⟩) j = И⟨ Иe₁ , (λ a {a∉} → cong₂ ƛ_,_ refl
@@ -1952,12 +1942,6 @@ proof of this in System F is presented below. TODO: Talk.
           ⊢tm-tm[]L = swap a≢y (Иe₂ a {a∉Иe₁})
       in subst-open-var-ctx L (sym-≢ a≢y) (⊢⇒lc ⊢N) (subst ⊢N ⊢tm-tm[]L)) ⟩
   subst {x = y} ⊢N (⊢· ⊢L ⊢M) = ⊢· (subst ⊢N ⊢L) (subst ⊢N ⊢M)
-  -- subst-open-var-ctx : ∀ {Γ A} {N : Term} {x y : List Char} {i : ℕ}
-  --   (L : Term)
-  --   → x ≢ y
-  --   → (i ≻ N)
-  --   → Γ ⊢ tm-tm[ x := N ] (tm-tm[ i —→ y ] L) ⦂ A
-  --   → Γ ⊢ tm-tm[ i —→ y ] (tm-tm[ x := N ] L) ⦂ A
   subst {x = y} {L = Λ L} ⊢N (⊢Λ И⟨ Иe₁ , Иe₂ ⟩) =
     ⊢Λ И⟨ y ∷ Иe₁ , (λ a {a∉} →
       let a∉Иe₁ = proj₂ (∉-++ {xs = y ∷ []} a∉)
