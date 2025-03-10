@@ -105,10 +105,19 @@ module plfa_adaptions where
   ++-∉ {_} {xs} {ys} s∉xs s∉ys = All¬⇒¬Any
     (++-All xs ys ⟨ (¬Any⇒All¬ s∉xs) , (¬Any⇒All¬ s∉ys) ⟩)
 
+  ∉y∷ys⇒≢y : {x y : List Char} {ys : List (List Char)}
+    → x ∉ y ∷ ys
+    → x ≢ y
+  ∉y∷ys⇒≢y x∉ with ¬Any⇒All¬ x∉
+  ... | px All.∷ thing = px
+
   ∉∷[]⇒≢ : {x y : List Char}
     → x ∉ y ∷ []
       -----------
     → x ≢ y
-  ∉∷[]⇒≢ x∉ with ¬Any⇒All¬ x∉
-  ... | px All.∷ All.[] = px
+  ∉∷[]⇒≢ = ∉y∷ys⇒≢y
+
+  m+1≤n⇒m≤n : ∀ {m n : ℕ} → (suc m) ≤ n → m ≤ n
+  m+1≤n⇒m≤n {zero} {suc n} sm≤n = z≤n
+  m+1≤n⇒m≤n {suc m} {suc n} (s≤s sm≤n) = s≤s (m+1≤n⇒m≤n sm≤n)
 \end{code}
