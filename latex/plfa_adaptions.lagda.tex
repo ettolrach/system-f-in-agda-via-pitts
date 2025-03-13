@@ -32,6 +32,7 @@ module plfa_adaptions where
   
   -- Products and exists quantifier.
   open import Data.Product using (_×_; proj₁; proj₂; ∃-syntax) renaming (_,_ to ⟨_,_⟩)
+  open import Data.Sum using (_⊎_; inj₁; inj₂)
   
   -- Lists.
   open import Data.List using (List; []; _∷_; _++_; length; filter; map; foldr; head; replicate)
@@ -58,6 +59,29 @@ module plfa_adaptions where
   All-++ [] ys Pys = ⟨ All.[] , Pys ⟩
   All-++ (x ∷ xs) ys (Px All.∷ Pxs++ys) with All-++ xs ys Pxs++ys
   ... | ⟨ Pxs , Pys ⟩ = ⟨ Px All.∷ Pxs , Pys ⟩
+
+  ++-All : ∀ {A : Set} {P : A → Set} (xs ys : List A)
+    → All P xs × All P ys
+      -------------------
+    → All P (xs ++ ys)
+  ++-All [] ys ⟨ All.[] , Pys ⟩ = Pys
+  ++-All (x ∷ xs) ys ⟨ Px All.∷ Pxs , Pys ⟩ =
+    Px All.∷ ++-All xs ys ⟨ Pxs , Pys ⟩
+
+  Any-++ : ∀ {A : Set} {P : A → Set} (xs ys : List A)
+    → Any P (xs ++ ys) → (Any P xs ⊎ Any P ys)
+  Any-++ [] ys AnyPys = inj₂ AnyPys
+  Any-++ (x ∷ xs) ys (here Px) = inj₁ (here Px)
+  Any-++ (x ∷ xs) ys (there Pxs++Pys) with Any-++ xs ys Pxs++Pys
+  ... | inj₁ Pxs = inj₁ (there Pxs)
+  ... | inj₂ Pys = inj₂ Pys
+
+  ++-Any : ∀ {A : Set} {P : A → Set} (xs ys : List A)
+    → (Any P xs ⊎ Any P ys) → Any P (xs ++ ys)
+  ++-Any [] ys (inj₂ AnyPys) = AnyPys
+  ++-Any (x ∷ xs) ys (inj₁ (here Px)) = here Px
+  ++-Any (x ∷ xs) ys (inj₁ (there AnyPxs)) = there (++-Any xs ys (inj₁ AnyPxs))
+  ++-Any (x ∷ xs) ys (inj₂ AnyPys) = there (++-Any xs ys (inj₂ AnyPys))
 
   All¬⇒¬Any : ∀ {A : Set} {P : A → Set} {xs : List A}
     → All (¬_ ∘ P) xs
@@ -89,13 +113,18 @@ module plfa_adaptions where
       ⟨ All¬⇒¬Any {xs = xs} all¬xs
       , All¬⇒¬Any {xs = ys} all¬ys ⟩
 
-  ++-All : ∀ {A : Set} {P : A → Set} (xs ys : List A)
-    → All P xs × All P ys
-      -------------------
-    → All P (xs ++ ys)
-  ++-All [] ys ⟨ All.[] , Pys ⟩ = Pys
-  ++-All (x ∷ xs) ys ⟨ Px All.∷ Pxs , Pys ⟩ =
-    Px All.∷ ++-All xs ys ⟨ Pxs , Pys ⟩
+  ∈-++ : ∀ {s : List Char} {xs ys : List (List Char)}
+    → s ∈ xs
+    → s ∈ xs ++ ys
+  ∈-++ {s} {x ∷ xs} {ys} (here px) = here px
+  ∈-++ {s} {x ∷ xs} {ys} (there s∈xs) = there (∈-++ s∈xs)
+
+  ∈-swap : ∀ {s : List Char} {xs ys : List (List Char)}
+    → s ∈ xs ++ ys
+    → s ∈ ys ++ xs
+  ∈-swap {s} {xs} {ys} s∈xs++ys with Any-++ xs ys s∈xs++ys
+  ... | inj₁ s∈xs = ++-Any ys xs (inj₂ s∈xs)
+  ... | inj₂ s∈ys = ++-Any ys xs (inj₁ s∈ys)
 
   ++-∉ : ∀ {s : List Char} {xs ys : List (List Char)}
     → s ∉ xs

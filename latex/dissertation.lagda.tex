@@ -759,7 +759,8 @@ Combining System F with the locally nameless representation was previously descr
 \begin{code}
 module chapter4 where
   open import cofinite
-  open import plfa_adaptions using (∉∷[]⇒≢; ∉-++; ∉y∷ys⇒≢y; m+1≤n⇒m≤n; All-++; ++-All)
+  open import plfa_adaptions using (All-++; ++-All; ∉∷[]⇒≢; ∉-++; ∈-++; ∈-swap;
+    ∉y∷ys⇒≢y; m+1≤n⇒m≤n)
   open import tspl_prior_work
     using (suc-preserves-≢; sym-≢; fresh; fresh-correct)
 \end{code}
@@ -1409,7 +1410,7 @@ As before, we can substitute a term for a free variable.
   tm-tm[ x := T ] (Λ L) = Λ (tm-tm[ x := T ] L)
   tm-tm[ x := T ] (L [ A ]) = (tm-tm[ x := T ] L) [ A ]
   tm-tm[ x := N ] ‵zero = ‵zero
-  tm-tm[ x := N ] (‵suc L) = tm-tm[ x := N ] L
+  tm-tm[ x := N ] (‵suc L) = ‵suc tm-tm[ x := N ] L
 \end{code}
 
 And we also have the alternative substitution; substituting a term for a bound variable.
@@ -1551,6 +1552,11 @@ relevant evidence automatically.
     → (∀ {X} → Γ ∋ X → Δ ∋ X)
     → ftv-ty A ⊆ domain-ftv Δ
   ⊆-change-ctx {Γ} {A} A⊆Γ ρ = All-map (λ px → ∋⇒∈ (ρ (∈⇒∋ px))) A⊆Γ
+
+  ⊆⇒⊆∷ : ∀ {Γ A X}
+    → ftv-ty A ⊆ domain-ftv Γ
+    → ftv-ty A ⊆ (X ∷ domain-ftv Γ)
+  ⊆⇒⊆∷ {Γ} {A} {X} A⊆Γ = All-map (λ px → (∈-swap {ys = X ∷ []} (∈-++ {xs = domain-ftv Γ} {ys = X ∷ []} px))) A⊆Γ
 \end{code}
 
 Here are some examples of accessing the context.
@@ -1629,6 +1635,7 @@ context, we only need to make sure that the types which we use are locally close
   data _⊢_⦂_ : Context → Term → Type → Set where
     ⊢free : ∀ {Γ x A}
       → Ok Γ
+      → Ty-LocallyClosed A
       → Γ ∋ x ⦂ A
         ------------------
       → Γ ⊢ fr x ⦂ A
@@ -1646,8 +1653,8 @@ context, we only need to make sure that the types which we use are locally close
       → Γ ⊢ L · M ⦂ B
 
     ⊢Λ : ∀ {Γ L B}
-      → И T , ((Γ , T)⊢ ty-tm[ 0 —→ T ] L ⦂ (ty-ty[ 0 —→ T ] B))
-        ---------------------------------------------------
+      → И T , ((Γ , T) ⊢ ty-tm[ 0 —→ T ] L ⦂ (ty-ty[ 0 —→ T ] B))
+        ----------------------------------------------------------
       → Γ ⊢ Λ L ⦂ t-∀ B
 
     ⊢[] : ∀ {Γ L A B}
@@ -1683,8 +1690,8 @@ We can give a type to \textit{twice} and $\Omega$ now.
           ⇒ ((t-# 0) ⇒ (t-# 0)))
     twice = ⊢Λ И⟨ [] , (λ X {X∉} → ⊢ƛ fr⇒fr-lc И⟨ [] , (λ f {f∉} →
       ⊢ƛ ty-fr-lc И⟨ (f ∷ []) , (λ x {x∉} → ⊢·
-        (⊢free ok-ctx (T (f≢x x∉) H′))
-        (⊢· (⊢free ok-ctx (T (f≢x x∉) H′)) (⊢free ok-ctx H′))) ⟩) ⟩) ⟩
+        (⊢free ok-ctx fr⇒fr-lc (T (f≢x x∉) H′))
+        (⊢· (⊢free ok-ctx fr⇒fr-lc (T (f≢x x∉) H′)) (⊢free ok-ctx ty-fr-lc H′))) ⟩) ⟩) ⟩
       where
         f≢x : ∀ {f x} → x ∉ f ∷ [] → f ≢ x
         f≢x x∉ = sym-≢ (∉∷[]⇒≢ x∉)
@@ -1701,7 +1708,7 @@ We can give a type to \textit{twice} and $\Omega$ now.
         ⦂ (t-∀ ((t-# 0) ⇒ (t-# 0)))
           ⇒ (t-∀ ((t-# 0) ⇒ (t-# 0)))
     big-omega =
-      ⊢ƛ lc-forall И⟨ [] , (λ x {x∉} → ⊢· (⊢[] lc-forall (⊢free ok-ctx H′)) (⊢free ok-ctx H′)) ⟩
+      ⊢ƛ lc-forall И⟨ [] , (λ x {x∉} → ⊢· (⊢[] lc-forall (⊢free ok-ctx lc-forall H′)) (⊢free ok-ctx lc-forall H′)) ⟩
         where
           lc-forall : Ty-LocallyClosed (t-∀ (t-# 0 ⇒ t-# 0))
           lc-forall j = И⟨ [] , (λ _ → refl) ⟩
@@ -1713,7 +1720,7 @@ We can give a type to \textit{twice} and $\Omega$ now.
 Once again, these properties are similar to those in \citet{wadler_programming_2022}.
 \begin{code}
   ⊢⇒Ok : ∀ {Γ L A} → Γ ⊢ L ⦂ A → Ok Γ
-  ⊢⇒Ok (⊢free okΓ ∋x) = okΓ
+  ⊢⇒Ok (⊢free okΓ lc-A ∋x) = okΓ
   ⊢⇒Ok (⊢ƛ lc-A И⟨ Иe₁ , Иe₂ ⟩) with ⊢⇒Ok (Иe₂ (fresh Иe₁) {fresh-correct Иe₁})
   ... | ok-∷fv OkΓ _ _ = OkΓ
   ⊢⇒Ok (⊢· ⊢L ⊢LM) = ⊢⇒Ok ⊢L
@@ -1722,22 +1729,6 @@ Once again, these properties are similar to those in \citet{wadler_programming_2
   ⊢⇒Ok (⊢[] lc-A ⊢L) = ⊢⇒Ok ⊢L
   ⊢⇒Ok (⊢zero OkΓ) = OkΓ
   ⊢⇒Ok (⊢suc ⊢L) = ⊢⇒Ok ⊢L
-
-  lemma : ∀ {Γ x A} → Ok Γ → Γ ∋ x ⦂ A → Ty-LocallyClosed A
-  lemma {Γ} {x} {‵ℕ} okΓ ∋x = n≻‵ℕ
-  lemma {Γ} {x} {t-fr x₁} okΓ ∋x = ty-fr-lc
-  lemma {Γ} {x} {t-# k} (ok-∷fv okΓ lc-#k _) (H refl) = contradiction lc-#k #-never-lc 
-  lemma {Γ} {x} {t-# k} (ok-∷fv okΓ' lc-A A⊆Γ') (T x≢y ∋x) = lemma okΓ' ∋x 
-  lemma {Γ} {x} {t-# k} (ok-∷ftv (ok-∷fv okΓ' lc-#k A⊆Γ')) (T⦂ (H refl)) = contradiction lc-#k #-never-lc 
-  lemma {Γ} {x} {t-# k} (ok-∷ftv (ok-∷fv okΓ' lc-A A⊆Γ')) (T⦂ (T x₁ ∋x)) = lemma okΓ' ∋x
-  lemma {Γ} {x} {t-# k} (ok-∷ftv (ok-∷ftv okΓ)) (T⦂ (T⦂ ∋x)) = lemma okΓ ∋x
-  lemma {Γ} {x} {A ⇒ B} okΓ ∋x = {!!}
-  lemma {Γ} {x} {t-∀ A} okΓ ∋x = {!!}
-
-  ⊢free⇒ty-lc : ∀ {Γ x A} → Γ ⊢ (fr x) ⦂ A → Ty-LocallyClosed A
-  ⊢free⇒ty-lc {∅} {x} {A} (⊢free ok∅ ())
-  ⊢free⇒ty-lc {Γ , y ⦂ B} {x} {A} (⊢free okΓ ∋x) = {!!}
-  ⊢free⇒ty-lc {Γ , x₁} {x} {A} ⊢fr = {!!}
 
   -- Extending contexts.
   ext-tm : ∀ {Γ Δ}
@@ -1773,7 +1764,7 @@ Once again, these properties are similar to those in \citet{wadler_programming_2
     → (∀ {X} → Γ ∋ X → Δ ∋ X)
       ---------------------------------
     → (∀ {L A} → Γ ⊢ L ⦂ A → Δ ⊢ L ⦂ A)
-  rename okΔ ρ-tm ρ-ty (⊢free okΓ x) = ⊢free okΔ (ρ-tm x)
+  rename okΔ ρ-tm ρ-ty (⊢free okΓ lc-A x) = ⊢free okΔ lc-A (ρ-tm x)
   rename {Γ} {Δ} okΔ ρ-tm ρ-ty {_} {A ⇒ B} (⊢ƛ lc-A И⟨ Иe₁ , Иe₂ ⟩) =
     ⊢ƛ lc-A И⟨ Иe₁ , (λ a {a∉} →
       rename (OkΔ,x a a∉) (ext-tm ρ-tm) (ext-ty-tm ρ-ty) (Иe₂ a {proj₂ (∉-++ a∉)})) ⟩
@@ -1818,6 +1809,25 @@ Once again, these properties are similar to those in \citet{wadler_programming_2
           -------------------------
         → ((Γ , x ⦂ A) , y ⦂ B) ∋ X
       ρ-tm-ty (S⦂ (S⦂ ∋X)) = S⦂ (S⦂ ∋X)
+
+  swap-tm-ty : ∀ {Γ X y L B C}
+    → ((Γ , y ⦂ B) , X) ⊢ L ⦂ C
+      -------------------------
+    → (Γ , X) , y ⦂ B ⊢ L ⦂ C
+  swap-tm-ty {Γ} {X} {y} {L} {B} {C} ⊢L with ⊢⇒Ok ⊢L
+  ... | ok-∷ftv (ok-∷fv okΓ lc-B B⊆Γ) = rename (ok-∷fv (ok-∷ftv okΓ) lc-B (⊆⇒⊆∷ {Γ} {B} B⊆Γ)) ρ₁ ρ₂ ⊢L
+    where
+      ρ₁ : ∀ {x A}
+        → ((Γ , y ⦂ B) , X) ∋ x ⦂ A
+          -------------------------
+        → ((Γ , X) , y ⦂ B) ∋ x ⦂ A
+      ρ₁ (T⦂ (H refl)) = H′
+      ρ₁ (T⦂ (T x≢y ∋x)) = T x≢y (T⦂ ∋x)
+      ρ₂ : ∀ {Z : List Char}
+        → ((Γ , y ⦂ B) , X) ∋ Z
+        → ((Γ , X) , y ⦂ B) ∋ Z
+      ρ₂ Z = S⦂ Z
+      ρ₂ (S (S⦂ ∋Z)) = S⦂ (S ∋Z)
 
   -- Dopping shadowed variables.
   drop : ∀ {Γ x L A B C}
@@ -1878,7 +1888,8 @@ We will also need a lemma called \texttt{subst-open-context} by \citet{charguera
   subst-open-var (L [ A ]) x≢y i≻u =
     cong₂ _[_] (subst-open-var L x≢y i≻u) refl
   subst-open-var ‵zero x≢y i≻u = refl
-  subst-open-var (‵suc L) x≢y i≻u = subst-open-var L x≢y i≻u
+  subst-open-var (‵suc L) x≢y i≻u =
+    cong ‵suc_ (subst-open-var L x≢y i≻u)
 
   subst-open-var-ctx : ∀ {Γ A} {N : Term} {x y : List Char} {i : ℕ}
     (L : Term)
@@ -1933,7 +1944,7 @@ An important lemma for proving that substitution preserves types is that all wel
 locally closed.
 \begin{code}
   ⊢⇒lc : ∀ {Γ L A} → Γ ⊢ L ⦂ A → Tm-LocallyClosed L
-  ⊢⇒lc (⊢free x lc-A) j = И⟨ [] , (λ a → refl) ⟩
+  ⊢⇒lc (⊢free okΓ lc-A ∋x) j = И⟨ [] , (λ a → refl) ⟩
   ⊢⇒lc (⊢ƛ lc-A И⟨ Иe₁ , Иe₂ ⟩) j = И⟨ Иe₁ , (λ a {a∉} → cong₂ ƛ_,_ refl
     (open-rec-lc-lemma
       (λ ())
@@ -1978,7 +1989,7 @@ locally closed.
     in И⟨ Иe₁ , (λ a {a∉} → cong ‵suc_ (Иe₂ a {a∉})) ⟩
 
   ⊢⇒lc-ty : ∀ {Γ L A} → Γ ⊢ L ⦂ A → Ty-LocallyClosed A
-  ⊢⇒lc-ty {Γ} {fr x} (⊢free okΓ ∋x) = {!!}
+  ⊢⇒lc-ty {Γ} {fr x} (⊢free okΓ lc-A ∋x) = lc-A
   ⊢⇒lc-ty {Γ} {ƛ B , L} (⊢ƛ lc-B И⟨ Иe₁ , Иe₂ ⟩) j =
     let И⟨ B-Иe₁ , B-Иe₂ ⟩ = lc-B j
         И⟨ A-Иe₁ , A-Иe₂ ⟩ = (⊢⇒lc-ty (Иe₂ (fresh Иe₁) {fresh-correct Иe₁})) j
@@ -2023,7 +2034,7 @@ locally closed.
   ⊢⇒lc-ty {Γ} {‵suc L} (⊢suc ⊢L) = n≻‵ℕ
 
   ⊢⇒lc-ty-tm : ∀ {Γ L A} → Γ ⊢ L ⦂ A → Ty-Tm-LocallyClosed L
-  ⊢⇒lc-ty-tm (⊢free x lc-A) j = И⟨ [] , (λ _ → refl) ⟩
+  ⊢⇒lc-ty-tm (⊢free okΓ lc-A ∋x) j = И⟨ [] , (λ _ → refl) ⟩
   ⊢⇒lc-ty-tm (⊢ƛ lc-A И⟨ B-Иe₁ , B-Иe₂ ⟩) j =
     let И⟨ A-Иe₁ , A-Иe₂ ⟩ = lc-A j
         И⟨ Иe₁ , Иe₂ ⟩ = (⊢⇒lc-ty-tm (B-Иe₂ (fresh B-Иe₁) {fresh-correct B-Иe₁})) j
@@ -2081,8 +2092,8 @@ locally closed.
   subst-open-ty-tm (L [ A ]) x≢y j≥i i≻N
     rewrite subst-open-ty-tm L x≢y j≥i i≻N = refl
   subst-open-ty-tm ‵zero x≢y j≥i i≻N = refl
-  subst-open-ty-tm (‵suc L) x≢y j≥i i≻N =
-    subst-open-ty-tm L x≢y j≥i i≻N
+  subst-open-ty-tm (‵suc L) x≢y j≥i i≻N rewrite
+    subst-open-ty-tm L x≢y j≥i i≻N = refl
 
   subst-open-ty-tm-ctx : ∀ {Γ A} {N : Term} {x y : List Char} {i j : ℕ}
     (L : Term)
@@ -2099,28 +2110,127 @@ locally closed.
     → Γ , x ⦂ A ⊢ L ⦂ B
       --------------------
     → Γ ⊢ tm-tm[ x := N ] L ⦂ B
-  subst {x = y} ⊢N (⊢free lc-A (H refl)) with y ≟lchar y
-  ... | yes refl = weaken {!!} ⊢N
+  subst {x = y} ⊢N (⊢free (ok-∷fv okΓ _ A⊆Γ) lc-A (H refl)) with y ≟lchar y
+  ... | yes refl = weaken okΓ ⊢N
   ... | no  y≢y  = contradiction refl y≢y
-  subst {x = y} ⊢N (⊢free {x = x} okΓ (T x≢y ∋x)) with y ≟lchar x
+  subst {x = y} ⊢N (⊢free {x = x} (ok-∷fv okΓ _ A⊆Γ) lc-A (T x≢y ∋x)) with y ≟lchar x
   ... | yes refl = contradiction refl x≢y
-  ... | no  _    = ⊢free {!!} ∋x
+  ... | no  _    = ⊢free okΓ lc-A ∋x
   subst {x = y} {L = ƛ _ , L} ⊢N (⊢ƛ lc-A И⟨ Иe₁ , Иe₂ ⟩) =
     ⊢ƛ lc-A И⟨ (y ∷ Иe₁) , (λ a {a∉} → 
       let a∉Иe₁ = proj₂ (∉-++ {xs = y ∷ []} a∉)
-          a≢y = (∉y∷ys⇒≢y a∉)
-          ⊢tm-tm[]L = swap a≢y (Иe₂ a {a∉Иe₁})
-      in subst-open-var-ctx L (sym-≢ a≢y) (⊢⇒lc ⊢N) (subst ⊢N ⊢tm-tm[]L)) ⟩
-  subst {x = y} ⊢N (⊢· ⊢L ⊢M) = ⊢· (subst ⊢N ⊢L) (subst ⊢N ⊢M)
-  subst {x = y} {L = Λ L} ⊢N (⊢Λ И⟨ Иe₁ , Иe₂ ⟩) =
-    ⊢Λ И⟨ y ∷ Иe₁ , (λ a {a∉} →
-      let a∉Иe₁ = proj₂ (∉-++ {xs = y ∷ []} a∉)
           y≢a = sym-≢ (∉y∷ys⇒≢y a∉)
-          ⊢ty-tm[]L = Иe₂ a {a∉Иe₁}
-      in {!!} ) ⟩ -- subst-open-ty-tm-ctx L y≢a z≤n (⊢⇒lc-ty-tm ⊢N) (subst ⊢N ⊢ty-tm[]L) ) ⟩
-  subst {x = y} ⊢N (⊢[] lc ⊢L) = ⊢[] lc (subst ⊢N ⊢L)
-  subst {x = y} ⊢N (⊢zero okΓ) = ⊢zero {!!}
-  subst {x = y} ⊢N (⊢suc ⊢L) = subst ⊢N ⊢L
+          ⊢tm-tm[]L = swap (sym-≢ y≢a) (Иe₂ a {a∉Иe₁})
+      in subst-open-var-ctx L y≢a (⊢⇒lc ⊢N) (subst ⊢N ⊢tm-tm[]L)) ⟩
+  subst ⊢N (⊢· ⊢L ⊢M) = ⊢· (subst ⊢N ⊢L) (subst ⊢N ⊢M)
+  subst {x = y} {L = Λ L} ⊢N (⊢Λ И⟨ Иe₁ , Иe₂ ⟩) =
+    ⊢Λ И⟨ y ∷ Иe₁ , (λ A {A∉} →
+      let A∉Иe₁ = proj₂ (∉-++ {xs = y ∷ []} A∉)
+          y≢A = sym-≢ (∉y∷ys⇒≢y A∉)
+          ⊢ty-tm[]L = Иe₂ A {A∉Иe₁}
+          induc-hypo = subst ⊢N (swap-tm-ty ⊢ty-tm[]L)
+      in subst-open-ty-tm-ctx L y≢A z≤n (⊢⇒lc-ty-tm ⊢N) induc-hypo ) ⟩
+  subst ⊢N (⊢[] lc ⊢L) = ⊢[] lc (subst ⊢N ⊢L)
+  subst ⊢N (⊢zero (ok-∷fv okΓ _ _)) = ⊢zero okΓ
+  subst ⊢N (⊢suc ⊢L) = ⊢suc (subst ⊢N ⊢L)
+
+  subst-intro : ∀ {x : List Char} {i : ℕ} (L N : Term)
+    → x ∉ fv-tm L
+    → tm-tm[ i :→ N ] L ≡ tm-tm[ x := N ] (tm-tm[ i —→ x ] L)
+  subst-intro {x} (fr y) N x∉fv-L with x ≟lchar y
+  ... | yes refl = contradiction refl (∉∷[]⇒≢ x∉fv-L)
+  ... | no  x≢y  = refl
+  subst-intro {x} {i} (# k) N x∉fv-L with i ≟ℕ k
+  ... | no  i≢k = refl
+  ... | yes refl with x ≟lchar x
+  ...   | yes refl = refl
+  ...   | no  x≢x  = contradiction refl x≢x
+  subst-intro {x} {i} (ƛ A , L) N x∉fv-L
+    rewrite subst-intro {x} {suc i} L N x∉fv-L = refl
+  subst-intro (L · M) N x∉ = let ⟨ x∉fv-L , x∉fv-M ⟩ = ∉-++ {xs = fv-tm L} x∉
+    in cong₂ _·_ (subst-intro L N x∉fv-L) (subst-intro M N x∉fv-M)
+  subst-intro (Λ L) N x∉fv-L = cong Λ_ (subst-intro L N x∉fv-L)
+  subst-intro (L [ A ]) N x∉fv-L = cong₂ _[_] (subst-intro L N x∉fv-L) refl
+  subst-intro ‵zero N x∉fv-L = refl
+  subst-intro (‵suc L) N x∉fv-L = cong ‵suc_ (subst-intro L N x∉fv-L)
+
+  subst-op : ∀ {Γ L N A B}
+    → ∅ ⊢ N ⦂ A
+    → Γ ⊢ ƛ A , L ⦂ A ⇒ B
+      --------------------
+    → Γ ⊢ tm-tm[ 0 :→ N ] L ⦂ B
+  subst-op {Γ} {L} {N} ⊢N (⊢ƛ lc-A И⟨ Иe₁ , Иe₂ ⟩) =
+    let x                  = fresh (fv-tm L ++ Иe₁)
+        ⟨ x∉fv-L , x∉Иe₁ ⟩ = ∉-++ {xs = fv-tm L}
+                                (fresh-correct (fv-tm L ++ Иe₁))
+    in ≡-with-⊢
+      (subst ⊢N (Иe₂ x {x∉Иe₁}))
+      (sym (subst-intro L N (x∉fv-L)))
+\end{code}
+
+\section{Evaluation}
+\begin{code}
+  data Value : Term → Set where
+    V-ƛ : ∀ {A L} → Value (ƛ A , L)
+    V-Λ : ∀ {L} → Value (Λ L)
+    V-zero : Value ‵zero
+    V-suc : ∀ {L} → Value L → Value (‵suc L)
+\end{code}
+
+
+\begin{code}
+  infix 4 _—→_
+  data _—→_ : Term → Term → Set where
+    ξ₁ : ∀ {L L' M}
+      → L —→ L'
+      -- → Tm-LocallyClosed M
+        -------------------
+      → L · M —→ L' · M
+
+    ξ₂ : ∀ {L M M'}
+      → M —→ M'
+        ---------
+      → L · M —→ L · M'
+
+    -- ξ-Λ
+
+    ξ-suc : ∀ {L L'}
+      → L —→ L'
+        ------------------
+      → ‵suc L —→ ‵suc L'
+
+    β-ƛ : ∀ {L A M}
+      → 1 ≻tm L
+      → Value M
+        -------
+      → (ƛ A , L) · M —→ tm-tm[ 0 :→ M ] L
+
+    -- β-Λ
+\end{code}
+
+\begin{code}
+  infix  2 _—↠_
+  infix  1 begin'_
+  infixr 2 _—→⟨_⟩_
+  infix  3 _∎'
+  data _—↠_ : Term → Term → Set where
+    _∎' : ∀ M
+        ---------
+      → M —↠ M
+
+    step—→ : ∀ L {M N}
+      → M —↠ N
+      → L —→ M
+        ---------
+      → L —↠ N
+
+  pattern _—→⟨_⟩_ L L—→M M—↠N = step—→ L M—↠N L—→M
+
+  begin'_ : ∀ {M N}
+    → M —↠ N
+      ------
+    → M —↠ N
+  begin' M—↠N = M—↠N
 \end{code}
 
 \chapter{Conclusions}
