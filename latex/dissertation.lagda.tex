@@ -1339,6 +1339,8 @@ inferred from context which one is meant, we specify it with these auxilary func
       i≻L : i ≻ty-tm L
       i≻L j = let И⟨ Иe₁ , Иe₂ ⟩ = i≻ j
         in И⟨ Иe₁ , (λ a {a∉} → proj₂ (ƛ-inj (Иe₂ a {a∉}))) ⟩
+
+  
 \end{code}
 
 \section{Free variables}
@@ -1931,6 +1933,10 @@ We will need some further lemmas regarding local closure.
   Λ-≻ i≻ j = let И⟨ Иe₁ , Иe₂ ⟩ = i≻ j
     in И⟨ Иe₁ , (λ a {a∉} → Λ-inj (Иe₂ a {a∉})) ⟩
 
+  ≻Λ⇒s≻Λ : ∀ {L i} → i ≻ty-tm (Λ L) → (suc i) ≻ty-tm L
+  ≻Λ⇒s≻Λ i≻Λ (suc j) = let И⟨ Иe₁ , Иe₂ ⟩ = i≻Λ j ⦃ ≤-pred it ⦄
+    in И⟨ Иe₁ , (λ a {a∉} → Λ-inj (Иe₂ a {a∉})) ⟩
+
   []-≻ : ∀ {L A i} → i ≻tm (L [ A ]) → i ≻tm L
   []-≻ {L} {A} {i} i≻ j = let И⟨ Иe₁ , Иe₂ ⟩ = i≻ j
     in И⟨ Иe₁ , (λ a {a∉} → proj₁ ([]-inj (Иe₂ a {a∉}))) ⟩
@@ -2192,7 +2198,10 @@ locally closed.
         ---------
       → L · M —→ L · M'
 
-    -- ξ-Λ
+    ξ-[] : ∀ {L L' A}
+      → L —→ L'
+        ------------------
+      → L [ A ] —→ L' [ A ]
 
     ξ-suc : ∀ {L L'}
       → L —→ L'
@@ -2202,10 +2211,14 @@ locally closed.
     β-ƛ : ∀ {L A M}
       → 1 ≻tm L
       → Value M
-        -------
+        ---------
       → (ƛ A , L) · M —→ tm-tm[ 0 :→ M ] L
 
-    -- β-Λ
+    β-Λ : ∀ {L A}
+      → 1 ≻ty-tm L
+      → Ty-LocallyClosed A
+        --------------------------------
+      → (Λ L) [ A ] —→ ty-tm[ 0 :→ A ] L
 \end{code}
 
 \begin{code}
@@ -2231,6 +2244,62 @@ locally closed.
       ------
     → M —↠ N
   begin' M—↠N = M—↠N
+\end{code}
+
+\begin{code}
+  data Progress (L : Term) : Set where
+    step : ∀ {L'}
+      → L —→ L'
+        ----------
+      → Progress L
+
+    done :
+        Value L
+        ----------
+      → Progress L
+
+  progress : ∀ {L A}
+    → ∅ ⊢ L ⦂ A
+      ----------
+    → Progress L
+  progress (⊢ƛ lc-A cof) = done V-ƛ
+  progress (⊢· ⊢L ⊢M) with progress ⊢L
+  ... | step L→L' = step (ξ₁ L→L')
+  ... | done V-ƛ with progress ⊢M
+  ...   | step M→M' = step (ξ₂ M→M')
+  ...   | done val  = step (β-ƛ (≻ƛ⇒s≻ƛ (⊢⇒lc ⊢L)) val)
+  progress (⊢Λ x) = done V-Λ
+  progress (⊢[] lc-A ⊢L) with progress ⊢L
+  ... | step L→L' = step (ξ-[] L→L')
+  ... | done V-Λ = step (β-Λ (≻Λ⇒s≻Λ (⊢⇒lc-ty-tm ⊢L)) lc-A)
+  progress (⊢zero ok∅) = done V-zero
+  progress (⊢suc ⊢L) with progress ⊢L
+  ... | step L→L'  = step (ξ-suc L→L')
+  ... | done val-L = done (V-suc val-L)
+\end{code}
+
+\begin{code}
+
+  preserve : ∀ {L L' A}
+    → ∅ ⊢ L ⦂ A
+    → L —→ L'
+      ----------
+    → ∅ ⊢ L' ⦂ A
+  preserve (⊢· ⊢L ⊢M) (ξ₁ L→L') = ⊢· (preserve ⊢L L→L') ⊢M
+  preserve (⊢· ⊢L ⊢M) (ξ₂ M→M') = ⊢· ⊢L (preserve ⊢M M→M')
+  preserve (⊢· ⊢L ⊢M) (β-ƛ 1≻L val-M) = subst-op {!!} {!⊢L!}
+  preserve (⊢[] x ⊢L) L→L' = {!!}
+  preserve (⊢suc ⊢L) L→L' = {!!}
+  
+  -- preserve : ∀ {t t' A}
+  --   → ∅ ⊢ t ⦂ A
+  --   → t —→ t'
+  --     ----------
+  --   → ∅ ⊢ t' ⦂ A
+  -- preserve (⊢· ⊢t₁ ⊢t₂) (ξ₁ t→t' _) = ⊢· (preserve ⊢t₁ t→t') ⊢t₂
+  -- preserve (⊢· ⊢t₁ ⊢t₂) (ξ₂ t→t') = ⊢· ⊢t₁  (preserve ⊢t₂ t→t')
+  -- preserve (⊢· ⊢t₁ ⊢t₂) (β x x₁) = subst-op ⊢t₂ ⊢t₁
+  -- preserve (⊢suc ⊢t) (ξ-suc t→t') = ⊢suc (preserve ⊢t t→t')
 \end{code}
 
 \chapter{Conclusions}
