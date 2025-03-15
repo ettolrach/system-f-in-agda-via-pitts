@@ -1348,7 +1348,7 @@ I don't think this is needed...
   ftv-tm (ƛ L) = ftv-tm L
   ftv-tm (L · M) = ftv-tm L ++ ftv-tm M
   ftv-tm (Λ L) = ftv-tm L
-  ftv-tm (L [ A ]) = ftv-ty A
+  ftv-tm (L [ A ]) = ftv-tm L ++ ftv-ty A
   ftv-tm ‵zero = []
   ftv-tm (‵suc L) = ftv-tm L
 
@@ -1841,12 +1841,19 @@ Once again, these properties are similar to those in \citet{wadler_programming_2
       ρ-tm-ty (S⦂ (S⦂ ∋X)) = S⦂ ∋X
 
   -- Apply term-equality within type judgements.
-  ≡-with-⊢ : ∀ {Γ L M A}
+  ≡-with-⊢-tm : ∀ {Γ L M A}
     → Γ ⊢ L ⦂ A
     → L ≡ M
       ---------
     → Γ ⊢ M ⦂ A
-  ≡-with-⊢ ⊢L refl = ⊢L
+  ≡-with-⊢-tm ⊢L refl = ⊢L
+
+  ≡-with-⊢-ty : ∀ {Γ L A B}
+    → Γ ⊢ L ⦂ A
+    → A ≡ B
+      ---------
+    → Γ ⊢ L ⦂ B
+  ≡-with-⊢-ty ⊢L refl = ⊢L
 \end{code}
 
 We will also need a lemma called \texttt{subst-open-context} by \citet{chargueraud_locally_2012}.
@@ -1885,7 +1892,7 @@ We will also need a lemma called \texttt{subst-open-context} by \citet{charguera
     → Γ ⊢ tm-tm[ x := N ] (tm-tm[ i —→ y ] L) ⦂ A
     → Γ ⊢ tm-tm[ i —→ y ] (tm-tm[ x := N ] L) ⦂ A
   subst-open-var-ctx L x≢y i≻N assump =
-    ≡-with-⊢ assump (subst-open-var L x≢y i≻N)
+    ≡-with-⊢-tm assump (subst-open-var L x≢y i≻N)
 \end{code}
 
 \section{Well-typed terms are locally closed}
@@ -2091,7 +2098,20 @@ locally closed.
     → (i ≻ty-tm N)
     → Γ ⊢ tm-tm[ x := N ] (ty-tm[ j —→ y ] L) ⦂ A
     → Γ ⊢ ty-tm[ j —→ y ] (tm-tm[ x := N ] L) ⦂ A
-  subst-open-ty-tm-ctx L x≢y j≥i i≻N assump = ≡-with-⊢ assump (subst-open-ty-tm L x≢y j≥i i≻N)
+  subst-open-ty-tm-ctx L x≢y j≥i i≻N assump = ≡-with-⊢-tm assump (subst-open-ty-tm L x≢y j≥i i≻N)
+
+  subst-ty : ∀ {Γ X L A B}
+    → Ty-LocallyClosed A
+    → (Γ , X) ⊢ L ⦂ B
+      --------------------
+    → Γ ⊢ ty-tm[ X := A ] L ⦂ ty-ty[ X := A ] B
+  subst-ty {X = Y} lc-A (⊢free okΓ,Y lc-B ∋x) = {!!}
+  subst-ty lc-A (⊢ƛ lc-B cof) = {!!}
+  subst-ty lc-A (⊢· ⊢L ⊢M) = {!!}
+  subst-ty lc-A (⊢Λ cof) = {!!}
+  subst-ty lc-A (⊢[] lc-B ⊢L) = {!!}
+  subst-ty lc-A (⊢zero okΓ) = {!!}
+  subst-ty lc-A (⊢suc ⊢L) = {!!}
 
   {-# TERMINATING #-}
   subst : ∀ {Γ x L N A B}
@@ -2142,6 +2162,36 @@ locally closed.
   subst-intro (L [ A ]) N x∉fv-L = cong₂ _[_] (subst-intro L N x∉fv-L) refl
   subst-intro ‵zero N x∉fv-L = refl
   subst-intro (‵suc L) N x∉fv-L = cong ‵suc_ (subst-intro L N x∉fv-L)
+      
+  subst-intro-ty-ty : ∀ {x i B} (A : Type)
+    → x ∉ ftv-ty A
+    → ty-ty[ i :→ B ] A ≡ ty-ty[ x := B ] (ty-ty[ i —→ x ] A)
+  subst-intro-ty-ty ‵ℕ x∉ = refl
+  subst-intro-ty-ty {x} (t-fr y) x∉ with x ≟lchar y
+  ... | yes refl = contradiction refl (∉∷[]⇒≢ x∉)
+  ... | no  x≢y  = refl
+  subst-intro-ty-ty {x} {i} (t-# k) x∉ with i ≟ℕ k
+  ... | no  i≢k  = refl
+  ... | yes refl with x ≟lchar x
+  ...   | yes refl = refl
+  ...   | no  x≢x  = contradiction refl x≢x
+  subst-intro-ty-ty (A ⇒ B) x∉ = let ⟨ x∉A , x∉B ⟩ = ∉-++ x∉
+    in cong₂ _⇒_ (subst-intro-ty-ty A x∉A) (subst-intro-ty-ty B x∉B)
+  subst-intro-ty-ty {i = i} (t-∀ A) x∉ = cong t-∀_ (subst-intro-ty-ty {i = suc i} A x∉)
+
+  subst-intro-ty-tm : ∀ {x i B} (L : Term)
+    → x ∉ ftv-tm L
+    → ty-tm[ i :→ B ] L ≡ ty-tm[ x := B ] (ty-tm[ i —→ x ] L)
+  subst-intro-ty-tm (fr x) x∉ = refl
+  subst-intro-ty-tm (# k) x∉ = refl
+  subst-intro-ty-tm (ƛ L) x∉ = cong ƛ_ (subst-intro-ty-tm L x∉)
+  subst-intro-ty-tm (L · M) x∉ = let ⟨ x∉L , x∉M ⟩ = ∉-++ x∉
+    in cong₂ _·_ (subst-intro-ty-tm L x∉L) (subst-intro-ty-tm M x∉M)
+  subst-intro-ty-tm (Λ L) x∉ = cong Λ_ (subst-intro-ty-tm L x∉)
+  subst-intro-ty-tm (L [ A ]) x∉ = let ⟨ x∉L , x∉A ⟩ = ∉-++ x∉
+    in cong₂ _[_] (subst-intro-ty-tm L x∉L) (subst-intro-ty-ty A x∉A )
+  subst-intro-ty-tm ‵zero x∉ = refl
+  subst-intro-ty-tm (‵suc L) x∉ = cong ‵suc_ (subst-intro-ty-tm L x∉)
 
   subst-op : ∀ {Γ L N A B}
     → ∅ ⊢ N ⦂ A
@@ -2152,9 +2202,20 @@ locally closed.
     let x                  = fresh (fv-tm L ++ Иe₁)
         ⟨ x∉fv-L , x∉Иe₁ ⟩ = ∉-++ {xs = fv-tm L}
                                 (fresh-correct (fv-tm L ++ Иe₁))
-    in ≡-with-⊢
+    in ≡-with-⊢-tm
       (subst ⊢N (Иe₂ x {x∉Иe₁}))
       (sym (subst-intro L N (x∉fv-L)))
+
+  subst-op-ty : ∀ {Γ L A B}
+    → Ty-LocallyClosed A
+    → Γ ⊢ Λ L ⦂ t-∀ B
+      --------------------
+    → Γ ⊢ ty-tm[ 0 :→ A ] L ⦂ ty-ty[ 0 :→ A ] B
+  subst-op-ty {Γ} {L} {A} lc-A (⊢Λ И⟨ Иe₁ , Иe₂ ⟩) =
+    let x                  = fresh (fv-tm L ++ Иe₁)
+        ⟨ x∉fv-L , x∉Иe₁ ⟩ = ∉-++ {xs = fv-tm L}
+                                (fresh-correct (fv-tm L ++ Иe₁))
+    in {!!}
 \end{code}
 
 \section{Evaluation}
@@ -2271,8 +2332,9 @@ locally closed.
   preserve (⊢· ⊢L ⊢M) (ξ₁ L→L') = ⊢· (preserve ⊢L L→L') ⊢M
   preserve (⊢· ⊢L ⊢M) (ξ₂ M→M') = ⊢· ⊢L (preserve ⊢M M→M')
   preserve (⊢· ⊢L ⊢M) (β-ƛ 1≻L val-M) = subst-op ⊢M ⊢L
-  preserve (⊢[] x ⊢L) L→L' = {!!}
-  preserve (⊢suc ⊢L) L→L' = {!!}
+  preserve (⊢[] lc-A ⊢L) (ξ-[] L→L') = ⊢[] lc-A (preserve ⊢L L→L')
+  preserve (⊢[] x ⊢L) (β-Λ 1≻L lc-A) = subst-op-ty x ⊢L
+  preserve (⊢suc ⊢L) (ξ-suc L→L') = ⊢suc (preserve ⊢L L→L')
   
   -- preserve : ∀ {t t' A}
   --   → ∅ ⊢ t ⦂ A
