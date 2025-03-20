@@ -264,7 +264,7 @@ open import Data.Product using (_×_; proj₁; proj₂; ∃-syntax) renaming (_,
 open import Data.Sum using (_⊎_; inj₁; inj₂; [_,_])
 
 -- Lists.
-open import Data.List using (List; []; _∷_; _++_; length; filter; map; foldr; head; replicate)
+open import Data.List using (List; []; _∷_; _++_; length; filter; foldr; head; replicate)
 open import Data.List.Properties using (≡-dec)
 import Data.List.Membership.DecPropositional as DecPropMembership
 open import Data.List.Relation.Unary.All using (All; all?; lookup)
@@ -315,8 +315,9 @@ Combining System F with the locally nameless representation was previously descr
 \begin{code}
 module chapter4 where
   open import cofinite
-  open import plfa_adaptions using (All-++; ++-All; ∉-++; ∈-++ˡ; ∈-++ʳ; ∈-swap;
-    ∉y∷ys⇒≢y; m+1≤n⇒m≤n; ∉∷[]⇒≢; ≢∧∉⇒∉∷; ∈∷[]⇒≡)
+  open import plfa_adaptions using (All-++; ++-All; ∉-++; ++-∉; ∈-++ˡ; ∈-++ʳ; ∈-swap;
+    ∉y∷ys⇒≢y; ∉y∷ys⇒∉ys; m+1≤n⇒m≤n; ∉∷[]⇒≢; ≢∧∉⇒∉∷; ∈∷[]⇒≡; ∉y∷ys⇒∉y∷[];
+    ∈y∷ys∧≢y⇒∈ys)
   open import tspl_prior_work
     using (suc-preserves-≢; sym-≢; fresh; fresh-correct)
 \end{code}
@@ -535,7 +536,7 @@ closure.
 
   open Lns ⦃ ... ⦄
 
-  
+
   -- Local closure definition.
   _≻_ : ∀ {A B : Set} ⦃ _ : Lns A B ⦄ → ℕ → B → Set
   i ≻ L = (j : ℕ) ⦃ _ : j ≥ i ⦄ → И a , ([ j —→ a ] L ≡ L)
@@ -578,7 +579,7 @@ closure.
   lemma2·13 {_} {_} {L} {x} j j≥i i≻L k
     with j ≟ℕ k | Иe₁ (i≻L j ⦃ j≥i ⦄)
   ... | yes refl | l = И⟨ l , (λ a → ax1 j a x L) ⟩
-  ... | no  j≢k  | l = И⟨ l , (λ a → 
+  ... | no  j≢k  | l = И⟨ l , (λ a →
     begin
       [ k —→ a ] ([ j —→ x ] L)
     ≡⟨ ax5 k j a x L (sym-≢ j≢k) ⟩
@@ -618,7 +619,7 @@ closure.
   open-rec-lc-lemma {‵suc L} i≢j assump
     rewrite open-rec-lc-lemma {L} i≢j (‵suc-inj assump) = refl
 
-  
+
   open-rec-lc-lemma-ty : ∀ {A i j u v}
     → i ≢ j
     → ty-ty[ i —→ u ] (ty-ty[ j —→ v ] A) ≡ ty-ty[ j —→ v ] A
@@ -721,7 +722,7 @@ Now we simply prove axioms 1 and 5 for both kinds of opening, and we get the lem
   ax5-type i j a b (t-∀ A) i≢j
     rewrite ax5-type (suc i) (suc j) a b A (suc-preserves-≢ i≢j)
           = refl
-  
+
   instance
     LnsType : Lns Type Type
     LnsType = record
@@ -952,7 +953,7 @@ As before, we can substitute a term for a free variable.
   ty-tm[_:=_]_ : List Char → Type → Term → Term
   ty-tm[ x := T ] (fr y) = fr y
   ty-tm[ x := T ] (# i) = # i
-  ty-tm[ x := T ] (ƛ L) = ƛ (ty-tm[ x := T ] L) 
+  ty-tm[ x := T ] (ƛ L) = ƛ (ty-tm[ x := T ] L)
   ty-tm[ x := T ] (L · M) = (ty-tm[ x := T ] L) · (ty-tm[ x := T ] M)
   ty-tm[ x := T ] (Λ L) = Λ (ty-tm[ x := T ] L)
   ty-tm[ x := T ] (L [ A ]) = (ty-tm[ x := T ] L) [ ty-ty[ x := T ] A ]
@@ -1097,6 +1098,22 @@ F$_{\omega}$ \citep{hutton_system_2019}.
     _,_ : Context → List Char → Context
 \end{code}
 
+Contexts are isomorphic to lists [TODO: CITE PLFA],
+so we can also concatenate them and define map over the types of free variables.
+We will need this later in proofs of substitution.
+
+\begin{code}
+  _+_ : Context → Context → Context
+  Γ + ∅ = Γ
+  Γ + (Δ , x ⦂ A) = (Γ + Δ) , x ⦂ A
+  Γ + (Δ , X) = (Γ + Δ) , X
+
+  map : ∀ (f : Type → Type) → Context → Context
+  map f ∅ = ∅
+  map f (Γ , x ⦂ A) = (map f Γ) , x ⦂ f A
+  map f (Γ , X) = (map f Γ) , X
+\end{code}
+
 \paragraph*{Ok environments.} We need a predicate to tell when an environment doesn't contain any
 bound type variables. Since the STLC only contains base and function types, this wasn't necessary
 before. \citet{chargueraud_locally_2012} requires that any references free type variables
@@ -1119,8 +1136,22 @@ restriction is unneccessary.
   domain-all-ftv (ctx , x ⦂ A) = (ftv-ty A) ++ domain-all-ftv ctx
   domain-all-ftv (ctx , X) = X ∷ domain-all-ftv ctx
 
+  weaken-dom-all-ftv : ∀ {X} (Γ : Context) → X ∉ domain-all-ftv Γ → X ∉ domain-ftv Γ
+  weaken-dom-all-ftv {X} ∅ _ = λ ()
+  weaken-dom-all-ftv {X} (Γ , x ⦂ A) X∉ftv-A++all-Γ =
+    weaken-dom-all-ftv Γ (proj₂ (∉-++ X∉ftv-A++all-Γ))
+  weaken-dom-all-ftv {X} (Γ , Y) X∉Y∷all-Γ =
+    ++-∉
+      (∉y∷ys⇒∉y∷[] X∉Y∷all-Γ)
+      (weaken-dom-all-ftv Γ (∉y∷ys⇒∉ys X∉Y∷all-Γ))
+
   _⊆_ : List (List Char) → List (List Char) → Set
   xs ⊆ ys = All (λ x → x ∈ ys) xs
+
+  x∈xs∧xs⊆ys⇒x∈ys : ∀ {x xs ys} → x ∈ xs → xs ⊆ ys → x ∈ ys
+  x∈xs∧xs⊆ys⇒x∈ys {x} {x' ∷ xs} {ys} x∈xs (px All.∷ xs⊆ys) with x ≟lchar x'
+  ... | yes refl = px
+  ... | no  x≢x' = x∈xs∧xs⊆ys⇒x∈ys (∈y∷ys∧≢y⇒∈ys x∈xs x≢x') xs⊆ys
 
   data Ok : Context → Set where
     ok-∅ : Ok ∅
@@ -1129,6 +1160,14 @@ restriction is unneccessary.
 
   _ : Ok (((∅ , ('T' ∷ [])) , ('Q' ∷ [])) , ('x' ∷ []) ⦂ (t-fr ('T' ∷ [])))
   _ = ok-∷fv (ok-∷ftv (ok-∷ftv ok-∅ (λ ())) (λ Q∈ → contradiction (∈∷[]⇒≡ Q∈) λ ())) ty-fr-lc ((there (here refl)) All.∷ All.[])
+
+  _ : Ok ((∅ , ('T' ∷ [])) + (∅ , ('x' ∷ []) ⦂ (t-fr ('T' ∷ []))))
+  _ = ok-∷fv (ok-∷ftv ok-∅ (λ ())) ty-fr-lc ((here refl) All.∷ All.[])
+
+  ok-+ : ∀ {Γ Δ} → Ok (Γ + Δ) → Ok Γ
+  ok-+ {Γ} {∅} okΓ = okΓ
+  ok-+ {Γ} {Δ , x ⦂ A} (ok-∷fv ok+ _ _) = ok-+ ok+
+  ok-+ {Γ} {Δ , X} (ok-∷ftv ok+ _) = ok-+ ok+
 \end{code}
 
 Accessing the context is done in two different ways:
@@ -1209,13 +1248,27 @@ relevant evidence automatically.
     → ftv-ty A ⊆ (X ∷ domain-ftv Γ)
   ⊆⇒⊆∷ {Γ} {A} {X} A⊆Γ = All-map (λ px → (∈-swap {ys = X ∷ []} (∈-++ˡ {xs = domain-ftv Γ} {ys = X ∷ []} px))) A⊆Γ
 
-  ≡-with-∋ : ∀ {Γ x A B} → Γ ∋ x ⦂ A → A ≡ B → Γ ∋ x ⦂ B
-  ≡-with-∋ ∋x refl = ∋x
+  ≡-with-∋-ty : ∀ {Γ x A B} → Γ ∋ x ⦂ A → A ≡ B → Γ ∋ x ⦂ B
+  ≡-with-∋-ty ∋x refl = ∋x
+
+  ≡-with-∋-ctx : ∀ {Γ Δ x A} → Γ ∋ x ⦂ A → Γ ≡ Δ → Δ ∋ x ⦂ A
+  ≡-with-∋-ctx ∋x refl = ∋x
 
   ⇒-:= : ∀ {Γ X x C} (A B : Type) → Γ ∋ x ⦂ (ty-ty[ X := C ] (A ⇒ B)) → Γ ∋ x ⦂ ((ty-ty[ X := C ] A) ⇒ (ty-ty[ X := C ] B))
   ⇒-:= _ _ []⇒ = []⇒
   ∀-:= : ∀ {Γ X x C} (A : Type) → Γ ∋ x ⦂ (ty-ty[ X := C ] (t-∀ A)) → Γ ∋ x ⦂ (t-∀ (ty-ty[ X := C ] A))
   ∀-:= _ []∀ = []∀
+
+  ∋-map-ftv : ∀ {Γ X x A C}
+    (Δ : Context)
+    → Ok ((Γ , X) + Δ)
+    → ((Γ , X) + Δ) ∋ x ⦂ A
+    → Γ + (map (ty-ty[ X := C ]_) Δ) ∋ x ⦂ (ty-ty[ X := C ] A)
+  ∋-map-ftv ∅ (ok-∷ftv okΓ X∉Γ) (T⦂ ∋x) =
+    ≡-with-∋-ty ∋x (sym (:=-∉-idempotent (∉-domain-all-∋ X∉Γ ∋x)))
+  ∋-map-ftv {x = x} (Δ , y ⦂ B) _ (H refl) = H′
+  ∋-map-ftv {x = x} (Δ , y ⦂ B) (ok-∷fv okΓ+Δ _ _) (T x≢y ∋x) = T x≢y (∋-map-ftv Δ okΓ+Δ ∋x)
+  ∋-map-ftv (Δ , Y) (ok-∷ftv okΓ,X+Δ Y∉) (T⦂ ∋x) = T⦂ (∋-map-ftv Δ okΓ,X+Δ ∋x)
 
   -- ty-ctx[_:=_]_ : List Char → Type → Context → Context
   -- ty-ctx[ X := A ] ∅ = ∅
@@ -1404,7 +1457,7 @@ Once again, these properties are similar to those in \citet{wadler_programming_2
     → (∀ {x y A B} → Γ , y ⦂ B ∋ x ⦂ A → Δ , y ⦂ B ∋ x ⦂ A)
   ext-tm ρ (H refl) = H′
   ext-tm ρ (T x≢y ∋x) = T x≢y (ρ ∋x)
-  
+
   ext-ty : ∀ {Γ Δ}
     → (∀ {X}     →        Γ ∋ X → Δ ∋ X)
       -----------------------------------------------------
@@ -1417,7 +1470,7 @@ Once again, these properties are similar to those in \citet{wadler_programming_2
       -----------------------------------------------------
     → (∀ {x Y A} → (Γ , Y) ∋ x ⦂ A → (Δ , Y) ∋ x ⦂ A)
   ext-tm-ty ρ (T⦂ ∋x) = T⦂ (ρ ∋x)
-  
+
   ext-ty-tm : ∀ {Γ Δ}
     → (∀ {X}     →        Γ ∋ X → Δ ∋ X)
       -----------------------------------------------------
@@ -1478,7 +1531,7 @@ Once again, these properties are similar to those in \citet{wadler_programming_2
           -------------------------
         → ((Γ , x ⦂ A) , y ⦂ B) ∋ X
       ρ-tm-ty (S⦂ (S⦂ ∋X)) = S⦂ (S⦂ ∋X)
-      
+
   swap-ty : ∀ {Γ X Y L C}
     → ((Γ , Y) , X) ⊢ L ⦂ C
       -------------------------
@@ -1500,7 +1553,7 @@ Once again, these properties are similar to those in \citet{wadler_programming_2
       ρ₂ Z = S Z
       ρ₂ (S Z) = Z
       ρ₂ (S (S ∋W)) = S (S ∋W)
-      
+
 
   swap-tm-ty : ∀ {Γ X y L B C}
     → ((Γ , y ⦂ B) , X) ⊢ L ⦂ C
@@ -1521,14 +1574,14 @@ Once again, these properties are similar to those in \citet{wadler_programming_2
       ρ₂ Z = S⦂ Z
       ρ₂ (S (S⦂ ∋Z)) = S⦂ (S ∋Z)
 
-  swap-ty-tm : ∀ {Γ X y L A B C}
-    → ((Γ , X) , y ⦂ A) ⊢ L ⦂ B
-      -------------------------
-    → ((Γ , y ⦂ (ty-ty[ X := C ] A)) , X) ⊢ L ⦂ B
-  swap-ty-tm {Γ} {X} {y} {L} {A} {B} {C} ⊢L with ⊢⇒Ok ⊢L
-  ... | ok-∷fv (ok-∷ftv okΓ x∉Γ) lc-A A⊆X∷Γ = rename (ok-∷ftv (ok-∷fv okΓ {!!} {!!}) {!!}) {!!} {!!} ⊢L
+  -- swap-ty-tm : ∀ {Γ X y L A B C}
+  --   → ((Γ , X) , y ⦂ A) ⊢ L ⦂ B
+  --     -------------------------
+  --   → ((Γ , y ⦂ (ty-ty[ X := C ] A)) , X) ⊢ L ⦂ B
+  -- swap-ty-tm {Γ} {X} {y} {L} {A} {B} {C} ⊢L with ⊢⇒Ok ⊢L
+  -- ... | ok-∷fv (ok-∷ftv okΓ x∉Γ) lc-A A⊆X∷Γ = rename (ok-∷ftv (ok-∷fv okΓ {!!} {!!}) {!!}) {!!} {!!} ⊢L
 
-  -- Dopping shadowed variables.
+  -- Dropping shadowed variables.
   drop : ∀ {Γ x L A B C}
     → (Γ , x ⦂ A) , x ⦂ B ⊢ L ⦂ C
       --------------------------
@@ -1564,6 +1617,13 @@ Once again, these properties are similar to those in \citet{wadler_programming_2
       ---------
     → Γ ⊢ L ⦂ B
   ≡-with-⊢-ty ⊢L refl = ⊢L
+
+  ≡-with-⊢-ctx : ∀ {Γ Δ L A}
+    → Γ ⊢ L ⦂ A
+    → Γ ≡ Δ
+      ---------
+    → Δ ⊢ L ⦂ A
+  ≡-with-⊢-ctx ⊢L refl = ⊢L
 \end{code}
 
 We will also need a lemma called \texttt{subst-open-context} by \citet{chargueraud_locally_2012}.
@@ -1681,11 +1741,11 @@ locally closed.
       helper {Λ N} k≥i i≻ty j =
         let И⟨ Иe₁ , Иe₂ ⟩ = (helper k≥i (Λ-≻ i≻ty)) j
         in И⟨ Иe₁ , (λ a {a∉} → cong Λ_ (Иe₂ a {a∉})) ⟩
-      helper {N [ A ]} k≥i i≻ty j = 
+      helper {N [ A ]} k≥i i≻ty j =
         let И⟨ Иe₁ , Иe₂ ⟩ = (helper k≥i ([]-≻ i≻ty)) j
         in И⟨ Иe₁ , (λ a {a∉} → cong _[ A ] (Иe₂ a {a∉})) ⟩
       helper {‵zero} k≥i i≻ty j = И⟨ [] , (λ _ → refl) ⟩
-      helper {‵suc N} k≥i i≻ty j = 
+      helper {‵suc N} k≥i i≻ty j =
         let И⟨ Иe₁ , Иe₂ ⟩ = (helper k≥i (‵suc-≻ i≻ty)) j
         in И⟨ Иe₁ , (λ a {a∉} → cong ‵suc_ (Иe₂ a {a∉})) ⟩
   ⊢⇒lc {L = L [ A ]} (⊢[] _ ⊢L) j =
@@ -1779,7 +1839,7 @@ locally closed.
     → tm-tm[ x := N ] (ty-tm[ j —→ y ] L)
       ≡ ty-tm[ j —→ y ] (tm-tm[ x := N ] L)
   subst-open-ty-tm {N} {x} {y} {i} {j} (fr z) x≢y j≥i i≻N with x ≟lchar z
-  ... | yes refl = 
+  ... | yes refl =
     begin
       N
     ≡⟨ sym (lemma2·7-2 ⦃ LnsTyTm ⦄ ≤-refl (lemma2·6 ⦃ LnsTyTm ⦄ j≥i i≻N)) ⟩
@@ -1809,7 +1869,7 @@ locally closed.
     → Γ ⊢ tm-tm[ x := N ] (ty-tm[ j —→ y ] L) ⦂ A
     → Γ ⊢ ty-tm[ j —→ y ] (tm-tm[ x := N ] L) ⦂ A
   subst-open-ty-tm-ctx L x≢y j≥i i≻N assump = ≡-with-⊢-tm assump (subst-open-ty-tm L x≢y j≥i i≻N)
-  
+
   subst-open-ty-tm-tm-tm : ∀ {C : Type} {x y : List Char} {i j : ℕ}
     (L : Term)
     → j ≥ i
@@ -1929,36 +1989,75 @@ locally closed.
     → Γ ⊢ L ⦂ ty-ty[ X := C ] (ty-ty[ j :→ A ] B)
   extract-subst-ctx {B = B} j≥i i≻C assump = ≡-with-⊢-ty assump (extract-subst B j≥i i≻C)
 
-  {-# TERMINATING #-}
-  subst-ty : ∀ {Γ X L A B}
-    → Ty-LocallyClosed A
+  map-subst-fresh-id : ∀ {Γ X A} → Ok Γ → X ∉ domain-ftv Γ → Γ ≡ map (ty-ty[ X := A ]_) Γ
+  map-subst-fresh-id ok-∅ X∉ = refl
+  map-subst-fresh-id (ok-∷fv {A = B} {x = x} okΓ lc-B B⊆Γ) X∉ =
+    cong₂ (_, x ⦂_)
+    (map-subst-fresh-id okΓ X∉)
+    (sym (:=-∉-idempotent λ X∈ftv-B → contradiction (x∈xs∧xs⊆ys⇒x∈ys X∈ftv-B B⊆Γ) X∉))
+  map-subst-fresh-id (ok-∷ftv {X = Y} okΓ x) X∉ = cong (_, Y) (map-subst-fresh-id okΓ (∉y∷ys⇒∉ys X∉))
+
+  subst-ty : ∀ {Γ Δ X L B C}
+    → Ty-LocallyClosed C
     -- → X ∉ domain-all-ftv Γ
-    → (Γ , X) ⊢ L ⦂ B
+    → Ok (Γ + (map (ty-ty[ X := C ]_) Δ))
+    → ((Γ , X) + Δ) ⊢ L ⦂ B
       --------------------
-    → Γ ⊢ ty-tm[ X := A ] L ⦂ ty-ty[ X := A ] B
---   subst-ty {X = Y} ⊢L = {!!}
-  subst-ty {X = Y} {B = ‵ℕ} lc-A (⊢free (ok-∷ftv okΓ X∉Γ) lc-B (T⦂ ∋x)) = ⊢free okΓ n≻‵ℕ ∋x
-  subst-ty {X = Y} {B = t-fr X} lc-A (⊢free (ok-∷ftv okΓ X∉Γ) lc-B (T⦂ ∋x)) with Y ≟lchar X
-  ... | yes refl = contradiction (∋⦂⇒∈ ∋x) X∉Γ
-  ... | no  X≢Y  = ⊢free okΓ lc-B ∋x
-  subst-ty {X = Y} {B = t-# x} lc-A (⊢free (ok-∷ftv okΓ X∉Γ) lc-B ∋x) = contradiction lc-B #-never-lc
-  subst-ty {X = Y} {A = A} {B = B ⇒ C} lc-A (⊢free (ok-∷ftv okΓ X∉Γ) lc-B⇒C (T⦂ {x = x} ∋x)) =
-    ⊢free okΓ (:=⇒-≻ B C z≤n lc-B⇒C lc-A) (⇒-:= B C (≡-with-∋ ∋x (sym (:=-∉-idempotent (∉-domain-all-∋ X∉Γ ∋x)))))
-  subst-ty {X = Y} {B = t-∀ B} lc-A (⊢free (ok-∷ftv okΓ X∉Γ) lc-B (T⦂ ∋x)) =
-    ⊢free okΓ (:=∀-≻ B z≤n lc-B lc-A) (∀-:= B (≡-with-∋ ∋x (sym (:=-∉-idempotent (∉-domain-all-∋ X∉Γ ∋x)))))
---   subst-ty {X = Y} {B = B} lc-A (⊢free okΓ,Y lc-B ∋x) = ⊢free {!!} (:=-≻ B z≤n lc-B lc-A) {!!}
-  subst-ty {X = Y} {A = C} lc-C (⊢ƛ lc-A И⟨ Иe₁ , Иe₂ ⟩) = ⊢ƛ (:=-≻ z≤n lc-A lc-C)
-    И⟨ Иe₁ , (λ a {a∉} → {!subst-open-ty-tm-tm-tm-ctx ? ? ? (subst-ty lc-A (Иe₂ a {a∉}))!}) ⟩
-  subst-ty lc-A (⊢· ⊢L ⊢M) = ⊢· (subst-ty lc-A ⊢L) (subst-ty lc-A ⊢M)
-  subst-ty {X = X} {B = t-∀ B} lc-A (⊢Λ И⟨ Иe₁ , Иe₂ ⟩) = ⊢Λ И⟨ X ∷ Иe₁ , (λ a {a∉} →
-    let ⟨ a∉X∷[] , a∉Иe₁ ⟩ = ∉-++ a∉
-        X≢a = sym-≢ (∉∷[]⇒≢ a∉X∷[])
-        hypo = subst-ty lc-A (swap-ty (Иe₂ a {a∉Иe₁}))
-    in subst-open-ty-tm-ty-tm-ctx X≢a z≤n lc-A (subst-open-ty-ty-ty-ty-ctx {A = B} {j = 0} X≢a z≤n lc-A hypo)) ⟩
-  subst-ty {X = X} {L = L [ A ]} {A = C} lc-C (⊢[] {B = B} lc-A ⊢L) =
-    extract-subst-ctx {X = X} {B = B} {A = A} {j = 0} z≤n lc-C (⊢[] (:=-≻ {x = X} z≤n lc-A lc-C) (subst-ty lc-C ⊢L))
-  subst-ty lc-A (⊢zero (ok-∷ftv okΓ _)) = ⊢zero okΓ
-  subst-ty lc-A (⊢suc ⊢L) = ⊢suc (subst-ty lc-A ⊢L)
+    → (Γ + (map (ty-ty[ X := C ]_) Δ)) ⊢ ty-tm[ X := C ] L ⦂ ty-ty[ X := C ] B
+  subst-ty {Γ} {Δ} {X = Y} {C = C} lc-C okΓ+map (⊢free okΓ+Δ lc-B ∋x)
+    with ok-+ {Γ = Γ , Y} okΓ+Δ
+  ... | ok-∷ftv okΓ Y∉Γ = ⊢free okΓ+map (:=-≻ z≤n lc-B lc-C) (∋-map-ftv Δ okΓ+Δ ∋x)
+  subst-ty {X = Y} {L = ƛ L} lc-C okΓ+map (⊢ƛ lc-A И⟨ Иe₁ , Иe₂ ⟩) =
+    ⊢ƛ (:=-≻ z≤n lc-A lc-C) И⟨ Иe₁ , (λ a {a∉} →
+      let ⊢tm-tm[0→]L = Иe₂ a {a∉}
+          ok = ⊢⇒Ok ⊢tm-tm[0→]L
+      in subst-open-ty-tm-tm-tm-ctx L z≤n lc-C
+        (subst-ty lc-C (ok-∷fv okΓ+map (:=-≻ z≤n lc-A lc-C) {!!}) ⊢tm-tm[0→]L)) ⟩
+  subst-ty {X = Y} lc-C okΓ+map (⊢· ⊢L ⊢M) = ⊢· (subst-ty lc-C okΓ+map ⊢L) (subst-ty lc-C okΓ+map ⊢M)
+  subst-ty {Γ} {Δ} {X = Y} {B = t-∀ B} {C = C} lc-C okΓ+map (⊢Λ И⟨ Иe₁ , Иe₂ ⟩) =
+    ⊢Λ И⟨ (Y ∷ Иe₁) ++ domain-all-ftv (Γ + map (ty-ty[_:=_]_ Y C) Δ) , (λ a {a∉} →
+      let ⟨ a∉Y∷Иe₁ , a∉dom-all-ftv ⟩ = ∉-++ a∉
+          ⟨ a∉Y∷[] , a∉Иe₁ ⟩ = ∉-++ a∉Y∷Иe₁
+          Y≢a = sym-≢ (∉∷[]⇒≢ a∉Y∷[])
+          hypo = subst-ty {Δ = Δ , a} lc-C (ok-∷ftv okΓ+map a∉dom-all-ftv) (Иe₂ a {a∉Иe₁})
+      in subst-open-ty-tm-ty-tm-ctx Y≢a z≤n lc-C
+        (subst-open-ty-ty-ty-ty-ctx {A = B} {j = 0} Y≢a z≤n lc-C hypo) ) ⟩
+  subst-ty {X = Y} {L = L [ A ]} {B = D} lc-C okΓ+map (⊢[] {B = B} lc-A ⊢L) =
+    extract-subst-ctx {X = Y} {B = B} {A = A} {j = 0} z≤n lc-C
+      (⊢[] (:=-≻ {x = Y} z≤n lc-A lc-C) (subst-ty lc-C okΓ+map ⊢L))
+  subst-ty {X = Y} lc-C okΓ+map (⊢zero okΓ+Δ) = ⊢zero okΓ+map
+  subst-ty {X = Y} lc-C okΓ+map (⊢suc ⊢L) = ⊢suc (subst-ty lc-C okΓ+map ⊢L)
+
+--   {-# TERMINATING #-}
+--   subst-ty : ∀ {Γ X L A B}
+--     → Ty-LocallyClosed A
+--     -- → X ∉ domain-all-ftv Γ
+--     → (Γ , X) ⊢ L ⦂ B
+--       --------------------
+--     → Γ ⊢ ty-tm[ X := A ] L ⦂ ty-ty[ X := A ] B
+-- --   subst-ty {X = Y} ⊢L = {!!}
+--   subst-ty {X = Y} {B = ‵ℕ} lc-A (⊢free (ok-∷ftv okΓ X∉Γ) lc-B (T⦂ ∋x)) = ⊢free okΓ n≻‵ℕ ∋x
+--   subst-ty {X = Y} {B = t-fr X} lc-A (⊢free (ok-∷ftv okΓ X∉Γ) lc-B (T⦂ ∋x)) with Y ≟lchar X
+--   ... | yes refl = contradiction (∋⦂⇒∈ ∋x) X∉Γ
+--   ... | no  X≢Y  = ⊢free okΓ lc-B ∋x
+--   subst-ty {X = Y} {B = t-# x} lc-A (⊢free (ok-∷ftv okΓ X∉Γ) lc-B ∋x) = contradiction lc-B #-never-lc
+--   subst-ty {X = Y} {A = A} {B = B ⇒ C} lc-A (⊢free (ok-∷ftv okΓ X∉Γ) lc-B⇒C (T⦂ {x = x} ∋x)) =
+--     ⊢free okΓ (:=⇒-≻ B C z≤n lc-B⇒C lc-A) (⇒-:= B C (≡-with-∋-ty ∋x (sym (:=-∉-idempotent (∉-domain-all-∋ X∉Γ ∋x)))))
+--   subst-ty {X = Y} {B = t-∀ B} lc-A (⊢free (ok-∷ftv okΓ X∉Γ) lc-B (T⦂ ∋x)) =
+--     ⊢free okΓ (:=∀-≻ B z≤n lc-B lc-A) (∀-:= B (≡-with-∋-ty ∋x (sym (:=-∉-idempotent (∉-domain-all-∋ X∉Γ ∋x)))))
+-- --   subst-ty {X = Y} {B = B} lc-A (⊢free okΓ,Y lc-B ∋x) = ⊢free {!!} (:=-≻ B z≤n lc-B lc-A) {!!}
+--   subst-ty {X = Y} {A = C} lc-C (⊢ƛ lc-A И⟨ Иe₁ , Иe₂ ⟩) = ⊢ƛ (:=-≻ z≤n lc-A lc-C)
+--     И⟨ Иe₁ , (λ a {a∉} → {!subst-open-ty-tm-tm-tm-ctx ? ? ? (subst-ty lc-A (Иe₂ a {a∉}))!}) ⟩
+--   subst-ty lc-A (⊢· ⊢L ⊢M) = ⊢· (subst-ty lc-A ⊢L) (subst-ty lc-A ⊢M)
+--   subst-ty {X = X} {B = t-∀ B} lc-A (⊢Λ И⟨ Иe₁ , Иe₂ ⟩) = ⊢Λ И⟨ X ∷ Иe₁ , (λ a {a∉} →
+--     let ⟨ a∉X∷[] , a∉Иe₁ ⟩ = ∉-++ a∉
+--         X≢a = sym-≢ (∉∷[]⇒≢ a∉X∷[])
+--         hypo = subst-ty lc-A (swap-ty (Иe₂ a {a∉Иe₁}))
+--     in subst-open-ty-tm-ty-tm-ctx X≢a z≤n lc-A (subst-open-ty-ty-ty-ty-ctx {A = B} {j = 0} X≢a z≤n lc-A hypo)) ⟩
+--   subst-ty {X = X} {L = L [ A ]} {A = C} lc-C (⊢[] {B = B} lc-A ⊢L) =
+--     extract-subst-ctx {X = X} {B = B} {A = A} {j = 0} z≤n lc-C (⊢[] (:=-≻ {x = X} z≤n lc-A lc-C) (subst-ty lc-C ⊢L))
+--   subst-ty lc-A (⊢zero (ok-∷ftv okΓ _)) = ⊢zero okΓ
+--   subst-ty lc-A (⊢suc ⊢L) = ⊢suc (subst-ty lc-A ⊢L)
 
   {-# TERMINATING #-}
   subst : ∀ {Γ x L N A B}
@@ -1973,7 +2072,7 @@ locally closed.
   ... | yes refl = contradiction refl x≢y
   ... | no  _    = ⊢free okΓ lc-A ∋x
   subst {x = y} {L = ƛ L} ⊢N (⊢ƛ lc-A И⟨ Иe₁ , Иe₂ ⟩) =
-    ⊢ƛ lc-A И⟨ (y ∷ Иe₁) , (λ a {a∉} → 
+    ⊢ƛ lc-A И⟨ (y ∷ Иe₁) , (λ a {a∉} →
       let a∉Иe₁ = proj₂ (∉-++ {xs = y ∷ []} a∉)
           y≢a = sym-≢ (∉y∷ys⇒≢y a∉)
           ⊢tm-tm[]L = swap (sym-≢ y≢a) (Иe₂ a {a∉Иe₁})
@@ -2009,7 +2108,7 @@ locally closed.
   subst-intro (L [ A ]) N x∉fv-L = cong₂ _[_] (subst-intro L N x∉fv-L) refl
   subst-intro ‵zero N x∉fv-L = refl
   subst-intro (‵suc L) N x∉fv-L = cong ‵suc_ (subst-intro L N x∉fv-L)
-      
+
   subst-intro-ty-ty : ∀ {x i B} (A : Type)
     → x ∉ ftv-ty A
     → ty-ty[ i :→ B ] A ≡ ty-ty[ x := B ] (ty-ty[ i —→ x ] A)
@@ -2064,7 +2163,7 @@ locally closed.
                              (fresh-correct (fv-tm L ++ ftv-ty B ++ ftv-tm L ++ Иe₁))
         ⟨ x∉ftv-B , x∉ ⟩ = ∉-++ {xs = ftv-ty B} x∉
         ⟨ x∉ftv-L , x∉Иe₁ ⟩ = ∉-++ {xs = ftv-tm L} x∉
-    in ≡-with-⊢-ty (≡-with-⊢-tm (subst-ty lc-C (Иe₂ x {x∉Иe₁})) (sym (subst-intro-ty-tm L x∉ftv-L))) (sym (subst-intro-ty-ty B x∉ftv-B))
+    in ≡-with-⊢-ty (≡-with-⊢-tm (subst-ty {Δ = ∅} lc-C ok-∅ (Иe₂ x {x∉Иe₁})) (sym (subst-intro-ty-tm L x∉ftv-L))) (sym (subst-intro-ty-ty B x∉ftv-B))
 \end{code}
 
 \section{Evaluation}
@@ -2184,7 +2283,7 @@ locally closed.
   preserve (⊢[] lc-A ⊢L) (ξ-[] L→L') = ⊢[] lc-A (preserve ⊢L L→L')
   preserve (⊢[] lc-A ⊢L) (β-Λ 1≻L _) = {!!} -- subst-op-ty x ⊢L
   preserve (⊢suc ⊢L) (ξ-suc L→L') = ⊢suc (preserve ⊢L L→L')
-  
+
   -- preserve : ∀ {t t' A}
   --   → ∅ ⊢ t ⦂ A
   --   → t —→ t'
