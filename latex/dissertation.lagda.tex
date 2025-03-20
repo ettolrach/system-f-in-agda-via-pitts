@@ -1168,6 +1168,9 @@ restriction is unneccessary.
   ok-+ {Γ} {∅} okΓ = okΓ
   ok-+ {Γ} {Δ , x ⦂ A} (ok-∷fv ok+ _ _) = ok-+ ok+
   ok-+ {Γ} {Δ , X} (ok-∷ftv ok+ _) = ok-+ ok+
+
+  extract-⊆ : ∀ {Γ x A} → Ok (Γ , x ⦂ A) → ftv-ty A ⊆ domain-ftv Γ
+  extract-⊆ (ok-∷fv okΓ lc-A A⊆Γ) = A⊆Γ
 \end{code}
 
 Accessing the context is done in two different ways:
@@ -1270,15 +1273,12 @@ relevant evidence automatically.
   ∋-map-ftv {x = x} (Δ , y ⦂ B) (ok-∷fv okΓ+Δ _ _) (T x≢y ∋x) = T x≢y (∋-map-ftv Δ okΓ+Δ ∋x)
   ∋-map-ftv (Δ , Y) (ok-∷ftv okΓ,X+Δ Y∉) (T⦂ ∋x) = T⦂ (∋-map-ftv Δ okΓ,X+Δ ∋x)
 
-  -- ty-ctx[_:=_]_ : List Char → Type → Context → Context
-  -- ty-ctx[ X := A ] ∅ = ∅
-  -- ty-ctx[ X := A ] (Γ , y ⦂ B) = (ty-ctx[ X := A ] Γ) , y ⦂ (ty-ty[ X := A ] B)
-  -- ty-ctx[ X := A ] (Γ , Y) = ty-ctx[ X := A ] Γ
-
-  -- ok-ctx-:= : ∀ {Γ X A} → Ok Γ → Ty-LocallyClosed A → ¬ (ftv-ty A ⊆ domain-ftv Γ) → Ok (ty-ctx[ X := A ] Γ)
-  -- ok-ctx-:= {∅} ok-∅ _ _ = ok-∅
-  -- ok-ctx-:= {Γ , y ⦂ B} (ok-∷fv okΓ lc-B B⊆Γ) lc-A A⊈Γ = ok-∷fv (ok-ctx-:= okΓ lc-A A⊈Γ) (:=-≻ B z≤n lc-B lc-A) {!!}
-  -- ok-ctx-:= {Γ , Y} okΓ lc-A A⊈Γ = {!!}
+  ftv⊆dom-:= : ∀ {X A C}
+    (Γ Δ : Context)
+     → Ty-LocallyClosed C
+     → ftv-ty A ⊆ domain-ftv ((Γ , X) + Δ)
+     → ftv-ty (ty-ty[ X := C ] A) ⊆ domain-ftv (Γ + map (ty-ty[ X := C ]_) Δ)
+  ftv⊆dom-:= Γ Δ lc-C A⊆Γ,X+Δ = {!!}
 \end{code}
 
 Here are some examples of accessing the context.
@@ -2007,12 +2007,18 @@ locally closed.
   subst-ty {Γ} {Δ} {X = Y} {C = C} lc-C okΓ+map (⊢free okΓ+Δ lc-B ∋x)
     with ok-+ {Γ = Γ , Y} okΓ+Δ
   ... | ok-∷ftv okΓ Y∉Γ = ⊢free okΓ+map (:=-≻ z≤n lc-B lc-C) (∋-map-ftv Δ okΓ+Δ ∋x)
-  subst-ty {X = Y} {L = ƛ L} lc-C okΓ+map (⊢ƛ lc-A И⟨ Иe₁ , Иe₂ ⟩) =
+  subst-ty {Γ} {Δ} {X = Y} {L = ƛ L} lc-C okΓ+map (⊢ƛ {A = A} lc-A И⟨ Иe₁ , Иe₂ ⟩) =
     ⊢ƛ (:=-≻ z≤n lc-A lc-C) И⟨ Иe₁ , (λ a {a∉} →
       let ⊢tm-tm[0→]L = Иe₂ a {a∉}
           ok = ⊢⇒Ok ⊢tm-tm[0→]L
       in subst-open-ty-tm-tm-tm-ctx L z≤n lc-C
-        (subst-ty lc-C (ok-∷fv okΓ+map (:=-≻ z≤n lc-A lc-C) {!!}) ⊢tm-tm[0→]L)) ⟩
+        (subst-ty
+          lc-C
+          (ok-∷fv
+            okΓ+map
+            (:=-≻ z≤n lc-A lc-C)
+            (ftv⊆dom-:= {A = A} Γ Δ lc-C (extract-⊆ ok)))
+          ⊢tm-tm[0→]L)) ⟩
   subst-ty {X = Y} lc-C okΓ+map (⊢· ⊢L ⊢M) = ⊢· (subst-ty lc-C okΓ+map ⊢L) (subst-ty lc-C okΓ+map ⊢M)
   subst-ty {Γ} {Δ} {X = Y} {B = t-∀ B} {C = C} lc-C okΓ+map (⊢Λ И⟨ Иe₁ , Иe₂ ⟩) =
     ⊢Λ И⟨ (Y ∷ Иe₁) ++ domain-all-ftv (Γ + map (ty-ty[_:=_]_ Y C) Δ) , (λ a {a∉} →
@@ -2158,12 +2164,16 @@ locally closed.
       --------------------
     → ∅ ⊢ ty-tm[ 0 :→ C ] L ⦂ ty-ty[ 0 :→ C ] B
   subst-op-ty {L} {B} {C} lc-C (⊢Λ И⟨ Иe₁ , Иe₂ ⟩) =
-    let x                  = fresh (fv-tm L ++ ftv-ty B ++ ftv-tm L ++ Иe₁)
+    let x = fresh (fv-tm L ++ ftv-ty B ++ ftv-tm L ++ Иe₁)
         ⟨ x∉fv-L , x∉ ⟩ = ∉-++ {xs = fv-tm L}
-                             (fresh-correct (fv-tm L ++ ftv-ty B ++ ftv-tm L ++ Иe₁))
+          (fresh-correct (fv-tm L ++ ftv-ty B ++ ftv-tm L ++ Иe₁))
         ⟨ x∉ftv-B , x∉ ⟩ = ∉-++ {xs = ftv-ty B} x∉
         ⟨ x∉ftv-L , x∉Иe₁ ⟩ = ∉-++ {xs = ftv-tm L} x∉
-    in ≡-with-⊢-ty (≡-with-⊢-tm (subst-ty {Δ = ∅} lc-C ok-∅ (Иe₂ x {x∉Иe₁})) (sym (subst-intro-ty-tm L x∉ftv-L))) (sym (subst-intro-ty-ty B x∉ftv-B))
+    in ≡-with-⊢-ty
+      (≡-with-⊢-tm
+        (subst-ty {Δ = ∅} lc-C ok-∅ (Иe₂ x {x∉Иe₁}))
+        (sym (subst-intro-ty-tm L x∉ftv-L)))
+      (sym (subst-intro-ty-ty B x∉ftv-B))
 \end{code}
 
 \section{Evaluation}
@@ -2281,7 +2291,7 @@ locally closed.
   preserve (⊢· ⊢L ⊢M) (ξ₂ M→M') = ⊢· ⊢L (preserve ⊢M M→M')
   preserve (⊢· ⊢L ⊢M) (β-ƛ 1≻L val-M) = subst-op ⊢M ⊢L
   preserve (⊢[] lc-A ⊢L) (ξ-[] L→L') = ⊢[] lc-A (preserve ⊢L L→L')
-  preserve (⊢[] lc-A ⊢L) (β-Λ 1≻L _) = {!!} -- subst-op-ty x ⊢L
+  preserve (⊢[] lc-A ⊢L) (β-Λ 1≻L _) = subst-op-ty lc-A ⊢L
   preserve (⊢suc ⊢L) (ξ-suc L→L') = ⊢suc (preserve ⊢L L→L')
 
   -- preserve : ∀ {t t' A}
