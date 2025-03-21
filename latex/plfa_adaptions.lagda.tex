@@ -194,4 +194,30 @@ module plfa_adaptions where
   m+1≤n⇒m≤n : ∀ {m n : ℕ} → (suc m) ≤ n → m ≤ n
   m+1≤n⇒m≤n {zero} {suc n} sm≤n = z≤n
   m+1≤n⇒m≤n {suc m} {suc n} (s≤s sm≤n) = s≤s (m+1≤n⇒m≤n sm≤n)
+
+  _⊆_ : List (List Char) → List (List Char) → Set
+  xs ⊆ ys = All (λ x → x ∈ ys) xs
+
+  ≡-⊆ : ∀ {xs ys zs} → xs ⊆ zs → xs ≡ ys → ys ⊆ zs
+  ≡-⊆ xs⊆ refl = xs⊆
+
+  ++-⊆ : ∀ {xs ys zs : List (List Char)} → xs ⊆ zs → ys ⊆ zs → (xs ++ ys) ⊆ zs
+  ++-⊆ {[]} {ys} {zs} All.[] ys⊆zs = ys⊆zs
+  ++-⊆ {x ∷ xs} {ys} {zs} (x∈zs All.∷ xs⊆zs) ys⊆zs = x∈zs All.∷ ++-⊆ xs⊆zs ys⊆zs
+
+  ⊆-++ : ∀ {xs ys zs : List (List Char)} → (xs ++ ys) ⊆ zs → (xs ⊆ zs) × (ys ⊆ zs)
+  ⊆-++ {[]} {ys} All.[] = ⟨ All.[] , All.[] ⟩
+  ⊆-++ {[]} {ys} (px All.∷ xs++ys⊆) =
+    ⟨ All.[] , (px All.∷ xs++ys⊆) ⟩
+  ⊆-++ {x ∷ xs} {ys} (px All.∷ xs++ys⊆) =
+    ⟨ (px All.∷ ⊆-++ xs++ys⊆ .proj₁)
+    , (⊆-++ xs++ys⊆ .proj₂) ⟩
+
+  ⊆⇒⊆∷ : ∀ {xs ys a} → xs ⊆ ys → xs ⊆ (a ∷ ys)
+  ⊆⇒⊆∷ {xs} {ys} {a} xs⊆ys = All-map (λ px → ∈-swap {ys = a ∷ []} (∈-++ˡ px)) xs⊆ys
+
+  x∈xs∧xs⊆ys⇒x∈ys : ∀ {x xs ys} → x ∈ xs → xs ⊆ ys → x ∈ ys
+  x∈xs∧xs⊆ys⇒x∈ys {x} {x' ∷ xs} {ys} x∈xs (px All.∷ xs⊆ys) with x ≟lchar x'
+  ... | yes refl = px
+  ... | no  x≢x' = x∈xs∧xs⊆ys⇒x∈ys (∈y∷ys∧≢y⇒∈ys x∈xs x≢x') xs⊆ys
 \end{code}
