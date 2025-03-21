@@ -20,7 +20,7 @@
 
 % Syntax highlighting
 \usepackage{minted}
-% BNF
+% BNF9
 \usepackage{simplebnf}
 % Inference rules
 \usepackage{mathpartir}
@@ -2360,6 +2360,42 @@ locally closed.
   -- preserve (⊢· ⊢t₁ ⊢t₂) (ξ₂ t→t') = ⊢· ⊢t₁  (preserve ⊢t₂ t→t')
   -- preserve (⊢· ⊢t₁ ⊢t₂) (β x x₁) = subst-op ⊢t₂ ⊢t₁
   -- preserve (⊢suc ⊢t) (ξ-suc t→t') = ⊢suc (preserve ⊢t t→t')
+\end{code}
+
+Now we can make an evaluation function.
+
+\begin{code}
+  record Gas : Set where
+    constructor gas
+    field
+      amount : ℕ
+
+  data Finished (N : Term) : Set where
+    done :
+        Value N
+        ----------
+      → Finished N
+    out-of-gas :
+        ----------
+        Finished N
+
+  data Steps (L : Term) : Set where
+    steps : ∀ {N}
+      → L —↠ N
+      → Finished N
+        ----------
+      → Steps L
+
+  eval : ∀ {L A}
+    → Gas
+    → ∅ ⊢ L ⦂ A
+      ---------
+    → Steps L
+  eval {L} (gas zero) ⊢L = steps (L ∎') out-of-gas
+  eval {L} (gas (suc n)) ⊢L with progress ⊢L
+  ... | done val = steps (L ∎') (done val)
+  ... | step {M} L→M with eval (gas n) (preserve ⊢L L→M)
+  ...   | steps M→N fin = steps (L —→⟨ L→M ⟩ M→N) fin
 \end{code}
 
 \chapter{Conclusions}
