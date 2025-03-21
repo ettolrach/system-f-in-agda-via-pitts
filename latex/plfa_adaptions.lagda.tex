@@ -182,6 +182,14 @@ module plfa_adaptions where
     → x ∉ ys
     → x ∉ y ∷ ys
   ≢∧∉⇒∉∷ x≢y x∉ys = ++-∉ (All¬⇒¬Any (x≢y All.∷ All.[])) x∉ys
+  
+  ∈-≡ : ∀ {x : List Char} {xs ys : List (List Char)}
+    → x ∈ xs → xs ≡ ys → x ∈ ys
+  ∈-≡ x∈ refl = x∈
+
+  ++-idʳ : ∀ (xs : List (List Char)) → xs ++ [] ≡ xs
+  ++-idʳ [] = refl
+  ++-idʳ (x ∷ xs) = cong (x ∷_) (++-idʳ xs)
 
   m+1≤n⇒m≤n : ∀ {m n : ℕ} → (suc m) ≤ n → m ≤ n
   m+1≤n⇒m≤n {zero} {suc n} sm≤n = z≤n
