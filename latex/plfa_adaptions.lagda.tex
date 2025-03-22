@@ -39,7 +39,7 @@ module plfa_adaptions where
   open import Data.List.Properties using (≡-dec)
   import Data.List.Membership.DecPropositional as DecPropMembership
   open import Data.List.Relation.Unary.All using (All; all?; lookup)
-    renaming (fromList to All-fromList; toList to All-toList)
+    renaming (fromList to All-fromList; toList to All-toList; map to All-map)
   open import Data.List.Relation.Unary.Any using (Any; here; there)
   open import Data.List.Extrema Data.Nat.Properties.≤-totalOrder using (max; xs≤max)
   
