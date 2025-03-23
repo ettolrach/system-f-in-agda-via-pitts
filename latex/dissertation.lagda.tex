@@ -183,7 +183,22 @@ Any acknowledgements go here.
 
 \chapter{Introduction}
 
-TODO.
+\textit{System F} is a theoretical model of computation first described independently by
+Jean \citet{girard_interpretation_1972} and John \citet{goos_towards_1974}. A previous formalisation of this
+in the proof-assistant Agda has been presented in \citep{hutton_system_2019}, but the authors used a
+syntax involving only De Bruijn indices.
+
+The \textit{locally nameless representation} is an alternative representation for the
+$\lambda$-calculus which uses De Bruijn indices for bound variables and identifiers (as in, regular
+names) for free variables. As described by Arthur \citet{chargueraud_locally_2012}, this can also be
+used for System F.
+
+Most of the prior literature in this representation has been made in Coq. A generalisation of this
+syntax, called \textit{locally nameless sets}, has been explored in Agda previously by Andrew
+\citet{pitts_locally_2023}. While this generalisation didn't specifically focus on the
+$\lambda$-calculus, it proves that the syntax is able to be used effectively in Agda.
+
+We present the first formalisation of System F using the locally nameless representation in Agda.
 
 This document is a literate Agda file and uses {\color{violet}colour}. Please see appendix
 \ref{appendix:compilation_instructions} for details.
@@ -1749,7 +1764,27 @@ The Agda-generated code is ommitted here, but one could figure this out interact
 Agda's normalise feature. For example, in Emacs, one can press C-c C-n and type \texttt{eval (gas 10) ⊢twice-suc-zero} to see the derivation being automatically generated.
 
 \chapter{Conclusions}
-We have successfully developed an evaluator for System F.
+We have successfully developed an evaluator for System F using the locally nameless representation.
+
+\paragraph*{Future work} Most, if not all, of the prior literature on locally nameless
+representation, including the work presented here, uses an extrinsically typed approach. This means
+that we defined the syntax of the langauge first and then restricted ourselves to only work with
+well-typed terms. Using intrinsic typing, we instead define the typing rules and immediately
+restrict ourselves to only well-typed terms. For the STLC,
+\citet[chapter~De~Bruijn]{wadler_programming_2022} found that this results in some theorems becoming
+trivial, such as preservation, and the overall code being more concise. As preservation proved to be
+the most difficult theorem in this work, this would certainly be welcome. The main problem with this
+is that the locally nameless representation requires a lot of properties of syntax to be proven. We
+would need two contexts, one for free variables and one for bound variables, and this may diminish
+the conciseness that an intrinsic typed approach is supposed to give.
+
+The language we presented here is plain System F, which isn't usually a subject of interest. The
+POPLMark challenge asks for an implementation of System F with subtyping
+\citep{chargueraud_locally_2012}; implementing this shouldn't be too hard, as it would only require
+a few extra type judgements for subtyping, extra evaluation rules, and some further restrictions on
+the `Ok' predicate. System F$_\omega$ is an important variant which has previously been studied by
+\citet{hutton_system_2019} in Agda, but a locally nameless approach is yet to be used for such a
+more complex langauge.
 
 \bibliographystyle{plainnat}
 \bibliography{dissertation}
