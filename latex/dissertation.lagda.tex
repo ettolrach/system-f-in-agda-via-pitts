@@ -811,11 +811,19 @@ Notice that we still increase the index when going under a $\lambda$-abstraction
 \end{code}
 The definition of the other two substitution functions is in the appendix \ref{appendix:f_substitution_of_terms}.
 \begin{code}
-  ty-tm[_:→_]_ : ℕ → Type → Term → Term
   ty-ty[_:→_]_ : ℕ → Type → Type → Type
+  ty-tm[_:→_]_ : ℕ → Type → Term → Term
 \end{code}
 \begin{comment}
 \begin{code}
+  ty-ty[ k :→ T ] ‵ℕ = ‵ℕ
+  ty-ty[ k :→ T ] (t-fr x) = t-fr x
+  ty-ty[ k :→ T ] (t-# i) with k ≟ℕ i
+  ... | yes refl = T
+  ... | no  _    = t-# i
+  ty-ty[ k :→ T ] (A ⇒ B) = (ty-ty[ k :→ T ] A) ⇒ (ty-ty[ k :→ T ] B)
+  ty-ty[ k :→ T ] (t-∀ A) = t-∀ (ty-ty[ (suc k) :→ T ] A)
+
   ty-tm[ k :→ T ] (fr x) = fr x
   ty-tm[ k :→ T ] (# i) = # i
   ty-tm[ k :→ T ] (ƛ L) = ƛ ty-tm[ k :→ T ] L
@@ -824,14 +832,6 @@ The definition of the other two substitution functions is in the appendix \ref{a
   ty-tm[ k :→ T ] (L [ A ]) = (ty-tm[ k :→ T ] L) [ ty-ty[ k :→ T ] A ]
   ty-tm[ k :→ T ] ‵zero = ‵zero
   ty-tm[ k :→ T ] (‵suc L) = ‵suc ty-tm[ k :→ T ] L
-
-  ty-ty[ k :→ T ] ‵ℕ = ‵ℕ
-  ty-ty[ k :→ T ] (t-fr x) = t-fr x
-  ty-ty[ k :→ T ] (t-# i) with k ≟ℕ i
-  ... | yes refl = T
-  ... | no  _    = t-# i
-  ty-ty[ k :→ T ] (A ⇒ B) = (ty-ty[ k :→ T ] A) ⇒ (ty-ty[ k :→ T ] B)
-  ty-ty[ k :→ T ] (t-∀ A) = t-∀ (ty-ty[ (suc k) :→ T ] A)
 \end{code}
 \end{comment}
 
@@ -2011,6 +2011,15 @@ Some miscellaneous proofs are required in the main chapters. Since they aren't o
 \end{code}
 
 \begin{minted}{agda}
+  -- ty-ty[_:→_]_ : ℕ → Type → Type → Type
+  ty-ty[ k :→ T ] ‵ℕ = ‵ℕ
+  ty-ty[ k :→ T ] (t-fr x) = t-fr x
+  ty-ty[ k :→ T ] (t-# i) with k ≟ℕ i
+  ... | yes refl = T
+  ... | no  _    = t-# i
+  ty-ty[ k :→ T ] (A ⇒ B) = (ty-ty[ k :→ T ] A) ⇒ (ty-ty[ k :→ T ] B)
+  ty-ty[ k :→ T ] (t-∀ A) = t-∀ (ty-ty[ (suc k) :→ T ] A)
+
   -- ty-tm[_:→_]_ : ℕ → Type → Term → Term
   ty-tm[ k :→ T ] (fr x) = fr x
   ty-tm[ k :→ T ] (# i) = # i
@@ -2020,15 +2029,6 @@ Some miscellaneous proofs are required in the main chapters. Since they aren't o
   ty-tm[ k :→ T ] (L [ A ]) = (ty-tm[ k :→ T ] L) [ ty-ty[ k :→ T ] A ]
   ty-tm[ k :→ T ] ‵zero = ‵zero
   ty-tm[ k :→ T ] (‵suc L) = ‵suc ty-tm[ k :→ T ] L
-
-  -- ty-ty[_:→_]_ : ℕ → Type → Type → Type
-  ty-ty[ k :→ T ] ‵ℕ = ‵ℕ
-  ty-ty[ k :→ T ] (t-fr x) = t-fr x
-  ty-ty[ k :→ T ] (t-# i) with k ≟ℕ i
-  ... | yes refl = T
-  ... | no  _    = t-# i
-  ty-ty[ k :→ T ] (A ⇒ B) = (ty-ty[ k :→ T ] A) ⇒ (ty-ty[ k :→ T ] B)
-  ty-ty[ k :→ T ] (t-∀ A) = t-∀ (ty-ty[ (suc k) :→ T ] A)
 \end{minted}
 
 \section{Type judgements}
@@ -2423,12 +2423,12 @@ This document is a literate Agda file. It has been tested to work with
 \begin{itemize}
   \item Agda 2.7.0,
   \item the Agda Standard Library 2.1 \citep{the_agda_community_agda_2024},
-  \item XeLaTeX 3.141592653-2.6-0.999996 (TeX Live 2024/Arch Linux 2024.2-4).
+  \item XeTeX 3.141592653-2.6-0.999997 (TeX Live 2025/Arch Linux 2024.1-1).
 \end{itemize}
 
-The full source code is available at [TODO: TO BE MADE PUBLIC LATER].
+The full source code is available at \url{https://github.com/ettolrach/system-f-in-agda-via-pitts}.
 
-Since this document uses the Minted package [TODO: cite], XeLaTeX needs to be run with the
+Since this document uses the Minted package, XeLaTeX needs to be run with the
 \texttt{--shell-escape} option. While Agda does provide its own typesetting of Agda code, it uses a
 sans-serif typeface. I decided to use the Minted package to provide a monospace typeface for the
 code blocks.

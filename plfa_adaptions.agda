@@ -1,0 +1,215 @@
+module plfa_adaptions where
+
+-- Data types (naturals, strings, characters)
+open import Data.Nat using (ℕ; zero; suc; _<_; _≥_; _≤_; _≤?_; _<?_; z≤n; s≤s; _⊔_)
+  renaming (_≟_ to _≟ℕ_)
+open import Data.Nat.Properties using (≤-refl; ≤-trans; ≤-<-trans; <-≤-trans; ≤-antisym; ≤-total;
+  +-mono-≤; n≤1+n; m≤n⇒m≤1+n; suc-injective; <⇒≢; ≰⇒>; ≮⇒≥)
+open import Data.String using (String; fromList) renaming (_≟_ to _≟str_; _++_ to _++str_;
+  length to str-length; toList to ⟪_⟫)
+open import Data.Char using (Char)
+open import Data.Char.Properties using () renaming (_≟_ to _≟char_)
+
+-- Function manipulation.
+open import Function using (_∘_; flip; it; id; case_returning_of_)
+
+-- Relations and predicates/decidability.
+import Relation.Binary.PropositionalEquality as Eq
+open Eq using (_≡_; _≢_; refl; sym; trans; cong; cong-app; cong₂)
+open Eq.≡-Reasoning using (begin_; step-≡-∣; step-≡-⟩; _∎)
+open import Relation.Binary.Definitions using (DecidableEquality)
+open import Relation.Nullary.Decidable using (Dec; yes; no; True; False; toWitnessFalse;
+  toWitness; fromWitness; ¬?; ⌊_⌋; From-yes)
+open import Relation.Unary using (Decidable)
+open import Relation.Binary using () renaming (Decidable to BinaryDecidable)
+open import Relation.Nullary.Negation using (¬_; contradiction)
+open import Data.Empty using (⊥-elim)
+
+-- Products and exists quantifier.
+open import Data.Product using (_×_; proj₁; proj₂; ∃-syntax) renaming (_,_ to ⟨_,_⟩)
+open import Data.Sum using (_⊎_; inj₁; inj₂)
+
+-- Lists.
+open import Data.List using (List; []; _∷_; _++_; length; filter; map; foldr; head; replicate)
+open import Data.List.Properties using (≡-dec)
+import Data.List.Membership.DecPropositional as DecPropMembership
+open import Data.List.Relation.Unary.All using (All; all?; lookup)
+  renaming (fromList to All-fromList; toList to All-toList; map to All-map)
+open import Data.List.Relation.Unary.Any using (Any; here; there)
+open import Data.List.Extrema Data.Nat.Properties.≤-totalOrder using (max; xs≤max)
+
+-- Import list membership using List Char comparisons.
+private
+  _≟lchar_ : ∀ (xs ys : List Char) → Dec (xs ≡ ys)
+  xs ≟lchar ys = ≡-dec (_≟char_) xs ys
+
+open DecPropMembership _≟lchar_ using (_∈_; _∉_; _∈?_)
+
+All-++ : ∀ {A : Set} {P : A → Set} (xs ys : List A)
+  → All P (xs ++ ys)
+    ---------------------
+  → (All P xs × All P ys)
+All-++ [] ys Pys = ⟨ All.[] , Pys ⟩
+All-++ (x ∷ xs) ys (Px All.∷ Pxs++ys) with All-++ xs ys Pxs++ys
+... | ⟨ Pxs , Pys ⟩ = ⟨ Px All.∷ Pxs , Pys ⟩
+
+++-All : ∀ {A : Set} {P : A → Set} (xs ys : List A)
+  → All P xs × All P ys
+    -------------------
+  → All P (xs ++ ys)
+++-All [] ys ⟨ All.[] , Pys ⟩ = Pys
+++-All (x ∷ xs) ys ⟨ Px All.∷ Pxs , Pys ⟩ =
+  Px All.∷ ++-All xs ys ⟨ Pxs , Pys ⟩
+
+Any-++ : ∀ {A : Set} {P : A → Set} (xs ys : List A)
+  → Any P (xs ++ ys) → (Any P xs ⊎ Any P ys)
+Any-++ [] ys AnyPys = inj₂ AnyPys
+Any-++ (x ∷ xs) ys (here Px) = inj₁ (here Px)
+Any-++ (x ∷ xs) ys (there Pxs++Pys) with Any-++ xs ys Pxs++Pys
+... | inj₁ Pxs = inj₁ (there Pxs)
+... | inj₂ Pys = inj₂ Pys
+
+++-Any : ∀ {A : Set} {P : A → Set} (xs ys : List A)
+  → (Any P xs ⊎ Any P ys) → Any P (xs ++ ys)
+++-Any [] ys (inj₂ AnyPys) = AnyPys
+++-Any (x ∷ xs) ys (inj₁ (here Px)) = here Px
+++-Any (x ∷ xs) ys (inj₁ (there AnyPxs)) = there (++-Any xs ys (inj₁ AnyPxs))
+++-Any (x ∷ xs) ys (inj₂ AnyPys) = there (++-Any xs ys (inj₂ AnyPys))
+
+All¬⇒¬Any : ∀ {A : Set} {P : A → Set} {xs : List A}
+  → All (¬_ ∘ P) xs
+    ---------------
+  → (¬_ ∘ Any P) xs
+All¬⇒¬Any {xs = x ∷ xs} (¬Px All.∷ All¬P) (here Px) = ¬Px Px
+All¬⇒¬Any {xs = x ∷ xs} (¬Px All.∷ All¬P) (there Pxs) =
+  All¬⇒¬Any {xs = xs} All¬P Pxs
+
+¬Any⇒All¬ : ∀ {A : Set} {P : A → Set} {xs : List A}
+  → (¬_ ∘ Any P) xs
+    ---------------
+  → All (¬_ ∘ P) xs
+¬Any⇒All¬ {xs = []} ¬∘AnyP = All.[]
+¬Any⇒All¬ {xs = (x ∷ xs)} ¬AnyP =
+  (λ Px → ¬AnyP (here Px))
+    All.∷ ¬Any⇒All¬ {xs = xs} (λ Pxs → ¬AnyP (there Pxs))
+
+-- We have to use ¬Any⇒All¬ and its inverse because ∉ is an
+-- alias for "¬ Any (_≡ x) xs".  So we have to go through
+-- the process of converting to "All ¬" to apply the
+-- "All-++" lemma.
+∉-++ : ∀ {s : List Char} {xs ys : List (List Char)}
+  → s ∉ xs ++ ys
+    --------------------
+  → (s ∉ xs) × (s ∉ ys)
+∉-++ {s} {xs} {ys} s∉xs++ys =
+  let ⟨ all¬xs , all¬ys ⟩ = All-++ xs ys (¬Any⇒All¬ s∉xs++ys) in
+    ⟨ All¬⇒¬Any {xs = xs} all¬xs
+    , All¬⇒¬Any {xs = ys} all¬ys ⟩
+
+∈-++ˡ : ∀ {s : List Char} {xs ys : List (List Char)}
+  → s ∈ xs
+  → s ∈ xs ++ ys
+∈-++ˡ {s} {x ∷ xs} {ys} (here px) = here px
+∈-++ˡ {s} {x ∷ xs} {ys} (there s∈xs) = there (∈-++ˡ s∈xs)
+
+∈-swap : ∀ {s : List Char} {xs ys : List (List Char)}
+  → s ∈ xs ++ ys
+  → s ∈ ys ++ xs
+∈-swap {s} {xs} {ys} s∈xs++ys with Any-++ xs ys s∈xs++ys
+... | inj₁ s∈xs = ++-Any ys xs (inj₂ s∈xs)
+... | inj₂ s∈ys = ++-Any ys xs (inj₁ s∈ys)
+
+∈-++ʳ : ∀ {s : List Char} {xs ys : List (List Char)}
+  → s ∈ ys
+  → s ∈ xs ++ ys
+∈-++ʳ {s} {xs} {ys} s∈ys = ∈-swap {xs = ys} (∈-++ˡ s∈ys)
+
+++-∉ : ∀ {s : List Char} {xs ys : List (List Char)}
+  → s ∉ xs
+  → s ∉ ys
+    -------------
+  → s ∉ xs ++ ys
+++-∉ {_} {xs} {ys} s∉xs s∉ys = All¬⇒¬Any
+  (++-All xs ys ⟨ (¬Any⇒All¬ s∉xs) , (¬Any⇒All¬ s∉ys) ⟩)
+
+∉y∷ys⇒≢y : ∀ {x y : List Char} {ys : List (List Char)}
+  → x ∉ y ∷ ys
+  → x ≢ y
+∉y∷ys⇒≢y x∉ with ¬Any⇒All¬ x∉
+... | px All.∷ x∉ys = px
+
+∉y∷ys⇒∉ys : ∀ {x y : List Char} {ys : List (List Char)}
+  → x ∉ y ∷ ys
+    -----------
+  → x ∉ ys
+∉y∷ys⇒∉ys x∉ = λ x∈ys → x∉ (there x∈ys)
+
+∉∷[]⇒≢ : ∀ {x y : List Char}
+  → x ∉ y ∷ []
+    -----------
+  → x ≢ y
+∉∷[]⇒≢ = ∉y∷ys⇒≢y
+
+∈∷[]⇒≡ : ∀ {x y : List Char}
+  → x ∈ y ∷ []
+    -----------
+  → x ≡ y
+∈∷[]⇒≡ (here refl) = refl
+
+∉y∷ys⇒∉y∷[] : ∀ {x y : List Char} {ys : List (List Char)}
+  → x ∉ y ∷ ys
+    -----------
+  → x ∉ y ∷ []
+∉y∷ys⇒∉y∷[] x∉ with ∉y∷ys⇒≢y x∉
+... | x≢y = λ x∈y∷[] → contradiction (∈∷[]⇒≡ x∈y∷[]) x≢y
+
+∈y∷ys∧≢y⇒∈ys : ∀ {x y : List Char} {ys : List (List Char)}
+  → x ∈ y ∷ ys
+  → x ≢ y
+  → x ∈ ys
+∈y∷ys∧≢y⇒∈ys (here refl) x≢y = contradiction refl x≢y
+∈y∷ys∧≢y⇒∈ys (there x∈ys) x≢y = x∈ys
+
+≢∧∉⇒∉∷ : ∀ {x y : List Char} {ys : List (List Char)}
+  → x ≢ y
+  → x ∉ ys
+  → x ∉ y ∷ ys
+≢∧∉⇒∉∷ x≢y x∉ys = ++-∉ (All¬⇒¬Any (x≢y All.∷ All.[])) x∉ys
+
+∈-≡ : ∀ {x : List Char} {xs ys : List (List Char)}
+  → x ∈ xs → xs ≡ ys → x ∈ ys
+∈-≡ x∈ refl = x∈
+
+++-idʳ : ∀ (xs : List (List Char)) → xs ++ [] ≡ xs
+++-idʳ [] = refl
+++-idʳ (x ∷ xs) = cong (x ∷_) (++-idʳ xs)
+
+m+1≤n⇒m≤n : ∀ {m n : ℕ} → (suc m) ≤ n → m ≤ n
+m+1≤n⇒m≤n {zero} {suc n} sm≤n = z≤n
+m+1≤n⇒m≤n {suc m} {suc n} (s≤s sm≤n) = s≤s (m+1≤n⇒m≤n sm≤n)
+
+_⊆_ : List (List Char) → List (List Char) → Set
+xs ⊆ ys = All (λ x → x ∈ ys) xs
+
+≡-⊆ : ∀ {xs ys zs} → xs ⊆ zs → xs ≡ ys → ys ⊆ zs
+≡-⊆ xs⊆ refl = xs⊆
+
+++-⊆ : ∀ {xs ys zs : List (List Char)} → xs ⊆ zs → ys ⊆ zs → (xs ++ ys) ⊆ zs
+++-⊆ {[]} {ys} {zs} All.[] ys⊆zs = ys⊆zs
+++-⊆ {x ∷ xs} {ys} {zs} (x∈zs All.∷ xs⊆zs) ys⊆zs = x∈zs All.∷ ++-⊆ xs⊆zs ys⊆zs
+
+⊆-++ : ∀ {xs ys zs : List (List Char)} → (xs ++ ys) ⊆ zs → (xs ⊆ zs) × (ys ⊆ zs)
+⊆-++ {[]} {ys} All.[] = ⟨ All.[] , All.[] ⟩
+⊆-++ {[]} {ys} (px All.∷ xs++ys⊆) =
+  ⟨ All.[] , (px All.∷ xs++ys⊆) ⟩
+⊆-++ {x ∷ xs} {ys} (px All.∷ xs++ys⊆) =
+  ⟨ (px All.∷ ⊆-++ xs++ys⊆ .proj₁)
+  , (⊆-++ xs++ys⊆ .proj₂) ⟩
+
+⊆⇒⊆∷ : ∀ {xs ys a} → xs ⊆ ys → xs ⊆ (a ∷ ys)
+⊆⇒⊆∷ {xs} {ys} {a} xs⊆ys = All-map (λ px → ∈-swap {ys = a ∷ []} (∈-++ˡ px)) xs⊆ys
+
+x∈xs∧xs⊆ys⇒x∈ys : ∀ {x xs ys} → x ∈ xs → xs ⊆ ys → x ∈ ys
+x∈xs∧xs⊆ys⇒x∈ys {x} {x' ∷ xs} {ys} x∈xs (px All.∷ xs⊆ys) with x ≟lchar x'
+... | yes refl = px
+... | no  x≢x' = x∈xs∧xs⊆ys⇒x∈ys (∈y∷ys∧≢y⇒∈ys x∈xs x≢x') xs⊆ys
