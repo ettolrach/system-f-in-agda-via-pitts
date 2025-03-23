@@ -78,6 +78,9 @@ module tspl_prior_work where
 \section{Functions on lists and creating strings}
 \label{appendix:list_functions}
 \begin{code}
+  Id : Set
+  Id = List Char
+
   All≤⇒<⇒All< : ∀ {n m : ℕ} (xs : List ℕ)
     → n < m
     → All (_≤ n) xs
@@ -97,7 +100,7 @@ module tspl_prior_work where
   ≡⇒<s {zero} {m} n≡m = s≤s z≤n
   ≡⇒<s {suc n} {suc m} sn≡sm = s≤s (≡⇒<s (suc-injective sn≡sm))
 
-  ∉⇒≢ : ∀ {xs : List (List Char)} {x y : List Char}
+  ∉⇒≢ : ∀ {xs : List Id} {x y : Id}
     → x ∈ xs
     → y ∉ xs
       -------
@@ -127,7 +130,7 @@ convert from a \texttt{String}.
   new-list : ∀ {A : Set} → A → List (List A) → List A
   new-list a xss = a ∷ replicate (max 0 (map length xss)) a
 
-  fresh : List (List Char) → List Char
+  fresh : List Id → Id
   fresh xss = new-list 'q' xss
 
   len-new-list : ∀ {A : Set} (a : A) (xss : List (List A))
@@ -164,7 +167,7 @@ character longer. Now to prove that this function is correct:
             sym-≢ (len≠⇒≠ xs ys (<⇒≢ lenxs<lenys))
               All.∷ helper xss ys all<
 
-  fresh-correct : (xss : List (List Char)) → (fresh xss) ∉ xss
+  fresh-correct : (xss : List Id) → (fresh xss) ∉ xss
   fresh-correct xss = new-list-correct xss 'q'
 \end{code}
 
@@ -172,7 +175,7 @@ character longer. Now to prove that this function is correct:
 \label{appendix:stlc_terms}
 \begin{code}
   data Term : Set where
-    free_  : List Char → Term
+    free_  : Id → Term
     bound_ : ℕ → Term
     ƛ_     : Term → Term
     _·_    : Term → Term → Term
@@ -203,14 +206,14 @@ keywords, a small \texttt{‵} symbol is used, following what is done in
 \citet{wadler_programming_2022}. We also exploit the injectivity of terms to help in proofs later.
 
 \section{Opening and closing}
-\label{appendix:opening_and_closing}
+\label{appendix:stlc_opening_and_closing}
 Two important operations in the locally nameless representation are
 opening and closing terms. This is when an index is replaced with a free variable, and when a free
 variable is replaced with an index. We write these as $[k \to x] M$ and $[k \leftarrow x] M$
-respectively, for some $k \in \nat$, $x \in \texttt{List Char}$, and $M \in \texttt{Terms}$. These
+respectively, for some $k \in \nat$, $x \in \texttt{Id}$, and $M \in \texttt{Terms}$. These
 can be defined recursively.
 \begin{code}
-  [_—→_]_ : ℕ → List Char → Term → Term
+  [_—→_]_ : ℕ → Id → Term → Term
   [ k —→ x ] (free y) = free y
   [ k —→ x ] (bound i) with k ≟ℕ i
   ... | yes _ = free x
@@ -220,7 +223,7 @@ can be defined recursively.
   [ k —→ x ] ‵zero = ‵zero
   [ k —→ x ] ‵suc t = ‵suc ([ k —→ x ] t)
 
-  [_←—_]_ : ℕ → List Char → Term → Term
+  [_←—_]_ : ℕ → Id → Term → Term
   [ k ←— x ] (free y) with x ≟lchar y
   ... | yes _ = bound k
   ... | no  _ = free y
@@ -236,7 +239,7 @@ operations look like the notation used in the prose.
 \citet{pitts_locally_2023} shows that nine axioms need to be fulfilled for a set to be considered a
 locally nameless set. For our terms we only need three: axioms 1, 2, and 5.
 \begin{code}
-  ax1 : ∀ (i : ℕ) (a b : List Char) (t : Term)
+  ax1 : ∀ (i : ℕ) (a b : Id) (t : Term)
     → [ i —→ a ] ([ i —→ b ] t) ≡ [ i —→ b ] t
   ax1 i a b (free x) = refl
   ax1 i a b (bound k) with i ≟ℕ k
@@ -249,12 +252,12 @@ locally nameless set. For our terms we only need three: axioms 1, 2, and 5.
   ax1 i a b ‵zero = refl
   ax1 i a b (‵suc t) rewrite ax1 i a b t = refl
 
-  ax1-cor : ∀ (i k : ℕ) (a : List Char) (t : Term)
+  ax1-cor : ∀ (i k : ℕ) (a : Id) (t : Term)
     → i ≡ k
     → [ k —→ a ] ([ i —→ a ] t) ≡ [ i —→ a ] t
   ax1-cor i .i a t refl = ax1 i a a t
 
-  ax2 : ∀ (i j : ℕ) (x : List Char) (t : Term)
+  ax2 : ∀ (i j : ℕ) (x : Id) (t : Term)
      → [ i ←— x ] ([ j ←— x ] t) ≡ [ j ←— x ] t
   ax2 i j x (free y) with x ≟lchar y
   ... | yes refl = refl
@@ -273,7 +276,7 @@ locally nameless set. For our terms we only need three: axioms 1, 2, and 5.
       helper : ∀ (n m : ℕ) → suc n ≡ suc m → n ≡ m
       helper n m refl = refl
 
-  ax5 : ∀ (i j : ℕ) (a b : List Char) (t : Term)
+  ax5 : ∀ (i j : ℕ) (a b : Id) (t : Term)
     → (i≢j : i ≢ j)
     → [ i —→ a ] ([ j —→ b ] t) ≡ [ j —→ b ] ([ i —→ a ] t)
   ax5 i j a b (free x) _ = refl
@@ -297,11 +300,11 @@ locally nameless set. For our terms we only need three: axioms 1, 2, and 5.
 \end{code}
 
 \section{Fresh variables}
-Fresh variables are those whose identifier (i.e. \texttt{List Char}) hasn't already been used for
+Fresh variables are those whose identifier (i.e. \texttt{Id}) hasn't already been used for
 any free variables in a term. We will exploit this when proving properties of substitution. Free
 variables can be collected recursively.
 \begin{code}
-  fv : Term → List (List Char)
+  fv : Term → List Id
   fv (free x) = x ∷ []
   fv (bound i) = []
   fv (ƛ t) = fv t
@@ -313,10 +316,10 @@ variables can be collected recursively.
 A variable is also fresh if a term remains unchanged after it is closed at index $0$ using the
 variable. This definition and the previous one imply each other.
 \begin{code}
-  _#_ : List Char → Term → Set
+  _#_ : Id → Term → Set
   x # t = [ 0 ←— x ] t ≡ t
 
-  #⇒∉fv : ∀ (x : List Char) (t : Term) → x # t → x ∉ fv t
+  #⇒∉fv : ∀ (x : Id) (t : Term) → x # t → x ∉ fv t
   #⇒∉fv x (free y) x#t with x ≟lchar y
   ... | yes x≡y with () ← x#t
   ... | no  x≢y = All¬⇒¬Any (x≢y All.∷ All.[])
@@ -337,7 +340,7 @@ variable. This definition and the previous one imply each other.
       (#⇒∉fv x t₂ x#t₂)
   #⇒∉fv x (‵suc t) x#t = #⇒∉fv x t (‵suc-inj x#t)
 
-  ∉fv⇒# : ∀ (x : List Char) (t : Term) → x ∉ fv t → x # t
+  ∉fv⇒# : ∀ (x : Id) (t : Term) → x ∉ fv t → x # t
   ∉fv⇒# x (free y) x∉fv with x ≟lchar y
   ... | yes x≡y = ⊥-elim (x∉fv (here x≡y))
   ... | no  x≢y = refl
@@ -360,7 +363,7 @@ variable. This definition and the previous one imply each other.
   ∉fv⇒# x ‵zero x∉fv = refl
   ∉fv⇒# x (‵suc t) x∉fv rewrite ∉fv⇒# x t x∉fv = refl
 
-  #-ƛ : ∀ {x : List Char} (t : Term)
+  #-ƛ : ∀ {x : Id} (t : Term)
     → x # (ƛ t)
       -------
     → x # t
@@ -375,7 +378,7 @@ variable. This definition and the previous one imply each other.
       t
     ∎
 
-  #-· : ∀ {x : List Char} (t₁ t₂ : Term)
+  #-· : ∀ {x : Id} (t₁ t₂ : Term)
     → x # (t₁ · t₂)
       ---------------
     → x # t₁ × x # t₂
@@ -383,7 +386,7 @@ variable. This definition and the previous one imply each other.
   ... | ⟨ x∉fv-t₁ , x∉fv-t₂ ⟩
     = ⟨ (∉fv⇒# x t₁ x∉fv-t₁) , ∉fv⇒# x t₂ x∉fv-t₂ ⟩
 
-  #-‵suc : ∀ {x : List Char} (t : Term)
+  #-‵suc : ∀ {x : Id} (t : Term)
     → x # (‵suc t)
       -------
     → x # t
@@ -391,7 +394,7 @@ variable. This definition and the previous one imply each other.
 \end{code}
 
 \section{Local closure}
-\label{appendix:local_closure_proofs}
+\label{appendix:stlc_local_closure_proofs}
 \begin{code}
   _≻_ : ℕ → Term → Set
   i ≻ t = (j : ℕ) ⦃ _ : j ≥ i ⦄ → И a , ([ j —→ a ] t ≡ t)
@@ -419,7 +422,7 @@ number used in \citet{pitts_locally_2023}.
     → (suc i) ≻ t
   ≻⇒s≻ {i} i≻t = lemma2·6 (n≤1+n i) i≻t
 
-  lemma2·7-1 : ∀ {i : ℕ} {x y : List Char} {t : Term}
+  lemma2·7-1 : ∀ {i : ℕ} {x y : Id} {t : Term}
     → [ i —→ x ] t ≡ t
       ----------------
     → [ i —→ y ] t ≡ t
@@ -435,7 +438,7 @@ number used in \citet{pitts_locally_2023}.
       t
     ∎
 
-  lemma2·7-2 : ∀ {i j : ℕ} {x : List Char} {t : Term}
+  lemma2·7-2 : ∀ {i j : ℕ} {x : Id} {t : Term}
     → j ≥ i
     → i ≻ t
       ----------------
@@ -444,7 +447,7 @@ number used in \citet{pitts_locally_2023}.
   ... | И⟨ Иe₁ , Иe₂ ⟩ =
     lemma2·7-1 (Иe₂ (fresh Иe₁) {fresh-correct Иe₁})
 
-  open-rec-lc : ∀ {t : Term} {i : ℕ} {x : List Char}
+  open-rec-lc : ∀ {t : Term} {i : ℕ} {x : Id}
     → LocallyClosed t
       ----------------
     → [ i —→ x ] t ≡ t
@@ -459,7 +462,7 @@ Note, for this next property, \texttt{open-rec-lc-lemma}, in the paper
 However, in the Coq source code \citep{chargueraud_lambda_jar_paperv_2023}, the assumption is as below (notice that the right side of the
 equality is \texttt{[ j —→ v ] t}). I decided to use the assumption as in the Coq source code.
 \begin{code}
-  open-rec-lc-lemma : ∀ {t : Term} {i j : ℕ} {u v : List Char}
+  open-rec-lc-lemma : ∀ {t : Term} {i j : ℕ} {u v : Id}
     → i ≢ j
     → [ i —→ u ] ([ j —→ v ] t) ≡ [ j —→ v ] t
     → [ i —→ u ] t ≡ t
@@ -488,7 +491,7 @@ equality is \texttt{[ j —→ v ] t}). I decided to use the assumption as in th
   open-rec-lc-lemma {‵suc t} i≢j assump
     rewrite open-rec-lc-lemma {t} i≢j (‵suc-inj assump) = refl
 
-  lemma2·13 : ∀ {t : Term} {a : List Char} {i : ℕ} (j : ℕ)
+  lemma2·13 : ∀ {t : Term} {a : Id} {i : ℕ} (j : ℕ)
     → j ≥ i
     → i ≻ t
     → i ≻ ([ j —→ a ] t)
@@ -516,7 +519,7 @@ other.
 \begin{code}
   data Lc-at : ℕ → Term → Set where
     lc-at-bound : ∀ {i j : ℕ} ⦃ _ : j < i ⦄ → Lc-at i (bound j)
-    lc-at-free : ∀ {i : ℕ} {a : List Char} → Lc-at i (free a)
+    lc-at-free : ∀ {i : ℕ} {a : Id} → Lc-at i (free a)
     lc-at-lam : ∀ {i : ℕ} {t : Term}
       → Lc-at (suc i) t
         ------------------
@@ -596,7 +599,7 @@ which will be very convenient in the future.
   ... | lc-at-bound ⦃ () ⦄ -- This implies that n < 0
                           -- which is never true.
 
-  free-lc : ∀ {x : List Char} → LocallyClosed (free x)
+  free-lc : ∀ {x : Id} → LocallyClosed (free x)
   free-lc _ = И⟨ [] , (λ _ → refl) ⟩
 
   i≻ƛt⇒si≻t : ∀ {i : ℕ} {t : Term} → i ≻ (ƛ t) → suc i ≻ t
@@ -619,10 +622,10 @@ which will be very convenient in the future.
 \end{code}
 
 \section{Substitution of terms}
-\label{appendix:substitution_proofs}
+\label{appendix:stlc_substitution_proofs}
 We can substitute terms for free variables with this recursive definition.
 \begin{code}
-  [_:=_]_ : List Char → Term → Term → Term
+  [_:=_]_ : Id → Term → Term → Term
   [ x := u ] (free y) with x ≟lchar y
   ... | yes _ = u
   ... | no  _ = free y
@@ -637,7 +640,7 @@ While there are many additional properties of free-variable substitution, as pro
 \citet{chargueraud_locally_2012}, we only need this one which shows how substitution interacts with
 term opening. It is named following what it's called in \citet{chargueraud_locally_2012}.
 \begin{code}
-  subst-open-var : ∀ {u : Term} {x y : List Char} {i : ℕ} (t : Term)
+  subst-open-var : ∀ {u : Term} {x y : Id} {i : ℕ} (t : Term)
     → x ≢ y
     → i ≻ u
     → [ x := u ] ([ i —→ y ] t) ≡ [ i —→ y ] ([ x := u ] t)
@@ -659,7 +662,7 @@ term opening. It is named following what it's called in \citet{chargueraud_local
   subst-open-var (‵suc t) x≢y lc-u =
     cong ‵suc_ (subst-open-var t x≢y lc-u)
 
-  subst-open-lc : ∀ {t u : Term} {x y : List Char}
+  subst-open-lc : ∀ {t u : Term} {x y : Id}
     → x ≢ y
     → LocallyClosed u
     → [ x := u ] ([ 0 —→ y ] t) ≡ [ 0 —→ y ] ([ x := u ] t)
@@ -670,7 +673,7 @@ During the development, I ended up proving more locally nameless substitution th
 needed, so some haven't been referenced above. These aren't strictly needed.
 
 \begin{code}    
-  subst-fresh : ∀ {t u : Term} {x : List Char}
+  subst-fresh : ∀ {t u : Term} {x : Id}
     → x ∉ fv t
     → [ x := u ] t ≡ t
   subst-fresh {free y} {u} {x} x∉ with x ≟lchar y
@@ -684,7 +687,7 @@ needed, so some haven't been referenced above. These aren't strictly needed.
   subst-fresh {‵zero} {u} {x} x∉ = refl
   subst-fresh {‵suc t} {u} {x} x∉ = cong ‵suc_ (subst-fresh x∉)
 
-  subst-≻ : ∀ {t u : Term} {i : ℕ} (x : List Char)
+  subst-≻ : ∀ {t u : Term} {i : ℕ} (x : Id)
     → i ≻ t
     → i ≻ u
       ----------------
@@ -727,7 +730,7 @@ needed, so some haven't been referenced above. These aren't strictly needed.
     let И⟨ Иe₁ , Иe₂ ⟩ = (subst-≻ {t} x (‵suc-≻ i≻t) i≻u) j ⦃ it ⦄
       in И⟨ Иe₁ , (λ a {a∉} → cong ‵suc_ (Иe₂ a {a∉})) ⟩
 
-  subst-lc : ∀ {t u : Term} (x : List Char)
+  subst-lc : ∀ {t u : Term} (x : Id)
     → LocallyClosed t
     → LocallyClosed u
       --------------------------
@@ -736,7 +739,7 @@ needed, so some haven't been referenced above. These aren't strictly needed.
 \end{code}
 
 \section{Types and contexts}
-\label{appendix:typing_stlc}
+\label{appendix:stlc_typing}
 We will use \texttt{‵ℕ} as the base type to work together with the
 \texttt{‵zero} and \texttt{‵suc} primitives. Other than the base type, we also have function (arrow)
 types. We will closely follow what is done in \citet{wadler_programming_2022}.
@@ -747,7 +750,7 @@ types. We will closely follow what is done in \citet{wadler_programming_2022}.
 
   data Context : Set where
     ∅ : Context
-    _,_⦂_ : Context → List Char → Type → Context
+    _,_⦂_ : Context → Id → Type → Context
 \end{code}
 
 \citet{aydemir_engineering_2008} and \citet{chargueraud_locally_2012} include a predicate to tell
@@ -758,7 +761,7 @@ matching variable in the context).
 To access the context, we can use these accessors. We use H and T to mirror the \texttt{List.Any}
 construct's `here' and `there'.
 \begin{code}
-  data _∋_⦂_ : Context → List Char → Type → Set where
+  data _∋_⦂_ : Context → Id → Type → Set where
     H : ∀ {Γ x y A}
       → x ≡ y
         ------------------
@@ -788,13 +791,13 @@ inference to find the required evidence itself.
 
 We need to have a function to get all the variables in the context.
 \begin{code}
-  domain : Context → List (List Char)
+  domain : Context → List Id
   domain ∅ = []
   domain (Γ , x ⦂ A) = x ∷ domain Γ
 \end{code}
 
 \section{Type judgements}
-\label{appendix:type_judgements}
+\label{appendix:stlc_type_judgements}
 The type judgements are the same as in
 \citet[chapter~Lambda]{wadler_programming_2022}, so we won't go into much detail here. The one
 difference is how we define $\lambda$-abstraction, where we use a cofinite quantifier.
@@ -802,7 +805,7 @@ difference is how we define $\lambda$-abstraction, where we use a cofinite quant
 In \citet[chapter~Lambda]{wadler_programming_2022}, $\lambda$-abstractions are handled as follows:
 the bound variable is added to the context and the expression is typechecked with the bound variable
 now treated as if it were free. Here, we open the term to replace it with a free variable (and then
-we add this free variable to the context). Thus, we need to find a \texttt{List Char} which isn't in
+we add this free variable to the context). Thus, we need to find a \texttt{Id} which isn't in
 the context yet, otherwise we would shadow a previous variable with the same identifier. Since bound
 variables become free, we don't have a typing judgement for bound variables.
 \begin{code}
@@ -925,7 +928,7 @@ we have many of the same properties as in \citet[chapter~Lambda]{wadler_programm
       ρ (T z≢x (T _ ∋z)) = T z≢x ∋z
 
   -- subst-open-var adapted to work with judgements.
-  subst-open-context : ∀ {Γ A} {t u : Term} {x y : List Char}
+  subst-open-context : ∀ {Γ A} {t u : Term} {x y : Id}
     → x ≢ y
     → LocallyClosed u
     → Γ ⊢ [ x := u ] ([ 0 —→ y ] t) ⦂ A

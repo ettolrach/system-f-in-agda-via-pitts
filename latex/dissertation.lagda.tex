@@ -239,7 +239,7 @@ available in the full source file (see appendix \ref{appendix:compilation_instru
 -- Data types (naturals, strings, characters)
 open import Data.Nat using (ℕ; zero; suc; _<_; _≥_; _≤_; _≤?_; _<?_; z≤n; s≤s; _⊔_)
   renaming (_≟_ to _≟ℕ_)
-open import Data.Nat.Properties using (≤-refl; ≤-trans; ≤-<-trans; <-≤-trans; ≤-antisym; ≤-total;
+open import Data.Nat.Properties using (≤-refl; ≤-trans; ≤-<-trans; <-≤-trans;
   ≤-pred; +-mono-≤; <-trans; n≤1+n; m≤n⇒m≤1+n; n≮n; <⇒≢; ≰⇒>; ≮⇒≥; ≤∧≢⇒<; 1+n≢n)
 open import Data.String using (String; fromList; toList) renaming (_≟_ to _≟str_;
   _++_ to _++str_; length to str-length)
@@ -247,7 +247,7 @@ open import Data.Char using (Char)
 open import Data.Char.Properties using () renaming (_≟_ to _≟char_)
 
 -- Function manipulation.
-open import Function using (_∘_; flip; it; id; case_returning_of_)
+open import Function using (_∘_; flip; it)
 
 -- Relations and predicates/decidability.
 import Relation.Binary.PropositionalEquality as Eq
@@ -255,18 +255,16 @@ open Eq using (_≡_; _≢_; refl; sym; trans; cong; cong-app; cong₂)
 open Eq.≡-Reasoning using (begin_; step-≡-∣; step-≡-⟩; _∎)
 open import Relation.Binary.Definitions using (DecidableEquality)
 open import Relation.Nullary.Decidable using (Dec; yes; no; True; False; toWitnessFalse;
-  toWitness; fromWitness; ¬?; ⌊_⌋; From-yes)
-open import Relation.Unary using (Decidable)
-open import Relation.Binary using () renaming (Decidable to BinaryDecidable)
+  toWitness; fromWitness; ¬?; ⌊_⌋)
 open import Relation.Nullary.Negation using (¬_; contradiction)
 open import Data.Empty using (⊥-elim)
 
 -- Products and exists quantifier.
 open import Data.Product using (_×_; proj₁; proj₂; ∃-syntax) renaming (_,_ to ⟨_,_⟩)
-open import Data.Sum using (_⊎_; inj₁; inj₂; [_,_])
+open import Data.Sum using (_⊎_; inj₁; inj₂)
 
 -- Lists.
-open import Data.List using (List; []; _∷_; _++_; length; filter; foldr; head; replicate)
+open import Data.List using (List; []; _∷_; _++_; length)
 open import Data.List.Properties using (≡-dec)
 import Data.List.Membership.DecPropositional as DecPropMembership
 open import Data.List.Relation.Unary.All using (All; all?; lookup)
@@ -323,46 +321,53 @@ module chapter4 where
 \end{code}
 
 \section{Syntax of types and terms}
+To represent identifiers, we'll use \texttt{List Char}, and thus define a type alias. I have
+previously worked on functions to generate new identifiers which can be found in appendix
+\ref{appendix:list_functions}. \texttt{fresh} generates a new identifier and \texttt{fresh-correct}
+gives a proof that this identifier does not exist in the given list.
+\begin{code}
+  open import tspl_prior_work
+    using (suc-preserves-≢; sym-≢; fresh; fresh-correct)
+  Id : Set
+  Id = List Char
+\end{code}
+
 In System F, types become part of the syntax, as they now become a part of how terms are built.
 Note, some authors use $\Pi$ for the $\forall$ type instead, such as \citet{hutton_system_2019}, and
 some use the lowercase $\lambda$ for both term and type abstraction, such as
 \citet{pierce_types_2002}.
-
 \begin{code}
   data Type : Set where
-    ‵ℕ      : Type               -- Base type.
-    t-fr     : List Char → Type   -- Free type variables.
-    t-#      : ℕ → Type           -- Bound type variables.
-    _⇒_      : Type → Type → Type -- Arrow types.
-    t-∀_     : Type → Type -- "For all" type.
-
-  ⇒-inj : ∀ {A B A' B'}→ A ⇒ B ≡ A' ⇒ B' → (A ≡ A') × (B ≡ B')
-  ⇒-inj refl = ⟨ refl , refl ⟩
-
-  ∀-inj : ∀ {A B}
-    → t-∀ A ≡ t-∀ B → A ≡ B
-  ∀-inj refl = refl
+    ‵ℕ      : Type                 -- Base type.
+    t-fr     : Id → Type           -- Free type variables.
+    t-#      : ℕ → Type            -- Bound type variables.
+    _⇒_      : Type → Type → Type  -- Arrow types.
+    t-∀_     : Type → Type         -- "For all" type.
 
   data Term : Set where
-    fr     : List Char → Term
+    fr     : Id → Term
     #      : ℕ → Term
-    -- λ terms now have a type bound. E.g. λ: T. M
     ƛ_     : Term → Term
     _·_    : Term → Term → Term
     Λ_     : Term → Term
     _[_]   : Term → Type → Term
     ‵zero  : Term
     ‵suc_  : Term → Term
+\end{code}
 
+We also define some helper functions for reasoning about equality.
+\begin{code}
+  ⇒-inj : ∀ {A B A' B'}→ A ⇒ B ≡ A' ⇒ B' → (A ≡ A') × (B ≡ B')
+  ⇒-inj refl = ⟨ refl , refl ⟩
+  ∀-inj : ∀ {A B} → t-∀ A ≡ t-∀ B → A ≡ B
+  ∀-inj refl = refl
   ƛ-inj : ∀ {L M} → ƛ L ≡ ƛ M → (L ≡ M)
   ƛ-inj refl = refl
-  ·-inj : ∀ {L M L' M'}
-    → L · M ≡ L' · M' → (L ≡ L') × (M ≡ M')
+  ·-inj : ∀ {L M L' M'} → L · M ≡ L' · M' → (L ≡ L') × (M ≡ M')
   ·-inj refl = ⟨ refl , refl ⟩
   Λ-inj : ∀ {L M} → Λ L ≡ Λ M → L ≡ M
   Λ-inj refl = refl
-  []-inj : ∀ {L M A B}
-    → L [ A ] ≡ M [ B ] → (L ≡ M) × (A ≡ B)
+  []-inj : ∀ {L M A B} → L [ A ] ≡ M [ B ] → (L ≡ M) × (A ≡ B)
   []-inj refl = ⟨ refl , refl ⟩
   ‵suc-inj : ∀ {L M} → ‵suc L ≡ ‵suc M → L ≡ M
   ‵suc-inj refl = refl
@@ -377,12 +382,9 @@ for example,
   \text{id} \triangleq (\Lambda \lambda \colon \mathbf{0}. 0) \colon \forall \mathbf{0} \to \mathbf{0}
 \end{equation*}
 \begin{code}
-  id' : Term
-  id' = Λ ƛ # 0
+  id : Term
+  id = Λ ƛ # 0
 \end{code}
-
-More examples are given after we define type judgements in equation \ref{equation:twice_big_omega}
-in section \ref{chapter4:type_judgements}.
 
 \section{Opening}
 In System F, we only require the opening operation \citep{chargueraud_locally_2012}. There are three
@@ -397,7 +399,7 @@ kinds of opening:
 \end{itemize}
 
 \begin{code}
-  ty-ty[_—→_]_ : ℕ → List Char → Type → Type
+  ty-ty[_—→_]_ : ℕ → Id → Type → Type
   ty-ty[ i —→ x ] ‵ℕ = ‵ℕ
   ty-ty[ i —→ x ] (t-fr y) = t-fr y
   ty-ty[ i —→ x ] (t-# n) with i ≟ℕ n
@@ -406,7 +408,7 @@ kinds of opening:
   ty-ty[ i —→ x ] (A ⇒ B) = (ty-ty[ i —→ x ] A) ⇒ (ty-ty[ i —→ x ] B)
   ty-ty[ i —→ x ] t-∀ A = t-∀ (ty-ty[ suc i —→ x ] A)
 
-  ty-tm[_—→_]_ : ℕ → List Char → Term → Term
+  ty-tm[_—→_]_ : ℕ → Id → Term → Term
   ty-tm[ i —→ x ] (fr y) = fr y
   ty-tm[ i —→ x ] (# n) = # n
   ty-tm[ i —→ x ] (ƛ L) = ƛ (ty-tm[ i —→ x ] L)
@@ -416,7 +418,7 @@ kinds of opening:
   ty-tm[ i —→ x ] ‵zero = ‵zero
   ty-tm[ i —→ x ] (‵suc L) = ‵suc ty-tm[ i —→ x ] L
 
-  tm-tm[_—→_]_ : ℕ → List Char → Term → Term
+  tm-tm[_—→_]_ : ℕ → Id → Term → Term
   tm-tm[ i —→ x ] (fr y) = fr y
   tm-tm[ i —→ x ] (# n) with i ≟ℕ n
   ... | yes _ = fr x
@@ -440,13 +442,12 @@ but only require axiom 1 to be fulfilled, as that is the only axiom which we'll 
 
 Thanks to using instances, we can prove the local closure properties for both kinds of local
 closure. Lemmas 2.6, 2.7-1, and 2.7-2 are the numbers given in \citet{pitts_locally_2023}, and the
-proofs of these lemmas are adapted from his Agda source code.
+proofs of these lemmas are adapted from his Agda source code, and are thus detailed in appendix \ref{appendix:f_local_closure}.
 \begin{code}
   record Lns (A : Set) (B : Set) : Set where
-    infix 5 [_—→_]_
     field
-      [_—→_]_ : ℕ → List Char → B → B
-      ax1 : ∀ (i : ℕ) (a b : List Char) (L : B)
+      [_—→_]_ : ℕ → Id → B → B
+      ax1 : ∀ (i : ℕ) (a b : Id) (L : B)
         → [ i —→ a ] ([ i —→ b ] L) ≡ [ i —→ b ] L
   open Lns ⦃ ... ⦄
 
@@ -456,41 +457,23 @@ proofs of these lemmas are adapted from his Agda source code.
   LocallyClosed : ∀ {A B : Set} ⦃ _ : Lns A B ⦄ → B → Set
   LocallyClosed L = 0 ≻ L
 
-  lemma2·6 : ∀ {A B : Set} ⦃ _ : Lns A B ⦄ {i j : ℕ} {L : B}
-    → j ≥ i   → i ≻ L
-      ---------------
-    → j ≻ L
-  lemma2·6 j≥i i≻L k = i≻L k ⦃ ≤-trans j≥i it ⦄
+  lemma2·6 : ∀ {A B : Set} ⦃ _ : Lns A B ⦄ {i j} {L : B}
+    → j ≥ i → i ≻ L → j ≻ L
 
-  lemma2·7-1 : ∀ {A B : Set} ⦃ _ : Lns A B ⦄ {i : ℕ} {x y : List Char} {L : B}
-    → [ i —→ x ] L ≡ L
-      ----------------
-    → [ i —→ y ] L ≡ L
-  lemma2·7-1 {_} {_} {i} {x} {y} {L} assump =
-    begin
-      [ i —→ y ] L
-    ≡⟨ sym (cong ([ i —→ y ]_) assump) ⟩
-      [ i —→ y ] ([ i —→ x ] L)
-    ≡⟨ ax1 i y x L ⟩
-      [ i —→ x ] L
-    ≡⟨ assump ⟩
-      L
-    ∎
+  lemma2·7-1 : ∀ {A B : Set} ⦃ _ : Lns A B ⦄ {i x y} {L : B}
+    → [ i —→ x ] L ≡ L → [ i —→ y ] L ≡ L
 
-  lemma2·7-2 : ∀ {A B : Set} ⦃ _ : Lns A B ⦄ {i j : ℕ} {x : List Char} {L : B}
-    → j ≥ i → i ≻ L
+  lemma2·7-2 : ∀ {A B : Set} ⦃ _ : Lns A B ⦄ {i j x} {L : B}
+    → j ≥ i    → i ≻ L
       ----------------
     → [ j —→ x ] L ≡ L
-  lemma2·7-2 {j = j} j≥i i≻L =
-    let И⟨ Иe₁ , Иe₂ ⟩ = i≻L j ⦃ j≥i ⦄ in
-      lemma2·7-1 (Иe₂ (fresh Иe₁) {fresh-correct Иe₁})
 \end{code}
 
 Now we simply prove axioms 1 for the three kinds of opening, and we get the lemmas above for them
 all. The proof is done by induction on the structure of the type or term with each case being
 trivial (proven using reflexivity).
 \begin{code}
-  ax1-type : ∀ (i : ℕ) (a b : List Char) (A : Type)
+  ax1-type : ∀ (i : ℕ) (a b : Id) (A : Type)
     → ty-ty[ i —→ a ] (ty-ty[ i —→ b ] A) ≡ ty-ty[ i —→ b ] A
   ax1-type i a b ‵ℕ = refl
   ax1-type i a b (t-fr x) = refl
@@ -510,12 +493,11 @@ trivial (proven using reflexivity).
       ; ax1 = ax1-type }
 \end{code}
 
-The proofs for the other two opening operations are very similar and left in appendix [TODO:
-APPENDIX].
+The proofs for the other two opening operations are very similar and left in appendix \ref{appendix:f_local_closure}.
 \begin{code}
-  ax1-term : ∀ (i : ℕ) (a b : List Char) (L : Term)
+  ax1-term : ∀ (i : ℕ) (a b : Id) (L : Term)
     → tm-tm[ i —→ a ] (tm-tm[ i —→ b ] L) ≡ tm-tm[ i —→ b ] L
-  ax1-ty-tm : ∀ (i : ℕ) (a b : List Char) (L : Term)
+  ax1-ty-tm : ∀ (i : ℕ) (a b : Id) (L : Term)
     → ty-tm[ i —→ a ] (ty-tm[ i —→ b ] L) ≡ ty-tm[ i —→ b ] L
 
   instance
@@ -557,10 +539,7 @@ draw particular attention to the first property, that if a type $\forall A$ is l
 $i$, then $A$ is locally closed up to $i + 1$. Intuitively, this is because we increment the indices
 when we go under a $\Lambda$-abstraction.
 \begin{code}
-  i≻∀A⇒si≻A : ∀ {A i}
-    → i ≻ (t-∀ A)
-      -----------
-    → (suc i) ≻ A
+  i≻∀A⇒si≻A : ∀ {A i} → i ≻ (t-∀ A) → (suc i) ≻ A
   i≻∀A⇒si≻A {A} i≻∀ (suc j) =
     let И⟨ Иe₁ , Иe₂ ⟩ = i≻∀ j ⦃ ≤-pred it ⦄
     in И⟨ Иe₁ , (λ a {a∉} → ∀-inj (Иe₂ a {a∉})) ⟩
@@ -600,6 +579,36 @@ These proofs are similar, but get more complex as the \texttt{⇒} type consists
     in И⟨ A-Иe₁ ++ B-Иe₁ , (λ a {a∉} →
       let ⟨ a∉A , a∉B ⟩ = ∉-++ a∉
       in cong₂ _⇒_ (A-Иe₂ a {a∉A}) (B-Иe₂ a {a∉B})) ⟩
+
+  ≻ƛ⇒s≻ƛ : ∀ {L i} → i ≻tm (ƛ L) → (suc i) ≻tm L
+  ≻ƛ⇒s≻ƛ ≻ƛ (suc j) = let И⟨ Иe₁ , Иe₂ ⟩ = ≻ƛ j ⦃ ≤-pred it ⦄
+    in И⟨ Иe₁ , (λ a {a∉} → ƛ-inj (Иe₂ a {a∉})) ⟩
+
+  ·-≻ : ∀ {L M i} → i ≻tm (L · M) → (i ≻tm L) × (i ≻tm M)
+  ·-≻ {L} {M} {i} i≻ = ⟨ i≻L , i≻M ⟩
+    where
+      i≻L : i ≻tm L
+      i≻L j = let И⟨ Иe₁ , Иe₂ ⟩ = i≻ j
+        in И⟨ Иe₁ , (λ a {a∉} → proj₁ (·-inj (Иe₂ a {a∉}))) ⟩
+      i≻M : i ≻tm M
+      i≻M j = let И⟨ Иe₁ , Иe₂ ⟩ = i≻ j
+        in И⟨ Иe₁ , (λ a {a∉} → proj₂ (·-inj (Иe₂ a {a∉}))) ⟩
+
+  Λ-≻ : ∀ {L i} → i ≻tm (Λ L) → i ≻tm L
+  Λ-≻ i≻ j = let И⟨ Иe₁ , Иe₂ ⟩ = i≻ j
+    in И⟨ Иe₁ , (λ a {a∉} → Λ-inj (Иe₂ a {a∉})) ⟩
+
+  ≻Λ⇒s≻Λ : ∀ {L i} → i ≻ty-tm (Λ L) → (suc i) ≻ty-tm L
+  ≻Λ⇒s≻Λ i≻Λ (suc j) = let И⟨ Иe₁ , Иe₂ ⟩ = i≻Λ j ⦃ ≤-pred it ⦄
+    in И⟨ Иe₁ , (λ a {a∉} → Λ-inj (Иe₂ a {a∉})) ⟩
+
+  []-≻ : ∀ {L A i} → i ≻tm (L [ A ]) → i ≻tm L
+  []-≻ {L} {A} {i} i≻ j = let И⟨ Иe₁ , Иe₂ ⟩ = i≻ j
+    in И⟨ Иe₁ , (λ a {a∉} → proj₁ ([]-inj (Иe₂ a {a∉}))) ⟩
+
+  ‵suc-≻ : ∀ {L i} → i ≻tm (‵suc L) → i ≻tm L
+  ‵suc-≻ i≻ j = let И⟨ Иe₁ , Иe₂ ⟩ = i≻ j
+    in И⟨ Иe₁ , (λ a {a∉} → ‵suc-inj (Иe₂ a {a∉})) ⟩
 \end{code}
 
 One important lemma which will be used later is called \texttt{open-rec-lc-lemma} by
@@ -612,8 +621,7 @@ We cannot use a generic proof because it is proven by induction on the structure
 type. For the base cases, the proof is immediate by reflexivity, and for the inductive cases, the
 inductive hypothesis immediately gives the result.
 \begin{code}
-  open-rec-lc-lemma : ∀ {L : Term} {i j u v}
-    → i ≢ j
+  open-rec-lc-lemma : ∀ {L : Term} {i j u v} → i ≢ j
     → tm-tm[ i —→ u ] (tm-tm[ j —→ v ] L) ≡ tm-tm[ j —→ v ] L
     → tm-tm[ i —→ u ] L ≡ L
   open-rec-lc-lemma {fr x} i≢j assump = refl
@@ -629,12 +637,10 @@ inductive hypothesis immediately gives the result.
   open-rec-lc-lemma {ƛ L} {i} {j} i≢j assump
     rewrite open-rec-lc-lemma {L} {suc i} {suc j}
       (suc-preserves-≢ i≢j)
-      (ƛ-inj assump)
-    = refl
+      (ƛ-inj assump) = refl
   open-rec-lc-lemma {L · M} i≢j assump rewrite
       open-rec-lc-lemma {L} i≢j (proj₁ (·-inj assump))
-    | open-rec-lc-lemma {M} i≢j (proj₂ (·-inj assump))
-    = refl
+    | open-rec-lc-lemma {M} i≢j (proj₂ (·-inj assump)) = refl
   open-rec-lc-lemma {Λ L} i≢j assump
     rewrite open-rec-lc-lemma {L} i≢j (Λ-inj assump) = refl
   open-rec-lc-lemma {L [ x ]} i≢j assump
@@ -644,14 +650,12 @@ inductive hypothesis immediately gives the result.
     rewrite open-rec-lc-lemma {L} i≢j (‵suc-inj assump) = refl
 \end{code}
 
-The proofs of the related versions of this lemma are left in the appendix as they are very similar.
+The proofs of the related versions of this lemma are left in appendix \ref{appendix:f_local_closure} as they are very similar.
 \begin{code}
-  open-rec-lc-lemma-ty : ∀ {A : Type} {i j u v}
-    → i ≢ j
+  open-rec-lc-lemma-ty : ∀ {A : Type} {i j u v} → i ≢ j
     → ty-ty[ i —→ u ] (ty-ty[ j —→ v ] A) ≡ ty-ty[ j —→ v ] A
     → ty-ty[ i —→ u ] A ≡ A
-  open-rec-lc-lemma-ty-tm : ∀ {L : Term} {i j u v}
-    → i ≢ j
+  open-rec-lc-lemma-ty-tm : ∀ {L : Term} {i j u v} → i ≢ j
     → ty-tm[ i —→ u ] (ty-tm[ j —→ v ] L) ≡ ty-tm[ j —→ v ] L
     → ty-tm[ i —→ u ] L ≡ L
   open-rec-lc-lemma-ty-tm-tm-tm : ∀ {L : Term} {i j u v}
@@ -661,9 +665,10 @@ The proofs of the related versions of this lemma are left in the appendix as the
 
 \section{Free variables}
 We want to collect free variables in terms and free type variables in terms and types. As before,
-there are three such functons we need to define.
+there are three such functons we need to define. The full definitions of the other two functions is
+left in appendix \ref{appendix:f_free_variables}.
 \begin{code}
-  fv-tm : Term → List (List Char)
+  fv-tm : Term → List Id
   fv-tm (fr x) = x ∷ []
   fv-tm (# i) = []
   fv-tm (ƛ L) = fv-tm L
@@ -673,14 +678,22 @@ there are three such functons we need to define.
   fv-tm ‵zero = []
   fv-tm (‵suc L) = fv-tm L
 
-  ftv-ty : Type → List (List Char)
+  ftv-ty : Type → List Id
+  ftv-tm : Term → List Id
+\end{code}
+\begin{comment}
+\begin{code}
+  -- We're actually gonna something really sneaky here.
+  -- We're including the full body here because Agda needs it to
+  -- be defined so that it can use the definition in later proofs.
+  -- So I'm just gonna copy-paste the body as non-Agda code later.
+
   ftv-ty ‵ℕ = []
   ftv-ty (t-fr x) = x ∷ []
   ftv-ty (t-# i) = []
   ftv-ty (A ⇒ B) = ftv-ty A ++ ftv-ty B
   ftv-ty (t-∀ A) = ftv-ty A
 
-  ftv-tm : Term → List (List Char)
   ftv-tm (fr x) = []
   ftv-tm (# i) = []
   ftv-tm (ƛ L) = ftv-tm L
@@ -690,12 +703,13 @@ there are three such functons we need to define.
   ftv-tm ‵zero = []
   ftv-tm (‵suc L) = ftv-tm L
 \end{code}
+\end{comment}
 
-\section{Substitution of Types and Terms}
-We can substitute a term for a free variable and a type for a free type variable. Again, we get
-three functions and define them recursively.
+\section{Substitution of types and terms}
+We can substitute a term for a free variable, and a type for a free type variable in a term and a
+type. Thus, we have three functions. We define them recursively.
 \begin{code}
-  tm-tm[_:=_]_ : List Char → Term → Term → Term
+  tm-tm[_:=_]_ : Id → Term → Term → Term
   tm-tm[ x := N ] (fr y) with x ≟lchar y
   ... | yes refl = N
   ... | no  _    = fr y
@@ -706,8 +720,15 @@ three functions and define them recursively.
   tm-tm[ x := T ] (L [ A ]) = (tm-tm[ x := T ] L) [ A ]
   tm-tm[ x := N ] ‵zero = ‵zero
   tm-tm[ x := N ] (‵suc L) = ‵suc tm-tm[ x := N ] L
-
-  ty-ty[_:=_]_ : List Char → Type → Type → Type
+\end{code}
+The definition of the other two substitution functions is in appendix
+\ref{appendix:f_substitution_of_terms}.
+\begin{code}
+  ty-ty[_:=_]_ : Id → Type → Type → Type
+  ty-tm[_:=_]_ : Id → Type → Term → Term
+\end{code}
+\begin{comment}
+\begin{code}
   ty-ty[ X := T ] ‵ℕ = ‵ℕ
   ty-ty[ X := T ] (t-fr Y) with X ≟lchar Y
   ... | yes refl = T
@@ -716,7 +737,6 @@ three functions and define them recursively.
   ty-ty[ X := T ] (A ⇒ B) = (ty-ty[ X := T ] A) ⇒ (ty-ty[ X := T ] B)
   ty-ty[ X := T ] (t-∀ A) = t-∀ (ty-ty[ X := T ] A)
 
-  ty-tm[_:=_]_ : List Char → Type → Term → Term
   ty-tm[ X := T ] (fr x) = fr x
   ty-tm[ X := T ] (# k) = # k
   ty-tm[ X := T ] (ƛ L) = ƛ (ty-tm[ X := T ] L)
@@ -726,40 +746,23 @@ three functions and define them recursively.
   ty-tm[ X := T ] ‵zero = ‵zero
   ty-tm[ X := T ] (‵suc L) = ‵suc ty-tm[ X := T ] L
 \end{code}
+\end{comment}
 
 This substitution is central to proving evaluation properties, so we'll require two lemmas about how
 it interacts with local closure. The first proves that if types $A$ and $C$ are locally closed up to
 $i$, then the substitution $[X := C] A$ is locally closed up to $i$ too. The proof is a consequence
-of lemma 2.6 and is done by induction on the structure of types.
+of lemma 2.6 and is done by induction on the structure of types. Since it's a very straight-forward
+proof, it has been detailed in appendix \ref{appendix:f_substitution_of_terms}.
 \begin{code}
-  :=-≻ : ∀ {A X C i j}
-    → j ≥ i
-    → i ≻ty A
-    → i ≻ty C
+  :=-≻ : ∀ {A X C i j} → j ≥ i → i ≻ty A → i ≻ty C
     → j ≻ty (ty-ty[ X := C ] A)
-  :=-≻ {‵ℕ} j≥i i≻A i≻C = n≻‵ℕ
-  :=-≻ {t-fr Y} {X} j≥i i≻A i≻C with X ≟lchar Y
-  ... | yes refl = lemma2·6 ⦃ LnsType ⦄ j≥i i≻C
-  ... | no  X≢Y  = lemma2·6 ⦃ LnsType ⦄ j≥i i≻A
-  :=-≻ {t-# k} j≥i i≻A i≻C = lemma2·6 ⦃ LnsType ⦄ j≥i i≻A
-  :=-≻ {A ⇒ B} j≥i i≻ i≻C k =
-    let ⟨ i≻A , i≻B ⟩ = ⇒-≻ i≻
-        И⟨ A-Иe₁ , A-Иe₂ ⟩ = (:=-≻ j≥i i≻A i≻C) k
-        И⟨ B-Иe₁ , B-Иe₂ ⟩ = (:=-≻ j≥i i≻B i≻C) k
-    in И⟨ A-Иe₁ ++ B-Иe₁ , (λ a {a∉} →
-      let ⟨ a∉A , a∉B ⟩ = ∉-++ a∉
-      in cong₂ _⇒_ (A-Иe₂ a {a∉A}) (B-Иe₂ a {a∉B})) ⟩
-  :=-≻ {t-∀ A} {i = i}  j≥i i≻A i≻C k =
-    let И⟨ Иe₁ , Иe₂ ⟩ = (:=-≻ (s≤s j≥i) (i≻∀A⇒si≻A i≻A) (lemma2·6 ⦃ LnsType ⦄ (n≤1+n i) i≻C)) (suc k) ⦃ s≤s it ⦄
-    in И⟨ Иe₁ , (λ a {a∉} → cong t-∀_ (Иe₂ a {a∉})) ⟩
 \end{code}
 
 The second is how substitution is idempotent if the free type variable that is being substituted for
 isn't present in the type. While this is also true for the other forms of substitution, we only need
 the result for type-in-type substitution. The proof is a trivial induction.
 \begin{code}
-  :=-∉-idempotent : ∀ {A X B}
-    → X ∉ ftv-ty A
+  :=-∉-idempotent : ∀ {A X B} → X ∉ ftv-ty A
     → (ty-ty[ X := B ] A) ≡ A
   :=-∉-idempotent {‵ℕ} X∉A = refl
   :=-∉-idempotent {t-fr Y} {X} X∉A with X ≟lchar Y
@@ -769,33 +772,16 @@ the result for type-in-type substitution. The proof is a trivial induction.
   :=-∉-idempotent {A ⇒ B} {X} {B = C} X∉ = cong₂ _⇒_
     (:=-∉-idempotent {A} (proj₁ (∉-++ X∉)))
     (:=-∉-idempotent {B} (proj₂ (∉-++ X∉)))
-  :=-∉-idempotent {t-∀ A} X∉A = cong t-∀_ (:=-∉-idempotent {A} X∉A)
+  :=-∉-idempotent {t-∀ A} X∉A =
+    cong t-∀_ (:=-∉-idempotent {A} X∉A)
 \end{code}
 
 And we also have an alternative substitution; substituting a term for a bound variable.
 \citet{chargueraud_locally_2012} also calls this operation opening, since it's the same as opening
 but instead of replacing the index with a free (type) varaible, it is replaced with a term. I
 believe this operation is closer to substitution than opening, and thus will call it substitution.
+Notice that we still increase the index when going under a $\lambda$-abstraction.
 \begin{code}
-  ty-ty[_:→_]_ : ℕ → Type → Type → Type
-  ty-ty[ k :→ T ] ‵ℕ = ‵ℕ
-  ty-ty[ k :→ T ] (t-fr x) = t-fr x
-  ty-ty[ k :→ T ] (t-# i) with k ≟ℕ i
-  ... | yes refl = T
-  ... | no  _    = t-# i
-  ty-ty[ k :→ T ] (A ⇒ B) = (ty-ty[ k :→ T ] A) ⇒ (ty-ty[ k :→ T ] B)
-  ty-ty[ k :→ T ] (t-∀ A) = t-∀ (ty-ty[ (suc k) :→ T ] A)
-
-  ty-tm[_:→_]_ : ℕ → Type → Term → Term
-  ty-tm[ k :→ T ] (fr x) = fr x
-  ty-tm[ k :→ T ] (# i) = # i
-  ty-tm[ k :→ T ] (ƛ L) = ƛ ty-tm[ k :→ T ] L
-  ty-tm[ k :→ T ] (L · M) = (ty-tm[ k :→ T ] L) · (ty-tm[ k :→ T ] M)
-  ty-tm[ k :→ T ] (Λ L) = Λ ty-tm[ suc k :→ T ] L
-  ty-tm[ k :→ T ] (L [ A ]) = (ty-tm[ k :→ T ] L) [ ty-ty[ k :→ T ] A ]
-  ty-tm[ k :→ T ] ‵zero = ‵zero
-  ty-tm[ k :→ T ] (‵suc L) = ‵suc ty-tm[ k :→ T ] L
-
   tm-tm[_:→_]_ : ℕ → Term → Term → Term
   tm-tm[ k :→ N ] (fr x) = fr x
   tm-tm[ k :→ N ] (# i) with k ≟ℕ i
@@ -808,29 +794,39 @@ believe this operation is closer to substitution than opening, and thus will cal
   tm-tm[ k :→ N ] ‵zero = ‵zero
   tm-tm[ k :→ N ] (‵suc L) = ‵suc tm-tm[ k :→ N ] L
 \end{code}
+The definition of the other two substitution functions is in the appendix \ref{appendix:f_substitution_of_terms}.
+\begin{code}
+  ty-tm[_:→_]_ : ℕ → Type → Term → Term
+  ty-ty[_:→_]_ : ℕ → Type → Type → Type
+\end{code}
+\begin{comment}
+\begin{code}
+  ty-tm[ k :→ T ] (fr x) = fr x
+  ty-tm[ k :→ T ] (# i) = # i
+  ty-tm[ k :→ T ] (ƛ L) = ƛ ty-tm[ k :→ T ] L
+  ty-tm[ k :→ T ] (L · M) = (ty-tm[ k :→ T ] L) · (ty-tm[ k :→ T ] M)
+  ty-tm[ k :→ T ] (Λ L) = Λ ty-tm[ suc k :→ T ] L
+  ty-tm[ k :→ T ] (L [ A ]) = (ty-tm[ k :→ T ] L) [ ty-ty[ k :→ T ] A ]
+  ty-tm[ k :→ T ] ‵zero = ‵zero
+  ty-tm[ k :→ T ] (‵suc L) = ‵suc ty-tm[ k :→ T ] L
+
+  ty-ty[ k :→ T ] ‵ℕ = ‵ℕ
+  ty-ty[ k :→ T ] (t-fr x) = t-fr x
+  ty-ty[ k :→ T ] (t-# i) with k ≟ℕ i
+  ... | yes refl = T
+  ... | no  _    = t-# i
+  ty-ty[ k :→ T ] (A ⇒ B) = (ty-ty[ k :→ T ] A) ⇒ (ty-ty[ k :→ T ] B)
+  ty-ty[ k :→ T ] (t-∀ A) = t-∀ (ty-ty[ (suc k) :→ T ] A)
+\end{code}
+\end{comment}
 
 Similar to before, we want to prove that if an index doesn't occur in a type, then substituting for
-that index will leave the type unchanged. The proof once again is a trivial induction (though we
-need to consider evaluate the equality of the bound type index for Agda to apply the substitution
-definition, even if we know the index will never occur).
+that index will leave the type unchanged. The proof once again is a trivial induction and so left in appendix \ref{appendix:f_substitution_of_terms}.
 \begin{code}
-  ≻⇒:→-idempotent : ∀ {C i j}
-    (A : Type)
-    → j ≥ i
-    → i ≻ty A
+  ≻⇒:→-idempotent : ∀ {C i j} (A : Type)
+    → j ≥ i       → i ≻ty A
+      ---------------------
     → ty-ty[ j :→ C ] A ≡ A
-  ≻⇒:→-idempotent ‵ℕ j≥i i≻A = refl
-  ≻⇒:→-idempotent (t-fr x) j≥i i≻A = refl
-  ≻⇒:→-idempotent {C} {i} {j} (t-# n) j≥i i≻A with j ≟ℕ n
-  ... | no  j≢n  = refl
-  ... | yes refl with i≻A j ⦃ j≥i ⦄
-  ...   | И⟨ Иe₁ , Иe₂ ⟩ with n ≟ℕ n
-  ...     | yes refl with () ← Иe₂ (fresh Иe₁) {fresh-correct Иe₁}
-  ...     | no  n≢n  = contradiction refl n≢n
-  ≻⇒:→-idempotent (A ⇒ B) j≥i i≻ = let ⟨ i≻A , i≻B ⟩ = ⇒-≻ i≻
-    in cong₂ _⇒_ (≻⇒:→-idempotent A j≥i i≻A) (≻⇒:→-idempotent B j≥i i≻B)
-  ≻⇒:→-idempotent {i = i} {j = j} (t-∀ A) j≥i i≻ = cong t-∀_
-    (≻⇒:→-idempotent A (s≤s j≥i) (i≻∀A⇒si≻A i≻))
 \end{code}
 
 \section{Type contexts}
@@ -839,8 +835,8 @@ free type variable to the context.
 \begin{code}
   data Context : Set where
     ∅ : Context
-    _,_⦂_ : Context → List Char → Type → Context
-    _,_ : Context → List Char → Context
+    _,_⦂_ : Context → Id → Type → Context
+    _,_ : Context → Id → Context
 \end{code}
 
 Contexts are isomorphic to lists \citep{wadler_programming_2022}, so we can concatenate them and
@@ -868,12 +864,12 @@ context. We're only interested in the free type variables that are contained in 
 (\texttt{domain-ftv}) and those contained in the types of the free variables in the context
 (\texttt{domain-all-ftv}). We also have a few properties of concatenation and mapping.
 \begin{code}
-  domain-ftv : Context → List (List Char)
+  domain-ftv : Context → List Id
   domain-ftv ∅ = []
   domain-ftv (ctx , x ⦂ A) = domain-ftv ctx
   domain-ftv (ctx , X) = X ∷ domain-ftv ctx
 
-  domain-all-ftv : Context → List (List Char)
+  domain-all-ftv : Context → List Id
   domain-all-ftv ∅ = []
   domain-all-ftv (ctx , x ⦂ A) = (ftv-ty A) ++ domain-all-ftv ctx
   domain-all-ftv (ctx , X) = X ∷ domain-all-ftv ctx
@@ -893,9 +889,7 @@ context. We're only interested in the free type variables that are contained in 
   domain-++ Γ (Δ , Y) = cong (Y ∷_) (domain-++ Γ Δ)
 
   domain-ftv-++ʳ : ∀ {X} (Γ Δ : Context)
-    → X ∈ (domain-ftv Δ)
-      ----------------------
-    → X ∈ domain-ftv (Γ + Δ)
+    → X ∈ (domain-ftv Δ) → X ∈ domain-ftv (Γ + Δ)
   domain-ftv-++ʳ {X} Γ Δ X∈Δ = ∈-≡ (∈-++ˡ X∈Δ) (domain-++ Γ Δ)
 \end{code}
 
@@ -903,22 +897,16 @@ We closely follow how \citet{chargueraud_locally_2012} defines the `Ok' predicat
 \begin{code}
   data Ok : Context → Set where
     ok-∅ : Ok ∅
-    ok-∷fv : ∀ {Γ A x} → Ok Γ → Ty-LocallyClosed A → ftv-ty A ⊆ domain-ftv Γ → Ok (Γ , x ⦂ A)
+    ok-∷fv : ∀ {Γ A x} → Ok Γ → Ty-LocallyClosed A
+      → ftv-ty A ⊆ domain-ftv Γ → Ok (Γ , x ⦂ A)
     ok-∷ftv : ∀ {Γ X} → Ok Γ → X ∉ domain-all-ftv Γ → Ok (Γ , X)
 \end{code}
 
-Now we can prove that these two contexts are `Ok'.
+For example, we can show that a context is `Ok' like so.
 \begin{code}
-  _ : Ok (((∅ , ('T' ∷ [])) , ('Q' ∷ [])) , ('x' ∷ []) ⦂ (t-fr ('T' ∷ [])))
-  _ = ok-∷fv
-    (ok-∷ftv
-      (ok-∷ftv ok-∅ (λ ()))
-      (λ Q∈ → contradiction (∈∷[]⇒≡ Q∈) λ ()))
-    ty-fr-lc
-    ((there (here refl)) All.∷ All.[])
-
   _ : Ok ((∅ , ('T' ∷ [])) + (∅ , ('x' ∷ []) ⦂ (t-fr ('T' ∷ []))))
-  _ = ok-∷fv (ok-∷ftv ok-∅ (λ ())) ty-fr-lc ((here refl) All.∷ All.[])
+  _ = ok-∷fv
+    (ok-∷ftv ok-∅ (λ ())) ty-fr-lc ((here refl) All.∷ All.[])
 \end{code}
 
 We also have two convenience functions which are simple consequences of the definition of `Ok'.
@@ -928,8 +916,7 @@ We also have two convenience functions which are simple consequences of the defi
   ok-+ {Γ} {Δ , x ⦂ A} (ok-∷fv ok+ _ _) = ok-+ ok+
   ok-+ {Γ} {Δ , X} (ok-∷ftv ok+ _) = ok-+ ok+
 
-  extract-⊆ : ∀ {Γ x A}
-    → Ok (Γ , x ⦂ A) → ftv-ty A ⊆ domain-ftv Γ
+  extract-⊆ : ∀ {Γ x A} → Ok (Γ , x ⦂ A) → ftv-ty A ⊆ domain-ftv Γ
   extract-⊆ (ok-∷fv okΓ lc-A A⊆Γ) = A⊆Γ
 \end{code}
 
@@ -942,16 +929,15 @@ Accessing the context is done in two different ways:
 Each accessor has three constructors; one for getting the variable at the top of the context, one
 for going deeper, and one for changing between free and free type variables. As for the STLC, we
 provide some convenience functions with the \texttt{′} character to find the relevant evidence
-automatically.
+automatically. These are adapted from \citet[chapter~Lambda]{wadler_programming_2022}.
 \begin{code}
-  infix 4 _,_
-  data _∋_ : Context → List Char → Set where
+  data _∋_ : Context → Id → Set where
     Z : ∀ {Γ X} → (Γ , X) ∋ X
     S : ∀ {Γ X Y} → Γ ∋ X → (Γ , Y) ∋ X
     S⦂ : ∀ {Γ X y B} → Γ ∋ X → (Γ , y ⦂ B) ∋ X
-  infix 4 _∋_⦂_
 
-  data _∋_⦂_ : Context → List Char → Type → Set where
+  infix 4 _∋_⦂_
+  data _∋_⦂_ : Context → Id → Type → Set where
     H : ∀ {Γ x y A} → x ≡ y → (Γ , x ⦂ A) ∋ y ⦂ A
     T : ∀ {Γ x y A B}
       → x ≢ y → (Γ ∋ x ⦂ A) → (Γ , y ⦂ B) ∋ x ⦂ A
@@ -965,18 +951,12 @@ automatically.
   T′ { x≢y = x≢y } x = T (toWitnessFalse x≢y) x
 \end{code}
 
-Here are some examples of accessing the context.
+Here's an example of accessing the context.
 \begin{code}
-  example-context : Context
-  example-context =
-    ((∅ , ('f' ∷ []) ⦂ (‵ℕ ⇒ ‵ℕ)) , ('T' ∷ []))
-      , ('x' ∷ []) ⦂ t-fr ('T' ∷ [])
-
-  _ : example-context ∋ ('f' ∷ []) ⦂ (‵ℕ ⇒ ‵ℕ)
+  _ : ((∅ , ('f' ∷ []) ⦂ (‵ℕ ⇒ ‵ℕ)) , ('T' ∷ []))
+        , ('x' ∷ []) ⦂ t-fr ('T' ∷ [])
+    ∋ ('f' ∷ []) ⦂ (‵ℕ ⇒ ‵ℕ)
   _ = T′ (T⦂ H′)
-
-  _ : example-context ∋ ('T' ∷ [])
-  _ = S⦂ Z
 \end{code}
 
 We also need some functions for switching between evidence that a variable is in the context and
@@ -994,9 +974,7 @@ evidence that a variable is in the domain of the context.
   ... | no  X≢Y  = contradiction X≡Y X≢Y
   ∈⇒∋ {Γ , Y} (there X∈Γ) = S (∈⇒∋ X∈Γ)
 
-  ∉-domain-all-∋ : ∀ {Γ X x A}
-    → X ∉ domain-all-ftv Γ
-    → Γ ∋ x ⦂ A
+  ∉-domain-all-∋ : ∀ {Γ X x A} → X ∉ domain-all-ftv Γ → Γ ∋ x ⦂ A
     → X ∉ ftv-ty A
   ∉-domain-all-∋ X∉Γ (H x) = proj₁ (∉-++ X∉Γ)
   ∉-domain-all-∋ X∉Γ (T _ ∋x) =
@@ -1004,15 +982,13 @@ evidence that a variable is in the domain of the context.
   ∉-domain-all-∋ X∉Γ (T⦂ ∋x) =
     ∉-domain-all-∋ (proj₂ (∉-++ X∉Γ)) ∋x
 
-  ⊆-change-ctx : ∀ {Γ A Δ}
-    → ftv-ty A ⊆ domain-ftv Γ
+  ⊆-change-ctx : ∀ {Γ A Δ} → ftv-ty A ⊆ domain-ftv Γ
     → (∀ {X} → Γ ∋ X → Δ ∋ X)
     → ftv-ty A ⊆ domain-ftv Δ
   ⊆-change-ctx {Γ} {A} A⊆Γ ρ =
     All-map (λ px → ∋⇒∈ (ρ (∈⇒∋ px))) A⊆Γ
 
-  ≡-with-∋-ty : ∀ {Γ x A B}
-    → Γ ∋ x ⦂ A → A ≡ B → Γ ∋ x ⦂ B
+  ≡-with-∋-ty : ∀ {Γ x A B} → Γ ∋ x ⦂ A → A ≡ B → Γ ∋ x ⦂ B
   ≡-with-∋-ty ∋x refl = ∋x
 \end{code}
 
@@ -1020,8 +996,7 @@ We also want to prove that (for an `Ok' context) removing a free type variable f
 be done by applying a substitution, and importantly, that this changes the type of a free variable.
 We express the context as $\Gamma, X, \Delta$ and induct on the structure of $\Delta$.
 \begin{code}
-  ∋-map-ftv : ∀ {Γ X x A C}
-    (Δ : Context)
+  ∋-map-ftv : ∀ {Γ X x A C} (Δ : Context)
     → Ok ((Γ , X) + Δ)
     → ((Γ , X) + Δ) ∋ x ⦂ A
     → Γ + (map (ty-ty[ X := C ]_) Δ) ∋ x ⦂ (ty-ty[ X := C ] A)
@@ -1048,8 +1023,7 @@ The other proof we need is that if the free type variables of $A$ are in $\Gamma
 after applying a substitution, they will still be in new context. We prove this by inducting on the
 structure of the type $A$.
 \begin{code}
-  ftv⊆dom-:= : ∀ {X A C}
-    (Γ Δ : Context)
+  ftv⊆dom-:= : ∀ {X A C} (Γ Δ : Context)
      → Ty-LocallyClosed C
      → ftv-ty C ⊆ domain-ftv Δ
      → Ok (Γ + (map (ty-ty[ X := C ]_) Δ))
@@ -1061,7 +1035,7 @@ structure of the type $A$.
 \end{code}
 If the type if $\nat$, then it's vacuously true.
 \begin{code}
-  ftv⊆dom-:= {X} {t-fr Y} {C} Γ Δ lc-C C⊆Δ okΓ+map (Y∈ All.∷ All.[])
+  ftv⊆dom-:= {X} {t-fr Y} {C} Γ Δ _ C⊆Δ _ (Y∈ All.∷ All.[])
     with X ≟lchar Y
   ... | yes refl = All-map
     (λ x∈ → domain-ftv-++ʳ Γ (map (ty-ty[ X := C ]_) Δ)
@@ -1099,58 +1073,7 @@ The last cases are the inductive steps and are trivial.
 \section{Type judgements}
 \label{chapter4:type_judgements}
 Modifying the ones presented in \citet{chargueraud_locally_2012}, since he uses subtyping, System F
-has these type judgements:
-\begin{equation}
-\begin{gathered}
-  \inferrule
-    {\text{Ok} \, \Gamma}
-    {\Gamma \vdash \texttt{‵zero} \colon \nat}
-    \; (\vdash\texttt{zero})\quad
-  \inferrule
-    {\Gamma \vdash L \colon \nat}
-    {\Gamma \vdash \texttt{‵suc} \, L \colon \nat}
-    \; (\vdash\texttt{suc})\quad
-  \\
-  \inferrule
-    {\text{Ok} \, \Gamma\\0 \succ A\\x \colon A \in \Gamma}
-    {\Gamma \vdash x \colon A}
-    \; (\vdash\text{free})
-  \\
-  \inferrule
-    {0 \succ A\\\cof x , \; (\Gamma , \, x \colon A \vdash [0 \to x] L \colon B)}
-    {\Gamma \vdash (\lambda \colon A. L) \colon A \to B}
-    \; (\vdash\lambda)\quad
-  \inferrule
-    {\Gamma \vdash L \colon A \to B\\\Gamma \vdash M \colon A}
-    {\Gamma \vdash L M \colon B}
-    \; (\vdash\text{app})
-  \\
-  \inferrule
-    {\cof T, \; (\Gamma \vdash ([0 \to T] L) \colon [0 \to T] B)}
-    {\Gamma \vdash (\Lambda \, L) \colon \forall B}
-    \; (\vdash\Lambda)
-  \\
-  \inferrule
-    {0 \succ A\\\text{ftv}(A) \subseteq \text{dom-ftv}(\Gamma)\\\Gamma \vdash L \colon \forall B}
-    {\Gamma \vdash L [ A ] \colon [0 \to A] B}
-    \; (\vdash[])
-\end{gathered}
-\end{equation}
-
-The first five rules are the same as they were for the STLC (with the exception of the locally
-closed requirement ($0 \succ A$) and that the ($\vdash \lambda$) case was adapted to the new syntax,
-it includes a `$\colon A$' after the $\lambda$ in the consequent). Notice how the two new rules for
-type abstraction are similar to the two rules for $\lambda$-abstraction. For the ($\vdash\Lambda$)
-judgement, both the term and the type need to be opened with the cofinite type variable $T$ because
-bound type variables can be referenced in both the term and the type. For the ($\vdash[]$)
-judgement, if one were to rewrite the antecedant type in fully named syntax, it would be $\Gamma
-\vdash L \colon \forall A. B$, which more closely mirrors the ($\vdash\text{app}$) judgement. There
-is only one part to the antecedant because we don't keep track of free type variables in the
-context.
-
-The only real difference between these and the rules presented by \citet{chargueraud_locally_2012}
-(besides the substyping) is that we only allow a type-application for types where the free variables
-are entirely contained in the context.
+has these type judgements (a version with more familiar mathematical notation is given in appendix \ref{appendix:f_type_judgements}):
 \begin{code}
   infix  4 _⊢_⦂_
   data _⊢_⦂_ : Context → Term → Type → Set where
@@ -1182,7 +1105,7 @@ are entirely contained in the context.
       → Ty-LocallyClosed A
       → ftv-ty A ⊆ domain-ftv Γ
       → Γ ⊢ L ⦂ t-∀ B
-        ---------------
+        -------------------------------
       → Γ ⊢ L [ A ] ⦂ ty-ty[ 0 :→ A ] B
 
     ⊢zero : ∀ {Γ}
@@ -1195,6 +1118,21 @@ are entirely contained in the context.
         ---------------
       → Γ ⊢ ‵suc L ⦂ ‵ℕ
 \end{code}
+
+The first five rules are the same as they were for the STLC (with the exception of the locally
+closed requirement ($0 \succ A$) and that the ($\vdash \lambda$) case was adapted to the new syntax,
+it includes a `$\colon A$' after the $\lambda$ in the consequent). Notice how the two new rules for
+type abstraction are similar to the two rules for $\lambda$-abstraction. For the ($\vdash\Lambda$)
+judgement, both the term and the type need to be opened with the cofinite type variable $T$ because
+bound type variables can be referenced in both the term and the type. For the ($\vdash[]$)
+judgement, if one were to rewrite the antecedant type in fully named syntax, it would be $\Gamma
+\vdash L \colon \forall A. B$, which more closely mirrors the ($\vdash\text{app}$) judgement. There
+is only one part to the antecedant because we don't keep track of free type variables in the
+context.
+
+The only real difference between these and the rules presented by \citet{chargueraud_locally_2012}
+(besides the substyping) is that we only allow a type-application for types where the free variables
+are entirely contained in the context.
 
 We can give a type to \textit{twice} and $\Omega$ now.
 \begin{align}
@@ -1261,27 +1199,23 @@ that we require more \texttt{ext} lemmas for the renaming property.
   -- Extending contexts.
   ext-tm : ∀ {Γ Δ}
     → (∀ {x A}     →        Γ ∋ x ⦂ A →         Δ ∋ x ⦂ A)
-      ---------------------------------------------------
     → (∀ {x y A B} → Γ , y ⦂ B ∋ x ⦂ A → Δ , y ⦂ B ∋ x ⦂ A)
   ext-tm ρ (H refl) = H′
   ext-tm ρ (T x≢y ∋x) = T x≢y (ρ ∋x)
 
   ext-ty : ∀ {Γ Δ}
     → (∀ {X}   →       Γ ∋ X →       Δ ∋ X)
-      -------------------------------------
     → (∀ {X Y} → (Γ , Y) ∋ X → (Δ , Y) ∋ X)
   ext-ty ρ Z = Z
   ext-ty ρ (S ∋X) = S (ρ ∋X)
 
   ext-tm-ty : ∀ {Γ Δ}
     → (∀ {x A}   →       Γ ∋ x ⦂ A →       Δ ∋ x ⦂ A)
-      ----------------------------------------------
     → (∀ {x Y A} → (Γ , Y) ∋ x ⦂ A → (Δ , Y) ∋ x ⦂ A)
   ext-tm-ty ρ (T⦂ ∋x) = T⦂ (ρ ∋x)
 
   ext-ty-tm : ∀ {Γ Δ}
     → (∀ {X}     →          Γ ∋ X →           Δ ∋ X)
-      ----------------------------------------------
     → (∀ {X y A} → (Γ , y ⦂ A) ∋ X → (Δ , y ⦂ A) ∋ X)
   ext-ty-tm ρ (S⦂ ∋X) = S⦂ (ρ ∋X)
 \end{code}
@@ -1301,7 +1235,7 @@ cofinite quantification.
     ⊢ƛ lc-A И⟨ Иe₁ , (λ a {a∉} →
       rename (OkΔ,x a a∉) (ext-tm ρ-tm) (ext-ty-tm ρ-ty) (Иe₂ a {proj₂ (∉-++ a∉)})) ⟩
     where
-      OkΔ,x : (x : List Char) → x ∉ Иe₁ → Ok (Δ , x ⦂ A)
+      OkΔ,x : (x : Id) → x ∉ Иe₁ → Ok (Δ , x ⦂ A)
       OkΔ,x x x∉ with ⊢⇒Ok (Иe₂ x {x∉})
       ... | ok-∷fv OkΓ lc-A ftvA⊆Γ = ok-∷fv okΔ lc-A (⊆-change-ctx {Γ} {A} ftvA⊆Γ ρ-ty)
   rename okΔ ρ-tm ρ-ty (⊢· ⊢A⇒B ⊢A) = ⊢· (rename okΔ ρ-tm ρ-ty ⊢A⇒B) (rename okΔ ρ-tm ρ-ty ⊢A)
@@ -1320,83 +1254,39 @@ hypothesis on this type judgement; notice how we call \texttt{rename} with the a
 T {T∉Иe₁}}.
 
 We have a few remaining properties. Again, the proof here is similar to how they are proven in
-\citet{wadler_programming_2022}, just with the addition of the `Ok' predicate.
+\citet{wadler_programming_2022}, just with the addition of the `Ok' predicate. They are all a
+consequence of the \texttt{rename} lemma. The full proof for \texttt{swap} and \texttt{drop} is left
+in appendix \ref{appendix:f_type_properties}.
 \begin{code}
   -- Weakening contexts.
-  weaken : ∀ {Γ L A}
-    → Ok Γ
-    → ∅ ⊢ L ⦂ A
-      ---------
-    → Γ ⊢ L ⦂ A
+  weaken : ∀ {Γ L A} → Ok Γ → ∅ ⊢ L ⦂ A → Γ ⊢ L ⦂ A
   weaken okΓ ⊢L = rename okΓ (λ ()) (λ ()) ⊢L
 
   -- Swapping variables in a context.
   swap : ∀ {Γ x y L A B C}
     → x ≢ y
     → (Γ , y ⦂ B) , x ⦂ A ⊢ L ⦂ C
-      -------------------------
     → (Γ , x ⦂ A) , y ⦂ B ⊢ L ⦂ C
-  swap {Γ} {x} {y} {L} {A} {B} {C} x≢y ⊢L with ⊢⇒Ok ⊢L
-  ... | ok-∷fv (ok-∷fv okΓ lc-B B⊆Γ) lc-A A⊆Γ =
-    rename (ok-∷fv (ok-∷fv okΓ lc-A A⊆Γ) lc-B B⊆Γ) ρ-tm ρ-tm-ty ⊢L
-    where
-      ρ-tm : ∀ {z C}
-        → (Γ , y ⦂ B) , x ⦂ A ∋ z ⦂ C
-          -------------------------
-        → (Γ , x ⦂ A) , y ⦂ B ∋ z ⦂ C
-      ρ-tm (H refl) = T x≢y H′
-      ρ-tm (T z≢x (H refl)) = H′
-      ρ-tm (T z≢x (T z≢y ∋z)) = T z≢y (T z≢x ∋z)
-      ρ-tm-ty : ∀ {X}
-        → ((Γ , y ⦂ B) , x ⦂ A) ∋ X
-          -------------------------
-        → ((Γ , x ⦂ A) , y ⦂ B) ∋ X
-      ρ-tm-ty (S⦂ (S⦂ ∋X)) = S⦂ (S⦂ ∋X)
 
   swap-tm-ty : ∀ {Γ X y L B C}
     → ((Γ , y ⦂ B) , X) ⊢ L ⦂ C
-      -------------------------
     → (Γ , X) , y ⦂ B ⊢ L ⦂ C
-  -- Presented in the appendix.
 
-  -- Dropping shadowed variables.
   drop : ∀ {Γ x L A B C}
     → (Γ , x ⦂ A) , x ⦂ B ⊢ L ⦂ C
-      --------------------------
     → Γ , x ⦂ B ⊢ L ⦂ C
-  drop {Γ} {x} {L} {A} {B} {C} ⊢L with ⊢⇒Ok ⊢L
-  ... | ok-∷fv (ok-∷fv okΓ lc-A A⊆Γ) lc-B B⊆Γ =
-    rename (ok-∷fv okΓ lc-B B⊆Γ) ρ-tm ρ-tm-ty ⊢L
-    where
-      ρ-tm : ∀ {z C}
-        → (Γ , x ⦂ A) , x ⦂ B ∋ z ⦂ C
-          -------------------------
-        → Γ , x ⦂ B ∋ z ⦂ C
-      ρ-tm (H refl) = H′
-      ρ-tm (T z≢x (H refl)) = contradiction refl z≢x
-      ρ-tm (T z≢x (T .z≢x ∋z)) = T z≢x ∋z
-      ρ-tm-ty : ∀ {X}
-        → ((Γ , x ⦂ A) , x ⦂ B) ∋ X
-          -------------------------
-        → (Γ , x ⦂ B) ∋ X
-      ρ-tm-ty (S⦂ (S⦂ ∋X)) = S⦂ ∋X
 
   -- Apply equality within type judgements.
-  ≡-with-⊢-tm : ∀ {Γ L M A}
-    → Γ ⊢ L ⦂ A → L ≡ M → Γ ⊢ M ⦂ A
+  ≡-with-⊢-tm : ∀ {Γ L M A} → Γ ⊢ L ⦂ A → L ≡ M → Γ ⊢ M ⦂ A
   ≡-with-⊢-tm ⊢L refl = ⊢L
-
-  ≡-with-⊢-ty : ∀ {Γ L A B}
-    → Γ ⊢ L ⦂ A → A ≡ B → Γ ⊢ L ⦂ B
+  ≡-with-⊢-ty : ∀ {Γ L A B} → Γ ⊢ L ⦂ A → A ≡ B → Γ ⊢ L ⦂ B
   ≡-with-⊢-ty ⊢L refl = ⊢L
-
-  ≡-with-⊢-ctx : ∀ {Γ Δ L A}
-    → Γ ⊢ L ⦂ A → Γ ≡ Δ → Δ ⊢ L ⦂ A
+  ≡-with-⊢-ctx : ∀ {Γ Δ L A} → Γ ⊢ L ⦂ A → Γ ≡ Δ → Δ ⊢ L ⦂ A
   ≡-with-⊢-ctx ⊢L refl = ⊢L
 \end{code}
 
 We will also need a lemma called \texttt{subst-open} by \citet{chargueraud_locally_2012}. This will
-allow us to replace the \texttt{:→} substitution with the \texttt{:=} substitution later. The proof
+be used in the main substitution properties later (\texttt{subst} and \texttt{subst-ty}). The proof
 uses a simple induction on the structure of the term.
 \begin{code}
   subst-open : ∀ {N x y i} (L : Term)
@@ -1415,13 +1305,11 @@ uses a simple induction on the structure of the term.
     (subst-open L x≢y (lemma2·6 ⦃ LnsTerm ⦄ (n≤1+n i) i≻u))
   subst-open (L · M) x≢y i≻u = cong₂ _·_
     (subst-open L x≢y i≻u) (subst-open M x≢y i≻u)
-  subst-open (Λ L) x≢y i≻u =
-    cong Λ_ (subst-open L x≢y i≻u)
+  subst-open (Λ L) x≢y i≻u = cong Λ_ (subst-open L x≢y i≻u)
   subst-open (L [ A ]) x≢y i≻u =
     cong₂ _[_] (subst-open L x≢y i≻u) refl
   subst-open ‵zero x≢y i≻u = refl
-  subst-open (‵suc L) x≢y i≻u =
-    cong ‵suc_ (subst-open L x≢y i≻u)
+  subst-open (‵suc L) x≢y i≻u = cong ‵suc_ (subst-open L x≢y i≻u)
 
   subst-open-ctx : ∀ {Γ A N x y i} (L : Term)
     → x ≢ y → (i ≻tm N)
@@ -1431,13 +1319,13 @@ uses a simple induction on the structure of the term.
     ≡-with-⊢-tm assump (subst-open L x≢y i≻N)
 \end{code}
 
-We also have various variations whose proof is placed in the appendix.
+We also have these variations whose proof is placed in the appendix
+\ref{appendix:f_type_properties}.
 \begin{code}
   subst-open-ty-tm : ∀ {N x y i j} (L : Term)
     → x ≢ y → j ≥ i → (i ≻ty-tm N)
     → tm-tm[ x := N ] (ty-tm[ j —→ y ] L)
       ≡ ty-tm[ j —→ y ] (tm-tm[ x := N ] L)
-
   subst-open-ty-tm-ctx : ∀ {Γ A N x y i j} (L : Term)
     → x ≢ y → j ≥ i → (i ≻ty-tm N)
     → Γ ⊢ tm-tm[ x := N ] (ty-tm[ j —→ y ] L) ⦂ A
@@ -1447,7 +1335,6 @@ We also have various variations whose proof is placed in the appendix.
     → j ≥ i → (i ≻ty C)
     → ty-tm[ x := C ] (tm-tm[ j —→ y ] L)
       ≡ tm-tm[ j —→ y ] (ty-tm[ x := C ] L)
-
   subst-open-ty-tm-tm-tm-ctx : ∀ {Γ A C x y i j} (L : Term)
     → j ≥ i → (i ≻ty C)
     → Γ ⊢ ty-tm[ x := C ] (tm-tm[ j —→ y ] L) ⦂ A
@@ -1457,7 +1344,6 @@ We also have various variations whose proof is placed in the appendix.
     → x ≢ y → j ≥ i → (i ≻ty C)
     → ty-ty[ x := C ] (ty-ty[ j —→ y ] A)
       ≡ ty-ty[ j —→ y ] (ty-ty[ x := C ] A)
-
   subst-open-ty-ty-ty-ty-ctx : ∀ {Γ L C A x y i j}
     → x ≢ y → j ≥ i → (i ≻ty C)
     → Γ ⊢ L ⦂ ty-ty[ x := C ] (ty-ty[ j —→ y ] A)
@@ -1467,7 +1353,6 @@ We also have various variations whose proof is placed in the appendix.
     → x ≢ y → j ≥ i → (i ≻ty C)
     → ty-tm[ x := C ] (ty-tm[ j —→ y ] L)
       ≡ ty-tm[ j —→ y ] (ty-tm[ x := C ] L)
-
   subst-open-ty-tm-ty-tm-ctx : ∀ {Γ L A C x y i j}
     → x ≢ y → j ≥ i → (i ≻ty C)
     → Γ ⊢ ty-tm[ x := C ] (ty-tm[ j —→ y ] L) ⦂ A
@@ -1476,92 +1361,24 @@ We also have various variations whose proof is placed in the appendix.
 
 To actually swap between the two substitutions, we have a lemma called \texttt{subst-intro}. It says
 that, so long as we choose a fresh identifier $x$, we can swap between \texttt{:→} and \texttt{:=}
-with opening. The proof is a trivial induction. Once again, the variants of this lemma are in the
-appendix.
+with opening. The proof is a trivial induction, and so detailed in appendix \ref{appendix:f_type_properties}.
 \begin{code}
-  subst-intro : ∀ {x i} (L N : Term)
-    → x ∉ fv-tm L
+  subst-intro : ∀ {x i} (L N : Term) → x ∉ fv-tm L
     → tm-tm[ i :→ N ] L ≡ tm-tm[ x := N ] (tm-tm[ i —→ x ] L)
-  subst-intro {x} (fr y) N x∉fv-L with x ≟lchar y
-  ... | yes refl = contradiction refl (∉∷[]⇒≢ x∉fv-L)
-  ... | no  x≢y  = refl
-  subst-intro {x} {i} (# k) N x∉fv-L with i ≟ℕ k
-  ... | no  i≢k = refl
-  ... | yes refl with x ≟lchar x
-  ...   | yes refl = refl
-  ...   | no  x≢x  = contradiction refl x≢x
-  subst-intro {x} {i} (ƛ L) N x∉fv-L
-    rewrite subst-intro {x} {suc i} L N x∉fv-L = refl
-  subst-intro (L · M) N x∉ =
-    let ⟨ x∉fv-L , x∉fv-M ⟩ = ∉-++ {xs = fv-tm L} x∉
-    in cong₂ _·_ (subst-intro L N x∉fv-L) (subst-intro M N x∉fv-M)
-  subst-intro (Λ L) N x∉fv-L =
-    cong Λ_ (subst-intro L N x∉fv-L)
-  subst-intro (L [ A ]) N x∉fv-L =
-    cong₂ _[_] (subst-intro L N x∉fv-L) refl
-  subst-intro ‵zero N x∉fv-L = refl
-  subst-intro (‵suc L) N x∉fv-L =
-    cong ‵suc_ (subst-intro L N x∉fv-L)
-
-  subst-intro-ty-ty : ∀ {x i B} (A : Type)
-    → x ∉ ftv-ty A
+  subst-intro-ty-ty : ∀ {x i B} (A : Type) → x ∉ ftv-ty A
     → ty-ty[ i :→ B ] A ≡ ty-ty[ x := B ] (ty-ty[ i —→ x ] A)
-
-  subst-intro-ty-tm : ∀ {x i B} (L : Term)
-    → x ∉ ftv-tm L
+  subst-intro-ty-tm : ∀ {x i B} (L : Term) → x ∉ ftv-tm L
     → ty-tm[ i :→ B ] L ≡ ty-tm[ x := B ] (ty-tm[ i —→ x ] L)
 \end{code}
 
 \section{Well-typed terms are locally closed}
-If the typing rules are correct, then all well-typed terms are locally closed. This is particularly
-important because a non-locally closed term has a bound variable which isn't actually bound. The
-proof of this in System F is presented below. TODO: Explain more.
-
-We will need some further lemmas regarding local closure.
-\begin{code}
-  s≻ƛ⇒≻ƛ : ∀ {L i} → (suc i) ≻tm L → i ≻tm (ƛ L)
-  s≻ƛ⇒≻ƛ s≻ j = let И⟨ Иe₁ , Иe₂ ⟩ = s≻ (suc j) ⦃ s≤s it ⦄
-    in И⟨ Иe₁ , (λ a {a∉} → cong ƛ_ (Иe₂ a {a∉})) ⟩
-
-  ≻ƛ⇒s≻ƛ : ∀ {L i} → i ≻tm (ƛ L) → (suc i) ≻tm L
-  ≻ƛ⇒s≻ƛ ≻ƛ (suc j) = let И⟨ Иe₁ , Иe₂ ⟩ = ≻ƛ j ⦃ ≤-pred it ⦄
-    in И⟨ Иe₁ , (λ a {a∉} → ƛ-inj (Иe₂ a {a∉})) ⟩
-
-  ·-≻ : ∀ {L M i} → i ≻tm (L · M) → (i ≻tm L) × (i ≻tm M)
-  ·-≻ {L} {M} {i} i≻ = ⟨ i≻L , i≻M ⟩
-    where
-      i≻L : i ≻tm L
-      i≻L j = let И⟨ Иe₁ , Иe₂ ⟩ = i≻ j
-        in И⟨ Иe₁ , (λ a {a∉} → proj₁ (·-inj (Иe₂ a {a∉}))) ⟩
-      i≻M : i ≻tm M
-      i≻M j = let И⟨ Иe₁ , Иe₂ ⟩ = i≻ j
-        in И⟨ Иe₁ , (λ a {a∉} → proj₂ (·-inj (Иe₂ a {a∉}))) ⟩
-
-  Λ-≻ : ∀ {L i} → i ≻tm (Λ L) → i ≻tm L
-  Λ-≻ i≻ j = let И⟨ Иe₁ , Иe₂ ⟩ = i≻ j
-    in И⟨ Иe₁ , (λ a {a∉} → Λ-inj (Иe₂ a {a∉})) ⟩
-
-  ≻Λ⇒s≻Λ : ∀ {L i} → i ≻ty-tm (Λ L) → (suc i) ≻ty-tm L
-  ≻Λ⇒s≻Λ i≻Λ (suc j) = let И⟨ Иe₁ , Иe₂ ⟩ = i≻Λ j ⦃ ≤-pred it ⦄
-    in И⟨ Иe₁ , (λ a {a∉} → Λ-inj (Иe₂ a {a∉})) ⟩
-
-  []-≻ : ∀ {L A i} → i ≻tm (L [ A ]) → i ≻tm L
-  []-≻ {L} {A} {i} i≻ j = let И⟨ Иe₁ , Иe₂ ⟩ = i≻ j
-    in И⟨ Иe₁ , (λ a {a∉} → proj₁ ([]-inj (Иe₂ a {a∉}))) ⟩
-
-  ‵suc-≻ : ∀ {L i} → i ≻tm (‵suc L) → i ≻tm L
-  ‵suc-≻ i≻ j = let И⟨ Иe₁ , Иe₂ ⟩ = i≻ j
-    in И⟨ Иe₁ , (λ a {a∉} → ‵suc-inj (Иe₂ a {a∉})) ⟩
-\end{code}
-
-An important lemma for proving that substitution preserves types is that all well-typed terms are
-locally closed. We prove this by inducting on the type judgement.
+If the typing rules are correct, then all well-typed terms are locally closed. Intuitively, since we
+only allow closed terms in our language, then all well-typed terms are locally closed. We prove this by inducting on the type judgement.
 \begin{code}
   ⊢⇒lc : ∀ {Γ L A} → Γ ⊢ L ⦂ A → Tm-LocallyClosed L
   ⊢⇒lc (⊢free okΓ lc-A ∋x) j = И⟨ [] , (λ a → refl) ⟩
   ⊢⇒lc (⊢ƛ lc-A И⟨ Иe₁ , Иe₂ ⟩) j = И⟨ Иe₁ , (λ a {a∉} → cong ƛ_
-    (open-rec-lc-lemma
-      (λ ())
+    (open-rec-lc-lemma (λ ())
       (lemma2·7-2 ⦃ LnsTerm ⦄ z≤n (⊢⇒lc (Иe₂ a {a∉}))))) ⟩
 \end{code}
 For the $\vdash\lambda$ case, since the type judgement is in the form of a cofinite quantification,
@@ -1575,11 +1392,10 @@ use the inductive hypothesis, which is called using \texttt{⊢⇒lc Иe₂ a {a
     (lemma2·7-2 ⦃ LnsTerm ⦄ z≤n (⊢⇒lc ⊢A))) ⟩
   ⊢⇒lc {Γ} (⊢Λ И⟨ Иe₁ , Иe₂ ⟩) j =
     И⟨ Иe₁ , (λ a {a∉} →
-      cong Λ_ (lemma2·7-2 ⦃ LnsTerm ⦄ z≤n (helper z≤n (⊢⇒lc (Иe₂ a {a∉}))))) ⟩
+      cong Λ_ (lemma2·7-2 ⦃ LnsTerm ⦄ z≤n
+        (helper z≤n (⊢⇒lc (Иe₂ a {a∉}))))) ⟩
     where
-      helper : ∀ {N i k q x}
-        → k ≥ i
-        → i ≻tm (ty-tm[ q —→ x ] N)
+      helper : ∀ {N i k q x} → k ≥ i → i ≻tm (ty-tm[ q —→ x ] N)
         → k ≻tm N
       helper {fr x} {k = k} k≥i i≻ty j = i≻ty k ⦃ k≥i ⦄
       helper {# n} k≥i i≻ty = lemma2·6 ⦃ LnsTerm ⦄ k≥i i≻ty
@@ -1607,22 +1423,20 @@ use the inductive hypothesis, which is called using \texttt{⊢⇒lc Иe₂ a {a
 For the $\vdash\Lambda$ case, we need a helper function which is very similar to lemma 2.6. It says
 that, if a term is locally closed at $i$ after opening, it will also be locally closed at $i$ (and
 any greater number) for the unopened term. This is itself proven by induction on the term.
-\begin{code}        
+\begin{code}
   ⊢⇒lc {L = L [ A ]} (⊢[] _ _ ⊢L) j =
     let И⟨ Иe₁ , Иe₂ ⟩ = (⊢⇒lc ⊢L) j
     in И⟨ Иe₁ , (λ a {a∉} → cong _[ A ]  (Иe₂ a {a∉})) ⟩
   ⊢⇒lc (⊢zero _) j = И⟨ [] , (λ _ → refl) ⟩
-  ⊢⇒lc (⊢suc ⊢L) j =
-    let И⟨ Иe₁ , Иe₂ ⟩ = (⊢⇒lc ⊢L) j
+  ⊢⇒lc (⊢suc ⊢L) j = let И⟨ Иe₁ , Иe₂ ⟩ = (⊢⇒lc ⊢L) j
     in И⟨ Иe₁ , (λ a {a∉} → cong ‵suc_ (Иe₂ a {a∉})) ⟩
 \end{code}
 The remaining cases are a simple induction, once again, using cofinite quantification by reusing the
 same set of exceptions.
 
-The proofs for the other two local closure predicates is presented in the appendix.
+The proofs for the other two local closure predicates are presented in the appendix \ref{appendix:f_well_typed_lc}.
 \begin{code}
   ⊢⇒lc-ty : ∀ {Γ L A} → Γ ⊢ L ⦂ A → Ty-LocallyClosed A
-
   ⊢⇒lc-ty-tm : ∀ {Γ L A} → Γ ⊢ L ⦂ A → Ty-Tm-LocallyClosed L
 \end{code}
 
@@ -1699,7 +1513,8 @@ have already done the hard work when we proved \texttt{ftv⊆dom-:=} earlier.
       let ⟨ a∉Y∷Иe₁ , a∉dom-all-ftv ⟩ = ∉-++ a∉
           ⟨ a∉Y∷[] , a∉Иe₁ ⟩ = ∉-++ a∉Y∷Иe₁
           Y≢a = sym-≢ (∉∷[]⇒≢ a∉Y∷[])
-          hypo = subst-ty {Δ = Δ , a} lc-C (⊆⇒⊆∷ C⊆Δ) (ok-∷ftv okΓ+map a∉dom-all-ftv) (Иe₂ a {a∉Иe₁})
+          hypo = subst-ty {Δ = Δ , a} lc-C (⊆⇒⊆∷ C⊆Δ)
+              (ok-∷ftv okΓ+map a∉dom-all-ftv) (Иe₂ a {a∉Иe₁})
       in subst-open-ty-tm-ty-tm-ctx Y≢a z≤n lc-C
         (subst-open-ty-ty-ty-ty-ctx {A = B} {j = 0} Y≢a z≤n lc-C hypo) ) ⟩
 \end{code}
@@ -1726,7 +1541,8 @@ For \texttt{subst}, our proof is very similar to how it is in \citet{wadler_prog
 cofinite induction and \texttt{subst-open} being the only notable additions. As mentioned in the
 STLC section, Agda believes that the $\vdash\lambda$ case doesn't terminate. However, as we're
 recursing on the deconstructed type judgement, we are ensuring that we're recursing on a strict
-subexpression of the argument, which is exactly the requirement for termination that Agda uses. [TODO: CITE THIS https://agda.readthedocs.io/en/stable/language/termination-checking.html].
+subexpression of the argument, which is exactly the requirement for termination that Agda uses
+\citep{the_agda_community_termination_2024}.
 \begin{code}
   {-# TERMINATING #-}
   subst : ∀ {Γ x L N A B}
@@ -1772,8 +1588,7 @@ And to put these two properties to use, we need to replace the \texttt{:→} sub
     let x                  = fresh (fv-tm L ++ Иe₁)
         ⟨ x∉fv-L , x∉Иe₁ ⟩ = ∉-++ {xs = fv-tm L}
                                 (fresh-correct (fv-tm L ++ Иe₁))
-    in ≡-with-⊢-tm
-      (subst ⊢N (Иe₂ x {x∉Иe₁}))
+    in ≡-with-⊢-tm (subst ⊢N (Иe₂ x {x∉Иe₁}))
       (sym (subst-intro L N (x∉fv-L)))
 
   subst-op-ty : ∀ {L B C}
@@ -1788,10 +1603,9 @@ And to put these two properties to use, we need to replace the \texttt{:→} sub
           (fresh-correct (fv-tm L ++ ftv-ty B ++ ftv-tm L ++ Иe₁))
         ⟨ x∉ftv-B , x∉ ⟩ = ∉-++ {xs = ftv-ty B} x∉
         ⟨ x∉ftv-L , x∉Иe₁ ⟩ = ∉-++ {xs = ftv-tm L} x∉
-    in ≡-with-⊢-ty
-      (≡-with-⊢-tm
-        (subst-ty {Δ = ∅} lc-C C⊆[] ok-∅ (Иe₂ x {x∉Иe₁}))
-        (sym (subst-intro-ty-tm L x∉ftv-L)))
+    in ≡-with-⊢-ty (≡-with-⊢-tm
+          (subst-ty {Δ = ∅} lc-C C⊆[] ok-∅ (Иe₂ x {x∉Иe₁}))
+          (sym (subst-intro-ty-tm L x∉ftv-L)))
       (sym (subst-intro-ty-ty B x∉ftv-B))
 \end{code}
 
@@ -1811,7 +1625,6 @@ We have the following evaluation rules.
   data _—→_ : Term → Term → Set where
     ξ₁ : ∀ {L L' M}
       → L —→ L'
-      -- → Tm-LocallyClosed M
         -------------------
       → L · M —→ L' · M
 
@@ -1831,14 +1644,12 @@ We have the following evaluation rules.
       → ‵suc L —→ ‵suc L'
 
     β-ƛ : ∀ {L M}
-      → 1 ≻tm L
-      → Value M
-        ---------
+      → 1 ≻tm L              → Value M
+        ------------------------------
       → (ƛ L) · M —→ tm-tm[ 0 :→ M ] L
 
     β-Λ : ∀ {L A}
-      → 1 ≻ty-tm L
-      → Ty-LocallyClosed A
+      → 1 ≻ty-tm L  → Ty-LocallyClosed A
       → ftv-ty A ⊆ []
         --------------------------------
       → (Λ L) [ A ] —→ ty-tm[ 0 :→ A ] L
@@ -1849,27 +1660,12 @@ $\Lambda$-abstraction, evaluation will only work on empty contexts.
 
 We have reflexivity and transitivity of evaluation.
 \begin{code}
-  infix  2 _—↠_
-  infix  1 begin'_
-  infixr 2 _—→⟨_⟩_
-  infix  3 _∎'
   data _—↠_ : Term → Term → Set where
-    _∎' : ∀ M
-        ---------
-      → M —↠ M
-
-    step—→ : ∀ L {M N}
-      → M —↠ N
-      → L —→ M
-        ---------
-      → L —↠ N
-
+    _∎' : ∀ M → M —↠ M
+    step—→ : ∀ L {M N} → M —↠ N → L —→ M → L —↠ N
   pattern _—→⟨_⟩_ L L—→M M—↠N = step—→ L M—↠N L—→M
 
-  begin'_ : ∀ {M N}
-    → M —↠ N
-      ------
-    → M —↠ N
+  begin'_ : ∀ {M N} → M —↠ N → M —↠ N
   begin' M—↠N = M—↠N
 \end{code}
 
@@ -1878,20 +1674,10 @@ The proof of progress is quite straight-forward. Compared to the proof as presen
 easily obtained by \texttt{⊢⇒lc}.
 \begin{code}
   data Progress (L : Term) : Set where
-    step : ∀ {L'}
-      → L —→ L'
-        ----------
-      → Progress L
+    done : Value L → Progress L
+    step : ∀ {L'} → L —→ L' → Progress L
 
-    done :
-        Value L
-        ----------
-      → Progress L
-
-  progress : ∀ {L A}
-    → ∅ ⊢ L ⦂ A
-      ----------
-    → Progress L
+  progress : ∀ {L A} → ∅ ⊢ L ⦂ A → Progress L
   progress (⊢ƛ lc-A cof) = done V-ƛ
   progress (⊢· ⊢L ⊢M) with progress ⊢L
   ... | step L→L' = step (ξ₁ L→L')
@@ -1911,16 +1697,14 @@ easily obtained by \texttt{⊢⇒lc}.
 The proof of preservation, however, proves difficult, because it requires the proofs of substitution
 which were presented earlier.
 \begin{code}
-  preserve : ∀ {L L' A}
-    → ∅ ⊢ L ⦂ A
-    → L —→ L'
-      ----------
-    → ∅ ⊢ L' ⦂ A
+  preserve : ∀ {L L' A} → ∅ ⊢ L ⦂ A → L —→ L' → ∅ ⊢ L' ⦂ A
   preserve (⊢· ⊢L ⊢M) (ξ₁ L→L') = ⊢· (preserve ⊢L L→L') ⊢M
   preserve (⊢· ⊢L ⊢M) (ξ₂ M→M') = ⊢· ⊢L (preserve ⊢M M→M')
   preserve (⊢· ⊢L ⊢M) (β-ƛ 1≻L val-M) = subst-op ⊢M ⊢L
-  preserve (⊢[] lc-A A⊆[] ⊢L) (ξ-[] L→L') = ⊢[] lc-A A⊆[] (preserve ⊢L L→L')
-  preserve (⊢[] lc-A A⊆[] ⊢L) (β-Λ 1≻L _ C⊆[]) = subst-op-ty lc-A C⊆[] ⊢L
+  preserve (⊢[] lc-A A⊆[] ⊢L) (ξ-[] L→L') =
+    ⊢[] lc-A A⊆[] (preserve ⊢L L→L')
+  preserve (⊢[] lc-A A⊆[] ⊢L) (β-Λ 1≻L _ C⊆[]) =
+    subst-op-ty lc-A C⊆[] ⊢L
   preserve (⊢suc ⊢L) (ξ-suc L→L') = ⊢suc (preserve ⊢L L→L')
 \end{code}
 
@@ -1933,26 +1717,13 @@ Now we can make an evaluation function.
       amount : ℕ
 
   data Finished (N : Term) : Set where
-    done :
-        Value N
-        ----------
-      → Finished N
-    out-of-gas :
-        ----------
-        Finished N
+    out-of-gas : Finished N
+    done : Value N → Finished N
 
   data Steps (L : Term) : Set where
-    steps : ∀ {N}
-      → L —↠ N
-      → Finished N
-        ----------
-      → Steps L
+    steps : ∀ {N} → L —↠ N → Finished N → Steps L
 
-  eval : ∀ {L A}
-    → Gas
-    → ∅ ⊢ L ⦂ A
-      ---------
-    → Steps L
+  eval : ∀ {L A} → Gas → ∅ ⊢ L ⦂ A → Steps L
   eval {L} (gas zero) ⊢L = steps (L ∎') out-of-gas
   eval {L} (gas (suc n)) ⊢L with progress ⊢L
   ... | done val = steps (L ∎') (done val)
@@ -1960,13 +1731,29 @@ Now we can make an evaluation function.
   ...   | steps M→N fin = steps (L —→⟨ L→M ⟩ M→N) fin
 \end{code}
 
+As an example, we can apply the earlier defined \texttt{twice} function to apply $\lambda \;
+\texttt{‵suc} \; 0$ twice to \texttt{‵zero} to get \texttt{‵suc (‵suc ‵zero)}.
+\begin{code}
+  ⊢twice-suc-zero :
+    ∅ ⊢ (((Λ ƛ (ƛ ((# 1) · ((# 1) · (# 0))))) [ ‵ℕ ])
+          · (ƛ ‵suc (# 0))) · ‵zero
+        ⦂ ‵ℕ
+  ⊢twice-suc-zero = ⊢·
+    (⊢· (⊢[] n≻‵ℕ All.[] example.twice)
+      (⊢ƛ n≻‵ℕ И⟨ [] , (λ a →
+        ⊢suc (⊢free (ok-∷fv ok-∅ n≻‵ℕ All.[]) n≻‵ℕ H′)) ⟩))
+    (⊢zero ok-∅)
+\end{code}
+
+The Agda-generated code is ommitted here, but one could figure this out interactively by using
+Agda's normalise feature. For example, in Emacs, one can press C-c C-n and type \texttt{eval (gas 10) ⊢twice-suc-zero} to see the derivation being automatically generated.
+
 \chapter{Conclusions}
 We have successfully developed an evaluator for System F.
+
 \bibliographystyle{plainnat}
 \bibliography{dissertation}
 
-
-% You may delete everything from \appendix up to \end{document} if you don't need it.
 \appendix
 
 \chapter{Miscellaneous Proofs}
@@ -1976,17 +1763,37 @@ Some miscellaneous proofs are required in the main chapters. Since they aren't o
 
 \input{plfa_adaptions.lagda}
 
-\chapter{Prior work submitted for TSPL}
-\label{appendix:tspl}
-\input{tspl_prior_work.lagda}
-
-\chapter{Substitution and Evaluation in STLC}
-\label{appendix:stlc_sub_and_eval}
-\input{stlc.lagda}
-
 \chapter{Miscellaneous System F proofs}
+\section{Local Closure}
+\label{appendix:f_local_closure}
 \begin{code}
-  -- ax1-term : ∀ (i : ℕ) (a b : List Char) (L : Term)
+  -- lemma2·6 : ∀ {A B : Set} ⦃ _ : Lns A B ⦄ {i j} {L : B}
+  --   → j ≥ i → i ≻ L → j ≻ L
+  lemma2·6 j≥i i≻L k = i≻L k ⦃ ≤-trans j≥i it ⦄
+
+  -- lemma2·7-1 : ∀ {A B : Set} ⦃ _ : Lns A B ⦄ {i x y} {L : B}
+  --   → [ i —→ x ] L ≡ L → [ i —→ y ] L ≡ L
+  lemma2·7-1 {_} {_} {i} {x} {y} {L} assump =
+    begin
+      [ i —→ y ] L
+    ≡⟨ sym (cong ([ i —→ y ]_) assump) ⟩
+      [ i —→ y ] ([ i —→ x ] L)
+    ≡⟨ ax1 i y x L ⟩
+      [ i —→ x ] L
+    ≡⟨ assump ⟩
+      L
+    ∎
+
+  -- lemma2·7-2 : ∀ {A B : Set} ⦃ _ : Lns A B ⦄ {i j x} {L : B}
+  --   → j ≥ i    → i ≻ L
+  --     ----------------
+  --   → [ j —→ x ] L ≡ L
+  lemma2·7-2 {j = j} j≥i i≻L =
+    let И⟨ Иe₁ , Иe₂ ⟩ = i≻L j ⦃ j≥i ⦄ in
+      lemma2·7-1 (Иe₂ (fresh Иe₁) {fresh-correct Иe₁})
+\end{code}
+\begin{code}
+  -- ax1-term : ∀ (i : ℕ) (a b : Id) (L : Term)
   --   → tm-tm[ i —→ a ] (tm-tm[ i —→ b ] L) ≡ tm-tm[ i —→ b ] L
   ax1-term i a b (fr x) = refl
   ax1-term i a b (# k) with i ≟ℕ k
@@ -2002,7 +1809,7 @@ Some miscellaneous proofs are required in the main chapters. Since they aren't o
   ax1-term i a b ‵zero = refl
   ax1-term i a b (‵suc L) rewrite ax1-term i a b L = refl
 
-  -- ax1-ty-tm : ∀ (i : ℕ) (a b : List Char) (L : Term)
+  -- ax1-ty-tm : ∀ (i : ℕ) (a b : Id) (L : Term)
   --   → ty-tm[ i —→ a ] (ty-tm[ i —→ b ] L) ≡ ty-tm[ i —→ b ] L
   ax1-ty-tm i a b (fr x) = refl
   ax1-ty-tm i a b (# k) = refl
@@ -2085,8 +1892,217 @@ Some miscellaneous proofs are required in the main chapters. Since they aren't o
     open-rec-lc-lemma-ty-tm-tm-tm {L} (‵suc-inj assump) = refl
 \end{code}
 
+\section{Free variables}
+\label{appendix:f_free_variables}
+\begin{minted}{agda}
+  -- ftv-ty : Term → List Id
+  ftv-ty ‵ℕ = []
+  ftv-ty (t-fr x) = x ∷ []
+  ftv-ty (t-# i) = []
+  ftv-ty (A ⇒ B) = ftv-ty A ++ ftv-ty B
+  ftv-ty (t-∀ A) = ftv-ty A
+
+  -- ftv-tm : Term → List Id
+  ftv-tm (fr x) = []
+  ftv-tm (# i) = []
+  ftv-tm (ƛ L) = ftv-tm L
+  ftv-tm (L · M) = ftv-tm L ++ ftv-tm M
+  ftv-tm (Λ L) = ftv-tm L
+  ftv-tm (L [ A ]) = ftv-tm L ++ ftv-ty A
+  ftv-tm ‵zero = []
+  ftv-tm (‵suc L) = ftv-tm L
+\end{minted}
+
+\section{Substitution of types and terms}
+\label{appendix:f_substitution_of_terms}
+\begin{minted}{agda}
+  -- ty-ty[_:=_]_ : Id → Type → Type → Type
+  ty-ty[ X := T ] ‵ℕ = ‵ℕ
+  ty-ty[ X := T ] (t-fr Y) with X ≟lchar Y
+  ... | yes refl = T
+  ... | no  _    = t-fr Y
+  ty-ty[ X := T ] (t-# k) = t-# k
+  ty-ty[ X := T ] (A ⇒ B) = (ty-ty[ X := T ] A) ⇒ (ty-ty[ X := T ] B)
+  ty-ty[ X := T ] (t-∀ A) = t-∀ (ty-ty[ X := T ] A)
+
+  -- ty-tm[_:=_]_ : Id → Type → Term → Term
+  ty-tm[ X := T ] (fr x) = fr x
+  ty-tm[ X := T ] (# k) = # k
+  ty-tm[ X := T ] (ƛ L) = ƛ (ty-tm[ X := T ] L)
+  ty-tm[ X := T ] (L · M) = (ty-tm[ X := T ] L) · (ty-tm[ X := T ] M)
+  ty-tm[ X := T ] (Λ L) = Λ (ty-tm[ X := T ] L)
+  ty-tm[ X := T ] (L [ A ]) = (ty-tm[ X := T ] L) [ ty-ty[ X := T ] A ]
+  ty-tm[ X := T ] ‵zero = ‵zero
+  ty-tm[ X := T ] (‵suc L) = ‵suc ty-tm[ X := T ] L
+\end{minted}
+
 \begin{code}
-  -- subst-open-ty-tm : ∀ {N : Term} {x y : List Char} {i j : ℕ}
+  -- ≻⇒:→-idempotent : ∀ {C i j} (A : Type)
+  --   → j ≥ i       → i ≻ty A
+  --     ---------------------
+  --   → ty-ty[ j :→ C ] A ≡ A
+  ≻⇒:→-idempotent ‵ℕ j≥i i≻A = refl
+  ≻⇒:→-idempotent (t-fr x) j≥i i≻A = refl
+  ≻⇒:→-idempotent {C} {i} {j} (t-# n) j≥i i≻A with j ≟ℕ n
+  ... | no  j≢n  = refl
+  ... | yes refl with i≻A j ⦃ j≥i ⦄
+  ...   | И⟨ Иe₁ , Иe₂ ⟩ with n ≟ℕ n
+  ...     | yes refl with () ← Иe₂ (fresh Иe₁) {fresh-correct Иe₁}
+  ...     | no  n≢n  = contradiction refl n≢n
+  ≻⇒:→-idempotent (A ⇒ B) j≥i i≻ = let ⟨ i≻A , i≻B ⟩ = ⇒-≻ i≻
+    in cong₂ _⇒_ (≻⇒:→-idempotent A j≥i i≻A) (≻⇒:→-idempotent B j≥i i≻B)
+  ≻⇒:→-idempotent {i = i} {j = j} (t-∀ A) j≥i i≻ = cong t-∀_
+    (≻⇒:→-idempotent A (s≤s j≥i) (i≻∀A⇒si≻A i≻))
+\end{code}
+
+\begin{code}
+  -- :=-≻ : ∀ {A X C i j} → j ≥ i → i ≻ty A → i ≻ty C
+  --   → j ≻ty (ty-ty[ X := C ] A)
+  :=-≻ {‵ℕ} j≥i i≻A i≻C = n≻‵ℕ
+  :=-≻ {t-fr Y} {X} j≥i i≻A i≻C with X ≟lchar Y
+  ... | yes refl = lemma2·6 ⦃ LnsType ⦄ j≥i i≻C
+  ... | no  X≢Y  = lemma2·6 ⦃ LnsType ⦄ j≥i i≻A
+  :=-≻ {t-# k} j≥i i≻A i≻C = lemma2·6 ⦃ LnsType ⦄ j≥i i≻A
+  :=-≻ {A ⇒ B} j≥i i≻ i≻C k =
+    let ⟨ i≻A , i≻B ⟩ = ⇒-≻ i≻
+        И⟨ A-Иe₁ , A-Иe₂ ⟩ = (:=-≻ j≥i i≻A i≻C) k
+        И⟨ B-Иe₁ , B-Иe₂ ⟩ = (:=-≻ j≥i i≻B i≻C) k
+    in И⟨ A-Иe₁ ++ B-Иe₁ , (λ a {a∉} →
+      let ⟨ a∉A , a∉B ⟩ = ∉-++ a∉
+      in cong₂ _⇒_ (A-Иe₂ a {a∉A}) (B-Иe₂ a {a∉B})) ⟩
+  :=-≻ {t-∀ A} {i = i}  j≥i i≻A i≻C k =
+    let И⟨ Иe₁ , Иe₂ ⟩ = (:=-≻ (s≤s j≥i) (i≻∀A⇒si≻A i≻A) (lemma2·6 ⦃ LnsType ⦄ (n≤1+n i) i≻C)) (suc k) ⦃ s≤s it ⦄
+    in И⟨ Иe₁ , (λ a {a∉} → cong t-∀_ (Иe₂ a {a∉})) ⟩
+\end{code}
+
+\begin{minted}{agda}
+  -- ty-tm[_:→_]_ : ℕ → Type → Term → Term
+  ty-tm[ k :→ T ] (fr x) = fr x
+  ty-tm[ k :→ T ] (# i) = # i
+  ty-tm[ k :→ T ] (ƛ L) = ƛ ty-tm[ k :→ T ] L
+  ty-tm[ k :→ T ] (L · M) = (ty-tm[ k :→ T ] L) · (ty-tm[ k :→ T ] M)
+  ty-tm[ k :→ T ] (Λ L) = Λ ty-tm[ suc k :→ T ] L
+  ty-tm[ k :→ T ] (L [ A ]) = (ty-tm[ k :→ T ] L) [ ty-ty[ k :→ T ] A ]
+  ty-tm[ k :→ T ] ‵zero = ‵zero
+  ty-tm[ k :→ T ] (‵suc L) = ‵suc ty-tm[ k :→ T ] L
+
+  -- ty-ty[_:→_]_ : ℕ → Type → Type → Type
+  ty-ty[ k :→ T ] ‵ℕ = ‵ℕ
+  ty-ty[ k :→ T ] (t-fr x) = t-fr x
+  ty-ty[ k :→ T ] (t-# i) with k ≟ℕ i
+  ... | yes refl = T
+  ... | no  _    = t-# i
+  ty-ty[ k :→ T ] (A ⇒ B) = (ty-ty[ k :→ T ] A) ⇒ (ty-ty[ k :→ T ] B)
+  ty-ty[ k :→ T ] (t-∀ A) = t-∀ (ty-ty[ (suc k) :→ T ] A)
+\end{minted}
+
+\section{Type judgements}
+\label{appendix:f_type_judgements}
+\begin{equation}
+\begin{gathered}
+  \inferrule
+    {\text{Ok} \, \Gamma}
+    {\Gamma \vdash \texttt{‵zero} \colon \nat}
+    \; (\vdash\texttt{zero})\quad
+  \inferrule
+    {\Gamma \vdash L \colon \nat}
+    {\Gamma \vdash \texttt{‵suc} \, L \colon \nat}
+    \; (\vdash\texttt{suc})\quad
+  \\
+  \inferrule
+    {\text{Ok} \, \Gamma\\0 \succ A\\x \colon A \in \Gamma}
+    {\Gamma \vdash x \colon A}
+    \; (\vdash\text{free})
+  \\
+  \inferrule
+    {0 \succ A\\\cof x , \; (\Gamma , \, x \colon A \vdash [0 \to x] L \colon B)}
+    {\Gamma \vdash (\lambda \colon A. L) \colon A \to B}
+    \; (\vdash\lambda)\quad
+  \inferrule
+    {\Gamma \vdash L \colon A \to B\\\Gamma \vdash M \colon A}
+    {\Gamma \vdash L M \colon B}
+    \; (\vdash\text{app})
+  \\
+  \inferrule
+    {\cof T, \; (\Gamma \vdash ([0 \to T] L) \colon [0 \to T] B)}
+    {\Gamma \vdash (\Lambda \, L) \colon \forall B}
+    \; (\vdash\Lambda)
+  \\
+  \inferrule
+    {0 \succ A\\\text{ftv}(A) \subseteq \text{dom-ftv}(\Gamma)\\\Gamma \vdash L \colon \forall B}
+    {\Gamma \vdash L [ A ] \colon [0 \to A] B}
+    \; (\vdash[])
+\end{gathered}
+\end{equation}
+
+\section{Typing properties}
+\label{appendix:f_type_properties}
+\begin{code}
+  -- swap : ∀ {Γ x y L A B C}
+  --   → x ≢ y
+  --   → (Γ , y ⦂ B) , x ⦂ A ⊢ L ⦂ C
+  --     -------------------------
+  --   → (Γ , x ⦂ A) , y ⦂ B ⊢ L ⦂ C
+  swap {Γ} {x} {y} {L} {A} {B} {C} x≢y ⊢L with ⊢⇒Ok ⊢L
+  ... | ok-∷fv (ok-∷fv okΓ lc-B B⊆Γ) lc-A A⊆Γ =
+    rename (ok-∷fv (ok-∷fv okΓ lc-A A⊆Γ) lc-B B⊆Γ) ρ₁ ρ₂ ⊢L
+    where
+      ρ₁ : ∀ {z C}
+        → (Γ , y ⦂ B) , x ⦂ A ∋ z ⦂ C
+          -------------------------
+        → (Γ , x ⦂ A) , y ⦂ B ∋ z ⦂ C
+      ρ₁ (H refl) = T x≢y H′
+      ρ₁ (T z≢x (H refl)) = H′
+      ρ₁ (T z≢x (T z≢y ∋z)) = T z≢y (T z≢x ∋z)
+      ρ₂ : ∀ {X}
+        → ((Γ , y ⦂ B) , x ⦂ A) ∋ X
+          -------------------------
+        → ((Γ , x ⦂ A) , y ⦂ B) ∋ X
+      ρ₂ (S⦂ (S⦂ ∋X)) = S⦂ (S⦂ ∋X)
+
+  -- swap-tm-ty : ∀ {Γ X y L B C}
+  --   → ((Γ , y ⦂ B) , X) ⊢ L ⦂ C
+  --     -------------------------
+  --   → (Γ , X) , y ⦂ B ⊢ L ⦂ C
+  swap-tm-ty {Γ} {X} {y} {L} {B} {C} ⊢L with ⊢⇒Ok ⊢L
+  ... | ok-∷ftv (ok-∷fv okΓ lc-B B⊆Γ) X∉Γ = rename (ok-∷fv (ok-∷ftv okΓ (proj₂ (∉-++ X∉Γ))) lc-B (⊆⇒⊆∷ B⊆Γ)) ρ₁ ρ₂ ⊢L
+    where
+      ρ₁ : ∀ {x A}
+        → ((Γ , y ⦂ B) , X) ∋ x ⦂ A
+          -------------------------
+        → ((Γ , X) , y ⦂ B) ∋ x ⦂ A
+      ρ₁ (T⦂ (H refl)) = H′
+      ρ₁ (T⦂ (T x≢y ∋x)) = T x≢y (T⦂ ∋x)
+      ρ₂ : ∀ {Z : Id}
+        → ((Γ , y ⦂ B) , X) ∋ Z
+        → ((Γ , X) , y ⦂ B) ∋ Z
+      ρ₂ Z = S⦂ Z
+      ρ₂ (S (S⦂ ∋Z)) = S⦂ (S ∋Z)
+
+  -- drop : ∀ {Γ x L A B C}
+  --   → (Γ , x ⦂ A) , x ⦂ B ⊢ L ⦂ C
+  --     --------------------------
+  --   → Γ , x ⦂ B ⊢ L ⦂ C
+  drop {Γ} {x} {L} {A} {B} {C} ⊢L with ⊢⇒Ok ⊢L
+  ... | ok-∷fv (ok-∷fv okΓ lc-A A⊆Γ) lc-B B⊆Γ =
+    rename (ok-∷fv okΓ lc-B B⊆Γ) ρ₁ ρ₂ ⊢L
+    where
+      ρ₁ : ∀ {z C}
+        → (Γ , x ⦂ A) , x ⦂ B ∋ z ⦂ C
+          -------------------------
+        → Γ , x ⦂ B ∋ z ⦂ C
+      ρ₁ (H refl) = H′
+      ρ₁ (T z≢x (H refl)) = contradiction refl z≢x
+      ρ₁ (T z≢x (T .z≢x ∋z)) = T z≢x ∋z
+      ρ₂ : ∀ {X}
+        → ((Γ , x ⦂ A) , x ⦂ B) ∋ X
+          -------------------------
+        → (Γ , x ⦂ B) ∋ X
+      ρ₂ (S⦂ (S⦂ ∋X)) = S⦂ ∋X
+\end{code}
+
+\begin{code}
+  -- subst-open-ty-tm : ∀ {N : Term} {x y : Id} {i j : ℕ}
   --   (L : Term)
   --   → x ≢ y
   --   → j ≥ i
@@ -2116,7 +2132,7 @@ Some miscellaneous proofs are required in the main chapters. Since they aren't o
   subst-open-ty-tm (‵suc L) x≢y j≥i i≻N rewrite
     subst-open-ty-tm L x≢y j≥i i≻N = refl
 
-  -- subst-open-ty-tm-ctx : ∀ {Γ A} {N : Term} {x y : List Char} {i j : ℕ}
+  -- subst-open-ty-tm-ctx : ∀ {Γ A} {N : Term} {x y : Id} {i j : ℕ}
   --   (L : Term)
   --   → x ≢ y
   --   → j ≥ i
@@ -2125,7 +2141,7 @@ Some miscellaneous proofs are required in the main chapters. Since they aren't o
   --   → Γ ⊢ ty-tm[ j —→ y ] (tm-tm[ x := N ] L) ⦂ A
   subst-open-ty-tm-ctx L x≢y j≥i i≻N assump = ≡-with-⊢-tm assump (subst-open-ty-tm L x≢y j≥i i≻N)
 
-  -- subst-open-ty-tm-tm-tm : ∀ {C : Type} {x y : List Char} {i j : ℕ}
+  -- subst-open-ty-tm-tm-tm : ∀ {C : Type} {x y : Id} {i j : ℕ}
   --   (L : Term)
   --   → j ≥ i
   --   → (i ≻ty C)
@@ -2149,7 +2165,7 @@ Some miscellaneous proofs are required in the main chapters. Since they aren't o
   subst-open-ty-tm-tm-tm (‵suc L) j≥i i≻C = cong ‵suc_
     (subst-open-ty-tm-tm-tm L j≥i i≻C)
 
-  -- subst-open-ty-tm-tm-tm-ctx : ∀ {Γ A} {C : Type} {x y : List Char} {i j : ℕ}
+  -- subst-open-ty-tm-tm-tm-ctx : ∀ {Γ A} {C : Type} {x y : Id} {i j : ℕ}
   --   (L : Term)
   --   → j ≥ i
   --   → (i ≻ty C)
@@ -2157,7 +2173,7 @@ Some miscellaneous proofs are required in the main chapters. Since they aren't o
   --   → Γ ⊢ tm-tm[ j —→ y ] (ty-tm[ x := C ] L) ⦂ A
   subst-open-ty-tm-tm-tm-ctx L j≥i i≻C assump = ≡-with-⊢-tm assump (subst-open-ty-tm-tm-tm L j≥i i≻C)
 
-  -- subst-open-ty-ty-ty-ty : ∀ {C : Type} {x y : List Char} {i j : ℕ}
+  -- subst-open-ty-ty-ty-ty : ∀ {C : Type} {x y : Id} {i j : ℕ}
   --   (A : Type)
   --   → x ≢ y
   --   → j ≥ i
@@ -2180,7 +2196,7 @@ Some miscellaneous proofs are required in the main chapters. Since they aren't o
   subst-open-ty-ty-ty-ty {j = j} (t-∀ A) x≢y j≥i i≻C = cong t-∀_
     (subst-open-ty-ty-ty-ty {j = suc j} A x≢y (m≤n⇒m≤1+n j≥i) i≻C)
 
-  -- subst-open-ty-ty-ty-ty-ctx : ∀ {Γ L} {C A : Type} {x y : List Char} {i j : ℕ}
+  -- subst-open-ty-ty-ty-ty-ctx : ∀ {Γ L} {C A : Type} {x y : Id} {i j : ℕ}
   --   → x ≢ y
   --   → j ≥ i
   --   → (i ≻ty C)
@@ -2188,7 +2204,7 @@ Some miscellaneous proofs are required in the main chapters. Since they aren't o
   --   → Γ ⊢ L ⦂ ty-ty[ j —→ y ] (ty-ty[ x := C ] A)
   subst-open-ty-ty-ty-ty-ctx {A = A} x≢y j≥i i≻C assump = ≡-with-⊢-ty assump (subst-open-ty-ty-ty-ty A x≢y j≥i i≻C)
 
-  -- subst-open-ty-tm-ty-tm : ∀ {C : Type} {x y : List Char} {i j : ℕ}
+  -- subst-open-ty-tm-ty-tm : ∀ {C : Type} {x y : Id} {i j : ℕ}
   --   (L : Term)
   --   → x ≢ y
   --   → j ≥ i
@@ -2212,7 +2228,7 @@ Some miscellaneous proofs are required in the main chapters. Since they aren't o
   subst-open-ty-tm-ty-tm (‵suc L) x≢y j≥i i≻C rewrite
     (subst-open-ty-tm-ty-tm L x≢y j≥i i≻C) = refl
 
-  -- subst-open-ty-tm-ty-tm-ctx : ∀ {Γ L A} {C : Type} {x y : List Char} {i j : ℕ}
+  -- subst-open-ty-tm-ty-tm-ctx : ∀ {Γ L A} {C : Type} {x y : Id} {i j : ℕ}
   --   → x ≢ y
   --   → j ≥ i
   --   → (i ≻ty C)
@@ -2222,6 +2238,29 @@ Some miscellaneous proofs are required in the main chapters. Since they aren't o
 \end{code}
 
 \begin{code}
+  -- subst-intro : ∀ {x i} (L N : Term)
+  --   → x ∉ fv-tm L
+  --   → tm-tm[ i :→ N ] L ≡ tm-tm[ x := N ] (tm-tm[ i —→ x ] L)
+  subst-intro {x} (fr y) N x∉fv-L with x ≟lchar y
+  ... | yes refl = contradiction refl (∉∷[]⇒≢ x∉fv-L)
+  ... | no  x≢y  = refl
+  subst-intro {x} {i} (# k) N x∉fv-L with i ≟ℕ k
+  ... | no  i≢k = refl
+  ... | yes refl with x ≟lchar x
+  ...   | yes refl = refl
+  ...   | no  x≢x  = contradiction refl x≢x
+  subst-intro {x} {i} (ƛ L) N x∉fv-L
+    rewrite subst-intro {x} {suc i} L N x∉fv-L = refl
+  subst-intro (L · M) N x∉ =
+    let ⟨ x∉fv-L , x∉fv-M ⟩ = ∉-++ {xs = fv-tm L} x∉
+    in cong₂ _·_ (subst-intro L N x∉fv-L) (subst-intro M N x∉fv-M)
+  subst-intro (Λ L) N x∉fv-L = cong Λ_ (subst-intro L N x∉fv-L)
+  subst-intro (L [ A ]) N x∉fv-L =
+    cong₂ _[_] (subst-intro L N x∉fv-L) refl
+  subst-intro ‵zero N x∉fv-L = refl
+  subst-intro (‵suc L) N x∉fv-L =
+    cong ‵suc_ (subst-intro L N x∉fv-L)
+
   -- subst-intro-ty-ty : ∀ {x i B} (A : Type)
   --   → x ∉ ftv-ty A
   --   → ty-ty[ i :→ B ] A ≡ ty-ty[ x := B ] (ty-ty[ i —→ x ] A)
@@ -2253,27 +2292,8 @@ Some miscellaneous proofs are required in the main chapters. Since they aren't o
   subst-intro-ty-tm (‵suc L) x∉ = cong ‵suc_ (subst-intro-ty-tm L x∉)
 \end{code}
 
-\begin{code}
-  -- swap-tm-ty : ∀ {Γ X y L B C}
-  --   → ((Γ , y ⦂ B) , X) ⊢ L ⦂ C
-  --     -------------------------
-  --   → (Γ , X) , y ⦂ B ⊢ L ⦂ C
-  swap-tm-ty {Γ} {X} {y} {L} {B} {C} ⊢L with ⊢⇒Ok ⊢L
-  ... | ok-∷ftv (ok-∷fv okΓ lc-B B⊆Γ) X∉Γ = rename (ok-∷fv (ok-∷ftv okΓ (proj₂ (∉-++ X∉Γ))) lc-B (⊆⇒⊆∷ B⊆Γ)) ρ₁ ρ₂ ⊢L
-    where
-      ρ₁ : ∀ {x A}
-        → ((Γ , y ⦂ B) , X) ∋ x ⦂ A
-          -------------------------
-        → ((Γ , X) , y ⦂ B) ∋ x ⦂ A
-      ρ₁ (T⦂ (H refl)) = H′
-      ρ₁ (T⦂ (T x≢y ∋x)) = T x≢y (T⦂ ∋x)
-      ρ₂ : ∀ {Z : List Char}
-        → ((Γ , y ⦂ B) , X) ∋ Z
-        → ((Γ , X) , y ⦂ B) ∋ Z
-      ρ₂ Z = S⦂ Z
-      ρ₂ (S (S⦂ ∋Z)) = S⦂ (S ∋Z)
-\end{code}
-
+\section{Well-typed terms are locally closed}
+\label{appendix:f_well_typed_lc}
 \begin{code}
   -- ⊢⇒lc-ty : ∀ {Γ L A} → Γ ⊢ L ⦂ A → Ty-LocallyClosed A
   ⊢⇒lc-ty {Γ} {fr x} (⊢free okΓ lc-A ∋x) = lc-A
@@ -2352,6 +2372,14 @@ Some miscellaneous proofs are required in the main chapters. Since they aren't o
   ⊢⇒lc-ty-tm {Γ} (⊢suc ⊢L) j = И⟨ [] , (λ a →
     cong ‵suc_ (lemma2·7-2 ⦃ LnsTyTm ⦄ it (⊢⇒lc-ty-tm ⊢L))) ⟩
 \end{code}
+
+\chapter{Prior work submitted for TSPL}
+\label{appendix:tspl}
+\input{tspl_prior_work.lagda}
+
+\chapter{Substitution and Evaluation in STLC}
+\label{appendix:stlc_sub_and_eval}
+\input{stlc.lagda}
 
 \chapter{Compilation instructions}
 \label{appendix:compilation_instructions}
