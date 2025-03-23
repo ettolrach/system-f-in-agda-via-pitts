@@ -2,6 +2,7 @@
 
 *.agdai
 latex/latex
+latex/\#disertation.lagda.tex\#
 
 ## === LaTeX ===
 
