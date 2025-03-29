@@ -112,11 +112,11 @@
 
 % Use minted for Agda
 
-\let\oldcode\code
-\NewCommandCopy{\mintedcopy}{\minted}
-\NewCommandCopy{\endmintedcopy}{\endminted}
-% Adapted from https://tex.stackexchange.com/a/488451/202867
-\renewenvironment{code}{\mintedcopy[breaklines,breaksymbolleft=\;]{agda}}{\endmintedcopy}
+% \let\oldcode\code
+% \NewCommandCopy{\mintedcopy}{\minted}
+% \NewCommandCopy{\endmintedcopy}{\endminted}
+% % Adapted from https://tex.stackexchange.com/a/488451/202867
+% \renewenvironment{code}{\mintedcopy[breaklines,breaksymbolleft=\;]{agda}}{\endmintedcopy}
 
 \begin{document}
 \begin{preliminary}
@@ -297,7 +297,7 @@ open DecPropMembership _≟lchar_ using (_∈_; _∉_; _∈?_)
 
 \section{Cofinite Quantification}
 
-\input{cofinite.lagda}
+\input{cofinite.tex}
 
 \section{The Lambda Calculus and System F}
 \input{background_lambda_calculus.tex}
@@ -439,7 +439,8 @@ kinds of opening:
   ... | yes _ = fr x
   ... | no  _ = # n
   tm-tm[ i —→ x ] (ƛ L) = ƛ tm-tm[ (suc i) —→ x ] L
-  tm-tm[ i —→ x ] (L · M) = (tm-tm[ i —→ x ] L) · (tm-tm[ i —→ x ] M)
+  tm-tm[ i —→ x ] (L · M) =
+    (tm-tm[ i —→ x ] L) · (tm-tm[ i —→ x ] M)
   tm-tm[ i —→ x ] (Λ L) = Λ (tm-tm[ i —→ x ] L)
   tm-tm[ i —→ x ] (L [ A ]) = (tm-tm[ i —→ x ] L) [ A ]
   tm-tm[ i —→ x ] ‵zero = ‵zero
@@ -1165,13 +1166,16 @@ We can give a type to \textit{twice} and $\Omega$ now.
     twice = ⊢Λ И⟨ [] , (λ X {X∉} → ⊢ƛ fr⇒fr-lc И⟨ [] , (λ f {f∉} →
       ⊢ƛ ty-fr-lc И⟨ (f ∷ []) , (λ x {x∉} → ⊢·
         (⊢free ok-ctx fr⇒fr-lc (T (f≢x x∉) H′))
-        (⊢· (⊢free ok-ctx fr⇒fr-lc (T (f≢x x∉) H′)) (⊢free ok-ctx ty-fr-lc H′))) ⟩) ⟩) ⟩
+        (⊢·
+          (⊢free ok-ctx fr⇒fr-lc (T (f≢x x∉) H′))
+          (⊢free ok-ctx ty-fr-lc H′))) ⟩) ⟩) ⟩
       where
         fr⇒fr-lc : ∀ {A} → Ty-LocallyClosed (t-fr A ⇒ t-fr A)
         fr⇒fr-lc j = И⟨ [] , (λ _ → refl) ⟩
         f≢x : ∀ {f x} → x ∉ f ∷ [] → f ≢ x
         f≢x x∉ = sym-≢ (∉∷[]⇒≢ x∉)
-        ok-ctx : ∀ {f X x} → Ok (((∅ , X) , f ⦂ (t-fr X ⇒ t-fr X)) , x ⦂ t-fr X)
+        ok-ctx : ∀ {f X x}
+          → Ok (((∅ , X) , f ⦂ (t-fr X ⇒ t-fr X)) , x ⦂ t-fr X)
         ok-ctx = ok-∷fv
                    (ok-∷fv (ok-∷ftv ok-∅ (λ ()))
                      fr⇒fr-lc
@@ -1198,10 +1202,12 @@ on the type judgement.
 \begin{code}
   ⊢⇒Ok : ∀ {Γ L A} → Γ ⊢ L ⦂ A → Ok Γ
   ⊢⇒Ok (⊢free okΓ lc-A ∋x) = okΓ
-  ⊢⇒Ok (⊢ƛ lc-A И⟨ Иe₁ , Иe₂ ⟩) with ⊢⇒Ok (Иe₂ (fresh Иe₁) {fresh-correct Иe₁})
+  ⊢⇒Ok (⊢ƛ lc-A И⟨ Иe₁ , Иe₂ ⟩)
+    with ⊢⇒Ok (Иe₂ (fresh Иe₁) {fresh-correct Иe₁})
   ... | ok-∷fv OkΓ _ _ = OkΓ
   ⊢⇒Ok (⊢· ⊢L ⊢LM) = ⊢⇒Ok ⊢L
-  ⊢⇒Ok (⊢Λ И⟨ Иe₁ , Иe₂ ⟩) with ⊢⇒Ok (Иe₂ (fresh Иe₁) {fresh-correct Иe₁})
+  ⊢⇒Ok (⊢Λ И⟨ Иe₁ , Иe₂ ⟩)
+    with ⊢⇒Ok (Иe₂ (fresh Иe₁) {fresh-correct Иe₁})
   ... | ok-∷ftv OkΓ _ = OkΓ
   ⊢⇒Ok (⊢[] lc-A _ ⊢L) = ⊢⇒Ok ⊢L
   ⊢⇒Ok (⊢zero OkΓ) = OkΓ
@@ -1248,17 +1254,30 @@ cofinite quantification.
   rename okΔ ρ-tm ρ-ty (⊢free okΓ lc-A x) = ⊢free okΔ lc-A (ρ-tm x)
   rename {Γ} {Δ} okΔ ρ-tm ρ-ty {_} {A ⇒ B} (⊢ƛ lc-A И⟨ Иe₁ , Иe₂ ⟩) =
     ⊢ƛ lc-A И⟨ Иe₁ , (λ a {a∉} →
-      rename (OkΔ,x a a∉) (ext-tm ρ-tm) (ext-ty-tm ρ-ty) (Иe₂ a {proj₂ (∉-++ a∉)})) ⟩
+      rename
+        (OkΔ,x a a∉)
+        (ext-tm ρ-tm)
+        (ext-ty-tm ρ-ty)
+        (Иe₂ a {proj₂ (∉-++ a∉)})) ⟩
     where
       OkΔ,x : (x : Id) → x ∉ Иe₁ → Ok (Δ , x ⦂ A)
       OkΔ,x x x∉ with ⊢⇒Ok (Иe₂ x {x∉})
-      ... | ok-∷fv OkΓ lc-A ftvA⊆Γ = ok-∷fv okΔ lc-A (⊆-change-ctx {Γ} {A} ftvA⊆Γ ρ-ty)
-  rename okΔ ρ-tm ρ-ty (⊢· ⊢A⇒B ⊢A) = ⊢· (rename okΔ ρ-tm ρ-ty ⊢A⇒B) (rename okΔ ρ-tm ρ-ty ⊢A)
+      ... | ok-∷fv OkΓ lc-A ftvA⊆Γ =
+        ok-∷fv okΔ lc-A (⊆-change-ctx {Γ} {A} ftvA⊆Γ ρ-ty)
+  rename okΔ ρ-tm ρ-ty (⊢· ⊢A⇒B ⊢A) =
+    ⊢· (rename okΔ ρ-tm ρ-ty ⊢A⇒B) (rename okΔ ρ-tm ρ-ty ⊢A)
   rename {Γ} {Δ} okΔ ρ-tm ρ-ty (⊢Λ И⟨ Иe₁ , Иe₂ ⟩) =
     ⊢Λ И⟨ Иe₁ ++ domain-all-ftv Δ , (λ T {T∉} →
       let ⟨ T∉Иe₁ , T∉Δ ⟩ = ∉-++ T∉
-      in rename (ok-∷ftv okΔ T∉Δ) (ext-tm-ty ρ-tm) (ext-ty ρ-ty) (Иe₂ T {T∉Иe₁}) ) ⟩
-  rename okΔ ρ-tm ρ-ty (⊢[] lc A⊆Γ ⊢L) = ⊢[] lc (All-map (λ px → ∋⇒∈ (ρ-ty (∈⇒∋ px))) A⊆Γ) (rename okΔ ρ-tm ρ-ty ⊢L)
+      in rename
+        (ok-∷ftv okΔ T∉Δ)
+        (ext-tm-ty ρ-tm)
+        (ext-ty ρ-ty)
+        (Иe₂ T {T∉Иe₁}) ) ⟩
+  rename okΔ ρ-tm ρ-ty (⊢[] lc A⊆Γ ⊢L) = ⊢[]
+    lc
+    (All-map (λ px → ∋⇒∈ (ρ-ty (∈⇒∋ px))) A⊆Γ)
+    (rename okΔ ρ-tm ρ-ty ⊢L)
   rename okΔ ρ-tm ρ-ty (⊢zero okΓ) = ⊢zero okΔ
   rename okΔ ρ-tm ρ-ty (⊢suc ⊢L) = ⊢suc (rename okΔ ρ-tm ρ-ty ⊢L)
 \end{code}
@@ -1415,7 +1434,8 @@ use the inductive hypothesis, which is called using \texttt{⊢⇒lc Иe₂ a {a
       helper {fr x} {k = k} k≥i i≻ty j = i≻ty k ⦃ k≥i ⦄
       helper {# n} k≥i i≻ty = lemma2·6 ⦃ LnsTerm ⦄ k≥i i≻ty
       helper {ƛ N} {i} {k} {q} {x} k≥i i≻ty j =
-        let И⟨ Иe₁ , Иe₂ ⟩ = ((helper {k = suc i} (≤-refl) (≻ƛ⇒s≻ƛ i≻ty)) (suc j) ⦃ s≤s (≤-trans k≥i it) ⦄)
+        let induc-hypo = helper {k = suc i} (≤-refl) (≻ƛ⇒s≻ƛ i≻ty)
+            И⟨ Иe₁ , Иe₂ ⟩ = induc-hypo (suc j) ⦃ s≤s (≤-trans k≥i it) ⦄
         in И⟨ Иe₁ , (λ a {a∉} → cong ƛ_ (Иe₂ a {a∉})) ⟩
       helper {N · N₁} k≥i i≻ty j =
         let ⟨ i≻L  , i≻M ⟩ = ·-≻ i≻ty
@@ -1499,15 +1519,17 @@ This first proof is done with an induction on the type judgement.
     → Ok (Γ + (map (ty-ty[ X := C ]_) Δ))
     → ((Γ , X) + Δ) ⊢ L ⦂ B
       --------------------
-    → (Γ + (map (ty-ty[ X := C ]_) Δ)) ⊢ ty-tm[ X := C ] L ⦂ ty-ty[ X := C ] B
-  subst-ty {Γ} {Δ} {X = Y} {C = C} lc-C C⊆Δ okΓ+map (⊢free okΓ+Δ lc-B ∋x)
-    with ok-+ {Γ = Γ , Y} okΓ+Δ
-  ... | ok-∷ftv okΓ Y∉Γ = ⊢free okΓ+map (:=-≻ z≤n lc-B lc-C) (∋-map-ftv Δ okΓ+Δ ∋x)
+    → (Γ + (map (ty-ty[ X := C ]_) Δ))
+        ⊢ ty-tm[ X := C ] L ⦂ ty-ty[ X := C ] B
+  subst-ty {Γ} {Δ} {X} lc-C C⊆Δ okΓ+map (⊢free okΓ+Δ lc-B ∋x)
+    with ok-+ {Γ = Γ , X} okΓ+Δ
+  ... | ok-∷ftv okΓ X∉Γ =
+    ⊢free okΓ+map (:=-≻ z≤n lc-B lc-C) (∋-map-ftv Δ okΓ+Δ ∋x)
 \end{code}
 In the $\vdash\text{free}$ case, we use the previously proven \texttt{∋-map-ftv} property to apply
 the substitution to the type of the free variable.
 \begin{code}
-  subst-ty {Γ} {Δ} {X = Y} {L = ƛ L} {C = C} lc-C C⊆Δ okΓ+map (⊢ƛ {A = A} lc-A И⟨ Иe₁ , Иe₂ ⟩) =
+  subst-ty {Γ} {Δ} {L = ƛ L} lc-C C⊆Δ okΓ+map (⊢ƛ {A = A} lc-A И⟨ Иe₁ , Иe₂ ⟩) =
     ⊢ƛ (:=-≻ z≤n lc-A lc-C) И⟨ Иe₁ , (λ a {a∉} →
       let ⊢tm-tm[0→]L = Иe₂ a {a∉}
           ok = ⊢⇒Ok ⊢tm-tm[0→]L
@@ -1522,33 +1544,39 @@ In the $\vdash\lambda$ case, we simply need to use the inductive hypothesis. The
 comes in proving that the context is still okay when adding the new free variable to it. Luckily, we
 have already done the hard work when we proved \texttt{ftv⊆dom-:=} earlier.
 \begin{code}
-  subst-ty {X = Y} lc-C C⊆Δ okΓ+map (⊢· ⊢L ⊢M) = ⊢· (subst-ty lc-C C⊆Δ okΓ+map ⊢L) (subst-ty lc-C C⊆Δ okΓ+map ⊢M)
-  subst-ty {Γ} {Δ} {X = Y} {B = t-∀ B} {C = C} lc-C C⊆Δ okΓ+map (⊢Λ И⟨ Иe₁ , Иe₂ ⟩) =
-    ⊢Λ И⟨ (Y ∷ Иe₁) ++ domain-all-ftv (Γ + map (ty-ty[_:=_]_ Y C) Δ) , (λ a {a∉} →
-      let ⟨ a∉Y∷Иe₁ , a∉dom-all-ftv ⟩ = ∉-++ a∉
-          ⟨ a∉Y∷[] , a∉Иe₁ ⟩ = ∉-++ a∉Y∷Иe₁
-          Y≢a = sym-≢ (∉∷[]⇒≢ a∉Y∷[])
+  subst-ty lc-C C⊆Δ okΓ+map (⊢· ⊢L ⊢M) =
+    ⊢· (subst-ty lc-C C⊆Δ okΓ+map ⊢L) (subst-ty lc-C C⊆Δ okΓ+map ⊢M)
+  subst-ty {Γ} {Δ} {X} {B = t-∀ B} {C = C} lc-C C⊆Δ okΓ+map (⊢Λ И⟨ Иe₁ , Иe₂ ⟩) =
+    ⊢Λ И⟨ (X ∷ Иe₁) ++ domain-all-ftv (Γ + map (ty-ty[_:=_]_ X C) Δ) , (λ a {a∉} →
+      let ⟨ a∉X∷Иe₁ , a∉dom-all-ftv ⟩ = ∉-++ a∉
+          ⟨ a∉X∷[] , a∉Иe₁ ⟩ = ∉-++ a∉X∷Иe₁
+          X≢a = sym-≢ (∉∷[]⇒≢ a∉X∷[])
           hypo = subst-ty {Δ = Δ , a} lc-C (⊆⇒⊆∷ C⊆Δ)
               (ok-∷ftv okΓ+map a∉dom-all-ftv) (Иe₂ a {a∉Иe₁})
-      in subst-open-ty-tm-ty-tm-ctx Y≢a z≤n lc-C
-        (subst-open-ty-ty-ty-ty-ctx {A = B} {j = 0} Y≢a z≤n lc-C hypo) ) ⟩
+      in subst-open-ty-tm-ty-tm-ctx X≢a z≤n lc-C
+        (subst-open-ty-ty-ty-ty-ctx {A = B} {j = 0} X≢a z≤n lc-C hypo) ) ⟩
 \end{code}
 The $\vdash\text{app}$ case is simple. For $\vdash\Lambda$, after application of the inductive
 hypothesis, we end up with a term which is of the form $\vdash [Y := C] ([i \to a] L) \colon [...]$.
 But to type a $\Lambda$-abstraction, we need the opening operation to be on the outside. Luckily we
 can use \texttt{subst-open} to swap these two around.
 \begin{code}
-  subst-ty {Γ} {Δ} {X = Y} {L = L [ A ]} {B = D} lc-C C⊆Δ okΓ+map (⊢[] {B = B} lc-A A⊆ ⊢L) =
-    extract-subst-ctx {X = Y} {B = B} {A = A} {j = 0} z≤n lc-C
-      (⊢[] (:=-≻ {X = Y} z≤n lc-A lc-C) (ftv⊆dom-:= {A = A} Γ Δ lc-C C⊆Δ okΓ+map A⊆) (subst-ty lc-C C⊆Δ okΓ+map ⊢L))
+  subst-ty {Γ} {Δ} {X = Y} {L = L [ A ]} {B = D}
+      lc-C C⊆Δ okΓ+map (⊢[] {B = B} lc-A A⊆ ⊢L)
+    = extract-subst-ctx {X = Y} {B = B} {A = A} {j = 0} z≤n lc-C
+      (⊢[]
+        (:=-≻ {X = Y} z≤n lc-A lc-C)
+        (ftv⊆dom-:= {A = A} Γ Δ lc-C C⊆Δ okΓ+map A⊆)
+        (subst-ty lc-C C⊆Δ okΓ+map ⊢L))
 \end{code}
 For $\vdash[]$, after applying the inductive hypothesis and the $\vdash[]$ type judgement, we get an
 expression of the type \texttt{(ty-ty[ 0 :→ ty-ty[ Y := C ] A ] (ty-ty[ Y := C ] B))}. Extracting
 the \texttt{:=} substitution out of the \texttt{:→} one is exactly the reason why we need to call
 \texttt{extract-subst-ctx}.
 \begin{code}
-  subst-ty {X = Y} lc-C C⊆Δ okΓ+map (⊢zero okΓ+Δ) = ⊢zero okΓ+map
-  subst-ty {X = Y} lc-C C⊆Δ okΓ+map (⊢suc ⊢L) = ⊢suc (subst-ty lc-C C⊆Δ okΓ+map ⊢L)
+  subst-ty lc-C C⊆Δ okΓ+map (⊢zero okΓ+Δ) = ⊢zero okΓ+map
+  subst-ty lc-C C⊆Δ okΓ+map (⊢suc ⊢L) =
+    ⊢suc (subst-ty lc-C C⊆Δ okΓ+map ⊢L)
 \end{code}
 The last two cases are a simple application of the inductive hypothesis.
 
@@ -1568,7 +1596,8 @@ subexpression of the argument, which is exactly the requirement for termination 
   subst {x = y} ⊢N (⊢free (ok-∷fv okΓ _ A⊆Γ) lc-A (H refl)) with y ≟lchar y
   ... | yes refl = weaken okΓ ⊢N
   ... | no  y≢y  = contradiction refl y≢y
-  subst {x = y} ⊢N (⊢free {x = x} (ok-∷fv okΓ _ A⊆Γ) lc-A (T x≢y ∋x)) with y ≟lchar x
+  subst {x = y} ⊢N (⊢free {x = x} (ok-∷fv okΓ _ A⊆Γ) lc-A (T x≢y ∋x))
+    with y ≟lchar x
   ... | yes refl = contradiction refl x≢y
   ... | no  _    = ⊢free okΓ lc-A ∋x
   subst {x = y} {L = ƛ L} ⊢N (⊢ƛ lc-A И⟨ Иe₁ , Иe₂ ⟩) =
@@ -1796,7 +1825,7 @@ more complex langauge.
 
 Some miscellaneous proofs are required in the main chapters. Since they aren't of interest, they are presented here in the appendix.
 
-\input{plfa_adaptions.lagda}
+\input{plfa_adaptions.tex}
 
 \chapter{Miscellaneous System F proofs}
 \section{Local Closure}
@@ -2410,11 +2439,11 @@ Some miscellaneous proofs are required in the main chapters. Since they aren't o
 
 \chapter{Prior work submitted for TSPL}
 \label{appendix:tspl}
-\input{tspl_prior_work.lagda}
+\input{tspl_prior_work.tex}
 
 \chapter{Substitution and Evaluation in STLC}
 \label{appendix:stlc_sub_and_eval}
-\input{stlc.lagda}
+\input{stlc.tex}
 
 \chapter{Compilation instructions}
 \label{appendix:compilation_instructions}
