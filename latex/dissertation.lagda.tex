@@ -447,10 +447,44 @@ kinds of opening:
   tm-tm[ i —→ x ] (‵suc L) = ‵suc tm-tm[ i —→ x ] L
 \end{code}
 
+When \citet{pitts_locally_2023} defines locally nameless sets, he requires that they follow 9
+axioms. In our development we will only need one of these, axiom 1. Proving the others is possible,
+but not necessary. Axiom 1 states that applying two openings of the same index to a type is the same
+as applying the first one only. The proof is done by induction on the structure of the type with
+each case being trivial (proven using reflexivity).
+\begin{code}
+  ax1-ty : ∀ (i : ℕ) (a b : Id) (A : Type)
+    → ty-ty[ i —→ a ] (ty-ty[ i —→ b ] A) ≡ ty-ty[ i —→ b ] A
+  ax1-ty i a b ‵ℕ = refl
+  ax1-ty i a b (t-fr x) = refl
+  ax1-ty i a b (t-# k) with i ≟ℕ k
+  ... | yes _   = refl
+  ... | no  i≢k with i ≟ℕ k
+  ...   | yes refl = contradiction refl i≢k
+  ...   | no  _    = refl
+  ax1-ty i a b (A ⇒ B)
+    rewrite ax1-ty i a b A | ax1-ty i a b B = refl
+  ax1-ty i a b (t-∀ A) rewrite ax1-ty (suc i) a b A = refl
+\end{code}
+
+The same can be said of the other kinds of opening. Repeating proofs for the three kinds of opening
+will be a recurring theme. The proofs for the other two opening operations are very similar and left
+in appendix \ref{appendix:f_local_closure}.
+\begin{code}
+  ax1-tm : ∀ (i : ℕ) (a b : Id) (L : Term)
+    → tm-tm[ i —→ a ] (tm-tm[ i —→ b ] L) ≡ tm-tm[ i —→ b ] L
+  ax1-ty-tm : ∀ (i : ℕ) (a b : Id) (L : Term)
+    → ty-tm[ i —→ a ] (ty-tm[ i —→ b ] L) ≡ ty-tm[ i —→ b ] L
+\end{code}
+
 \section{Local closure}
 \label{chapter3:local_closure}
 Recall that a term is locally closed at level $i$ if it remains unchanged after opening it at $i$,
-see equation \ref{equation:local_closure}.
+see equation \ref{equation:local_closure}. We will have three kinds of local closure, one for each
+kind of opening. In Agda, we can make use of \textit{instance arguments} to automatically search for
+a evidence that is in scope. In the above definitions, we try and automatically find evidence that
+$j \geq i$. If Agda cannot find such evidence, it has to be provided using ⦃ these unicode curly
+brackets ⦄ or \{\{ double curly brackets \}\}.
 
 \begin{code}
   _≻ty_ : ℕ → Type → Set
@@ -472,25 +506,31 @@ see equation \ref{equation:local_closure}.
   Ty-Tm-LocallyClosed L = 0 ≻ty-tm L
 \end{code}
 
-To make future proofs simpler, we will make use of Agda's instances, which are similar to
-typeclasses in Haskell. We will follow how \citet{pitts_locally_2023} defined locally nameless sets,
-but only require axiom 1 to be fulfilled, as that is the only axiom which we'll be using.
+\citet{pitts_locally_2023} proves three lemmas about local closure that we will make use of later.
+As I simply adapted these proofs with the syntax of System F defined earlier, the proofs are
+detailed in the appendix \ref{appendix:f_local_closure}.
 
-Thanks to using instances, we can prove the local closure properties for both kinds of local
-closure. Lemmas 2.6, 2.7-1, and 2.7-2 are the numbers given in \citet{pitts_locally_2023}, and the
-proofs of these lemmas are adapted from his Agda source code, and are thus detailed in appendix \ref{appendix:f_local_closure}.
+\textbf{Lemma 2.6} states that if a type is locally closed at level $i$, then it is also locally
+closed at any level greater than $i$. The proof follows from the definition of local closure.
 \begin{code}
   lemma2·6-ty : ∀ {i j L}
     → j ≥ i
     → i ≻ty L
       -------
     → j ≻ty L
-
+\end{code}
+The same can be said of the other kinds of local closure.
+\begin{code}
   lemma2·6-tm : ∀ {i j L}
     → j ≥ i → i ≻tm L → j ≻tm L
   lemma2·6-ty-tm : ∀ {i j L}
     → j ≥ i → i ≻ty-tm L → j ≻ty-tm L
+\end{code}
 
+\textbf{Lemma 2.7-1} states that if a type with a string leaves it unchanged, then opening it with
+any other string will also leave it unchanged. Once again, the same can be said of the other local
+closure properties.
+\begin{code}
   lemma2·7-1-ty : ∀ {i x y L}
     → ty-ty[ i —→ x ] L ≡ L
     → ty-ty[ i —→ y ] L ≡ L
@@ -499,11 +539,16 @@ proofs of these lemmas are adapted from his Agda source code, and are thus detai
     → tm-tm[ i —→ x ] L ≡ L → tm-tm[ i —→ y ] L ≡ L
   lemma2·7-1-ty-tm : ∀ {i x y L}
     → ty-tm[ i —→ x ] L ≡ L → ty-tm[ i —→ y ] L ≡ L
+\end{code}
 
-  lemma2·7-2-ty : ∀ {i j x L}
-    → j ≥ i       → i ≻ty L
+And \textbf{Lemma 2.7-2} states that if a type is locally closed at level $i$, then opening it at
+$i$ or any greater index will leave the type unchanged. And the same applies to the other local
+closure properties.
+\begin{code}
+  lemma2·7-2-ty : ∀ {i j x A}
+    → j ≥ i       → i ≻ty A
       ---------------------
-    → ty-ty[ j —→ x ] L ≡ L
+    → ty-ty[ j —→ x ] A ≡ A
 
   lemma2·7-2-tm : ∀ {i j x L} → j ≥ i
     → i ≻tm L → tm-tm[ j —→ x ] L ≡ L
@@ -511,39 +556,16 @@ proofs of these lemmas are adapted from his Agda source code, and are thus detai
     → i ≻ty-tm L → ty-tm[ j —→ x ] L ≡ L
 \end{code}
 
-Now we simply prove axioms 1 for the three kinds of opening, and we get the lemmas above for them
-all. The proof is done by induction on the structure of the type or term with each case being
-trivial (proven using reflexivity).
-\begin{code}
-  ax1-ty : ∀ (i : ℕ) (a b : Id) (A : Type)
-    → ty-ty[ i —→ a ] (ty-ty[ i —→ b ] A) ≡ ty-ty[ i —→ b ] A
-  ax1-ty i a b ‵ℕ = refl
-  ax1-ty i a b (t-fr x) = refl
-  ax1-ty i a b (t-# k) with i ≟ℕ k
-  ... | yes _   = refl
-  ... | no  i≢k with i ≟ℕ k
-  ...   | yes refl = contradiction refl i≢k
-  ...   | no  _    = refl
-  ax1-ty i a b (A ⇒ B)
-    rewrite ax1-ty i a b A | ax1-ty i a b B = refl
-  ax1-ty i a b (t-∀ A) rewrite ax1-ty (suc i) a b A = refl
-\end{code}
-
-The proofs for the other two opening operations are very similar and left in appendix \ref{appendix:f_local_closure}.
-\begin{code}
-  ax1-tm : ∀ (i : ℕ) (a b : Id) (L : Term)
-    → tm-tm[ i —→ a ] (tm-tm[ i —→ b ] L) ≡ tm-tm[ i —→ b ] L
-  ax1-ty-tm : ∀ (i : ℕ) (a b : Id) (L : Term)
-    → ty-tm[ i —→ a ] (ty-tm[ i —→ b ] L) ≡ ty-tm[ i —→ b ] L
-\end{code}
-
-Sometimes, we want to be specific about which kind of local closure is being used. When Agda cannot
-infer which one is meant, we specify it with these auxilary functions.
+\textit{As as aside, we could use instances so these three lemmas need only be proven once each. But
+since this is the only repetition it would save, it is not worth the effort for this implementation.
+See [TODO] for more detail.}
 
 We also have some local closure properties which will become useful in later proofs. I would like to
 draw particular attention to the first property, that if a type $\forall A$ is locally closed up to
-$i$, then $A$ is locally closed up to $i + 1$. Intuitively, this is because we increment the indices
-when we go under a $\Lambda$-abstraction.
+$i$, then $A$ is locally closed up to $i + 1$. Intuitively, this is because we increment the local
+closure index when we go under a $\Lambda$-abstraction. The property does not follow from Lemma 2.6
+as that would prove $i \succ \forall A$ implies $i + 1 \succ \forall A$ without removing the
+$\forall$.
 \begin{code}
   i≻∀A⇒si≻A : ∀ {A i} → i ≻ty (t-∀ A) → (suc i) ≻ty A
   i≻∀A⇒si≻A {A} i≻∀ (suc j) =
@@ -552,22 +574,56 @@ when we go under a $\Lambda$-abstraction.
 \end{code}
 
 Recall the definition of local closure. To prove that something is locally closed up to $i$, we take
-a $j$ that is greater than $i$ as an argument, and then prove that the type remains unchanged when
-it's opened at $j$ with some cofinite identifier. Since we need to prove that $A$ is locally closed
-up to $i + 1$, we can deconstruct and write \texttt{suc j} instead. The hypothesis gives a proof
-that $\forall A = \forall B$. To obtain this proof, we need to choose some identifier which is not
-in the set \texttt{Иe₁}. By constructing a cofinite quantification ourselves, we can use the set
-\texttt{Иe₁} as our finite set of exceptions and choose an identifier that isn't in \texttt{Иe₁}.
-Then, by the injectivity of \texttt{t-∀}, the result is immediate from the hypothesis.
+a $j \in \nat$ that is greater than $i$ as an argument, and then prove that the type remains
+unchanged when opened at $j$ with a cofinite identifier. Since we need to prove that $A$ is locally
+closed up to $i + 1$, we can deconstruct and write \texttt{suc j} instead. Using $j$ with the
+hypothesis gives a proof that $\forall ([suc j \to a] A) = \forall A$. To obtain this proof, we need
+to choose some identifier which is not in the set \texttt{Иe₁}. By constructing a cofinite
+quantification ourselves, we can use the set \texttt{Иe₁} as our finite set of exceptions and choose
+an identifier that isn't in \texttt{Иe₁}, which we give the variable name $a$. Then we can use the
+injectivity of \texttt{t-∀} to get a proof of $([suc j \to a] A) = A$, which is exactly what is
+required.
 
-These proofs are similar, but get more complex as the \texttt{⇒} type consists of two types.
+We can prove a similar properties for \texttt{ƛ} and \texttt{Λ} in the same way.
 \begin{code}
-  n≻‵ℕ : ∀ {n} → n ≻ty ‵ℕ
+  ≻ƛ⇒s≻ƛ : ∀ {L i} → i ≻tm (ƛ L) → (suc i) ≻tm L
+  ≻ƛ⇒s≻ƛ ≻ƛ (suc j) = let И⟨ Иe₁ , Иe₂ ⟩ = ≻ƛ j ⦃ ≤-pred it ⦄
+    in И⟨ Иe₁ , (λ a {a∉} → ƛ-inj (Иe₂ a {a∉})) ⟩
+
+  ≻Λ⇒s≻Λ : ∀ {L i} → i ≻ty-tm (Λ L) → (suc i) ≻ty-tm L
+  ≻Λ⇒s≻Λ i≻Λ (suc j) = let И⟨ Иe₁ , Иe₂ ⟩ = i≻Λ j ⦃ ≤-pred it ⦄
+    in И⟨ Иe₁ , (λ a {a∉} → Λ-inj (Иe₂ a {a∉})) ⟩
+\end{code}
+
+For some terms, opening will not increment the index, and so the proof is even simpler.
+\begin{code}
+  Λ-≻ : ∀ {L i} → i ≻tm (Λ L) → i ≻tm L
+  Λ-≻ i≻ j = let И⟨ Иe₁ , Иe₂ ⟩ = i≻ j
+    in И⟨ Иe₁ , (λ a {a∉} → Λ-inj (Иe₂ a {a∉})) ⟩
+
+  ‵suc-≻ : ∀ {L i} → i ≻tm (‵suc L) → i ≻tm L
+  ‵suc-≻ i≻ j = let И⟨ Иe₁ , Иe₂ ⟩ = i≻ j
+    in И⟨ Иe₁ , (λ a {a∉} → ‵suc-inj (Иe₂ a {a∉})) ⟩
+
+  []-≻ : ∀ {L A i} → i ≻tm (L [ A ]) → i ≻tm L
+  []-≻ {L} {A} {i} i≻ j = let И⟨ Иe₁ , Иe₂ ⟩ = i≻ j
+    in И⟨ Иe₁ , (λ a {a∉} → proj₁ ([]-inj (Иe₂ a {a∉}))) ⟩
+\end{code}
+
+The two below properties are trivial, since the opening operation will do nothing as there are no
+indices.
+\begin{code}
+  n≻‵ℕ : ∀ {n : ℕ} → n ≻ty ‵ℕ
   n≻‵ℕ j = И⟨ [] , (λ _ → refl) ⟩
 
   ty-fr-lc : ∀ {A} → Ty-LocallyClosed (t-fr A)
   ty-fr-lc j = И⟨ [] , (λ _ → refl) ⟩
+\end{code}
 
+And finally, we have a proof that for syntax which consists of two subexpressions, local closure can
+be moved between the main expression and the subexpressions. This follows the same method of using
+the hypothesis and injectivity.
+\begin{code}
   ⇒-≻ : ∀ {A B i} → i ≻ty (A ⇒ B) → (i ≻ty A) × (i ≻ty B)
   ⇒-≻ {A} {B} {i} i≻A⇒B = ⟨ i≻A , i≻B ⟩
     where
@@ -586,10 +642,6 @@ These proofs are similar, but get more complex as the \texttt{⇒} type consists
       let ⟨ a∉A , a∉B ⟩ = ∉-++ a∉
       in cong₂ _⇒_ (A-Иe₂ a {a∉A}) (B-Иe₂ a {a∉B})) ⟩
 
-  ≻ƛ⇒s≻ƛ : ∀ {L i} → i ≻tm (ƛ L) → (suc i) ≻tm L
-  ≻ƛ⇒s≻ƛ ≻ƛ (suc j) = let И⟨ Иe₁ , Иe₂ ⟩ = ≻ƛ j ⦃ ≤-pred it ⦄
-    in И⟨ Иe₁ , (λ a {a∉} → ƛ-inj (Иe₂ a {a∉})) ⟩
-
   ·-≻ : ∀ {L M i} → i ≻tm (L · M) → (i ≻tm L) × (i ≻tm M)
   ·-≻ {L} {M} {i} i≻ = ⟨ i≻L , i≻M ⟩
     where
@@ -599,22 +651,6 @@ These proofs are similar, but get more complex as the \texttt{⇒} type consists
       i≻M : i ≻tm M
       i≻M j = let И⟨ Иe₁ , Иe₂ ⟩ = i≻ j
         in И⟨ Иe₁ , (λ a {a∉} → proj₂ (·-inj (Иe₂ a {a∉}))) ⟩
-
-  Λ-≻ : ∀ {L i} → i ≻tm (Λ L) → i ≻tm L
-  Λ-≻ i≻ j = let И⟨ Иe₁ , Иe₂ ⟩ = i≻ j
-    in И⟨ Иe₁ , (λ a {a∉} → Λ-inj (Иe₂ a {a∉})) ⟩
-
-  ≻Λ⇒s≻Λ : ∀ {L i} → i ≻ty-tm (Λ L) → (suc i) ≻ty-tm L
-  ≻Λ⇒s≻Λ i≻Λ (suc j) = let И⟨ Иe₁ , Иe₂ ⟩ = i≻Λ j ⦃ ≤-pred it ⦄
-    in И⟨ Иe₁ , (λ a {a∉} → Λ-inj (Иe₂ a {a∉})) ⟩
-
-  []-≻ : ∀ {L A i} → i ≻tm (L [ A ]) → i ≻tm L
-  []-≻ {L} {A} {i} i≻ j = let И⟨ Иe₁ , Иe₂ ⟩ = i≻ j
-    in И⟨ Иe₁ , (λ a {a∉} → proj₁ ([]-inj (Иe₂ a {a∉}))) ⟩
-
-  ‵suc-≻ : ∀ {L i} → i ≻tm (‵suc L) → i ≻tm L
-  ‵suc-≻ i≻ j = let И⟨ Иe₁ , Иe₂ ⟩ = i≻ j
-    in И⟨ Иe₁ , (λ a {a∉} → ‵suc-inj (Иe₂ a {a∉})) ⟩
 \end{code}
 
 One important lemma which will be used later is called \texttt{open-rec-lc-lemma} by
@@ -1834,7 +1870,7 @@ Some miscellaneous proofs are required in the main chapters. Since they aren't o
   --   → j ≥ i → i ≻tm L → j ≻tm L
   lemma2·6-tm j≥i i≻L k =
     i≻L k ⦃ ≤-trans j≥i it ⦄
-    
+
   -- lemma2·6-ty-tm : ∀ {i j L}
   --   → j ≥ i → i ≻ty-tm L → j ≻ty-tm L
   lemma2·6-ty-tm j≥i i≻L k =
@@ -1866,7 +1902,7 @@ Some miscellaneous proofs are required in the main chapters. Since they aren't o
     ≡⟨ assump ⟩
       L
     ∎
-    
+
   -- lemma2·7-1-ty-tm : ∀ {i x y L}
   --   → ty-tm[ i —→ x ] L ≡ L → ty-tm[ i —→ y ] L ≡ L
   lemma2·7-1-ty-tm {i} {x} {y} {L} assump =
@@ -1893,7 +1929,7 @@ Some miscellaneous proofs are required in the main chapters. Since they aren't o
   lemma2·7-2-tm {j = j} j≥i i≻L =
     let И⟨ Иe₁ , Иe₂ ⟩ = i≻L j ⦃ j≥i ⦄ in
       lemma2·7-1-tm (Иe₂ (fresh Иe₁) {fresh-correct Иe₁})
-      
+
   -- lemma2·7-2-ty-tm : ∀ {i j x L} → j ≥ i
   --   → i ≻ty-tm L → ty-tm[ j —→ x ] L ≡ L
   lemma2·7-2-ty-tm {j = j} j≥i i≻L =
