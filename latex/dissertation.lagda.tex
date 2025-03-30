@@ -20,7 +20,7 @@
 
 % Syntax highlighting
 \usepackage{minted}
-% BNF9
+% BNF
 \usepackage{simplebnf}
 % Inference rules
 \usepackage{mathpartir}
@@ -447,158 +447,200 @@ kinds of opening:
   tm-tm[ i —→ x ] (‵suc L) = ‵suc tm-tm[ i —→ x ] L
 \end{code}
 
-\section{Local closure}
-\label{chapter3:local_closure}
-Recall that a term is locally closed at level $i$ if it remains unchanged after opening it at $i$,
-see equation \ref{equation:local_closure}.
-
-To make future proofs simpler, we will make use of Agda's instances, which are similar to
-typeclasses in Haskell. We will follow how \citet{pitts_locally_2023} defined locally nameless sets,
-but only require axiom 1 to be fulfilled, as that is the only axiom which we'll be using.
-
-Thanks to using instances, we can prove the local closure properties for both kinds of local
-closure. Lemmas 2.6, 2.7-1, and 2.7-2 are the numbers given in \citet{pitts_locally_2023}, and the
-proofs of these lemmas are adapted from his Agda source code, and are thus detailed in appendix \ref{appendix:f_local_closure}.
+When \citet{pitts_locally_2023} defines locally nameless sets, he requires that they follow 9
+axioms. In our development we will only need one of these, axiom 1. Proving the others is possible,
+but not necessary. Axiom 1 states that applying two openings of the same index to a type is the same
+as applying the first one only. The proof is done by induction on the structure of the type with
+each case being trivial (proven using reflexivity).
 \begin{code}
-  record Lns (A : Set) (B : Set) : Set where
-    field
-      [_—→_]_ : ℕ → Id → B → B
-      ax1 : ∀ (i : ℕ) (a b : Id) (L : B)
-        → [ i —→ a ] ([ i —→ b ] L) ≡ [ i —→ b ] L
-  open Lns ⦃ ... ⦄
-
-  -- Local closure definition.
-  _≻_ : ∀ {A B : Set} ⦃ _ : Lns A B ⦄ → ℕ → B → Set
-  i ≻ L = (j : ℕ) ⦃ _ : j ≥ i ⦄ → И a , ([ j —→ a ] L ≡ L)
-  LocallyClosed : ∀ {A B : Set} ⦃ _ : Lns A B ⦄ → B → Set
-  LocallyClosed L = 0 ≻ L
-
-  lemma2·6 : ∀ {A B : Set} ⦃ _ : Lns A B ⦄ {i j} {L : B}
-    → j ≥ i → i ≻ L → j ≻ L
-
-  lemma2·7-1 : ∀ {A B : Set} ⦃ _ : Lns A B ⦄ {i x y} {L : B}
-    → [ i —→ x ] L ≡ L → [ i —→ y ] L ≡ L
-
-  lemma2·7-2 : ∀ {A B : Set} ⦃ _ : Lns A B ⦄ {i j x} {L : B}
-    → j ≥ i    → i ≻ L
-      ----------------
-    → [ j —→ x ] L ≡ L
-\end{code}
-
-Now we simply prove axioms 1 for the three kinds of opening, and we get the lemmas above for them
-all. The proof is done by induction on the structure of the type or term with each case being
-trivial (proven using reflexivity).
-\begin{code}
-  ax1-type : ∀ (i : ℕ) (a b : Id) (A : Type)
+  ax1-ty : ∀ (i : ℕ) (a b : Id) (A : Type)
     → ty-ty[ i —→ a ] (ty-ty[ i —→ b ] A) ≡ ty-ty[ i —→ b ] A
-  ax1-type i a b ‵ℕ = refl
-  ax1-type i a b (t-fr x) = refl
-  ax1-type i a b (t-# k) with i ≟ℕ k
+  ax1-ty i a b ‵ℕ = refl
+  ax1-ty i a b (t-fr x) = refl
+  ax1-ty i a b (t-# k) with i ≟ℕ k
   ... | yes _   = refl
   ... | no  i≢k with i ≟ℕ k
   ...   | yes refl = contradiction refl i≢k
   ...   | no  _    = refl
-  ax1-type i a b (A ⇒ B)
-    rewrite ax1-type i a b A | ax1-type i a b B = refl
-  ax1-type i a b (t-∀ A) rewrite ax1-type (suc i) a b A = refl
-
-  instance
-    LnsType : Lns Type Type
-    LnsType = record
-      { [_—→_]_ = ty-ty[_—→_]_
-      ; ax1 = ax1-type }
+  ax1-ty i a b (A ⇒ B)
+    rewrite ax1-ty i a b A | ax1-ty i a b B = refl
+  ax1-ty i a b (t-∀ A) rewrite ax1-ty (suc i) a b A = refl
 \end{code}
 
-The proofs for the other two opening operations are very similar and left in appendix \ref{appendix:f_local_closure}.
+The same can be said of the other kinds of opening. Repeating proofs for the three kinds of opening
+will be a recurring theme. The proofs for the other two opening operations are very similar and left
+in appendix \ref{appendix:f_local_closure}.
 \begin{code}
-  ax1-term : ∀ (i : ℕ) (a b : Id) (L : Term)
+  ax1-tm : ∀ (i : ℕ) (a b : Id) (L : Term)
     → tm-tm[ i —→ a ] (tm-tm[ i —→ b ] L) ≡ tm-tm[ i —→ b ] L
   ax1-ty-tm : ∀ (i : ℕ) (a b : Id) (L : Term)
     → ty-tm[ i —→ a ] (ty-tm[ i —→ b ] L) ≡ ty-tm[ i —→ b ] L
-
-  instance
-    LnsTerm : Lns Term Term
-    LnsTerm = record
-      { [_—→_]_ = tm-tm[_—→_]_
-      ; ax1 = ax1-term }
-  instance
-    LnsTyTm : Lns Type Term
-    LnsTyTm = record
-      { [_—→_]_ = ty-tm[_—→_]_
-      ; ax1 = ax1-ty-tm }
 \end{code}
 
-Sometimes, we want to be specific about which kind of local closure is being used. When Agda cannot
-infer which one is meant, we specify it with these auxilary functions.
+\section{Local closure}
+\label{chapter3:local_closure}
+Recall that a term is locally closed at level $i$ if it remains unchanged after opening it at $i$,
+see equation \ref{equation:local_closure}. We will have three kinds of local closure, one for each
+kind of opening. In Agda, we can make use of \textit{instance arguments} to automatically search for
+a evidence that is in scope. In the above definitions, we try and automatically find evidence that
+$j \geq i$. If Agda cannot find such evidence, it has to be provided using ⦃ these unicode curly
+brackets ⦄ or \{\{ double curly brackets \}\}.
+
 \begin{code}
   _≻ty_ : ℕ → Type → Set
-  i ≻ty A = _≻_ ⦃ LnsType ⦄ i A
+  i ≻ty A = (j : ℕ) ⦃ _ : j ≥ i ⦄ → И T , (ty-ty[ j —→ T ] A ≡ A)
 
   _≻tm_ : ℕ → Term → Set
-  i ≻tm L = _≻_ ⦃ LnsTerm ⦄ i L
+  i ≻tm L = (j : ℕ) ⦃ _ : j ≥ i ⦄ → И a , (tm-tm[ j —→ a ] L ≡ L)
 
   _≻ty-tm_ : ℕ → Term → Set
-  i ≻ty-tm L = _≻_ ⦃ LnsTyTm ⦄ i L
+  i ≻ty-tm L = (j : ℕ) ⦃ _ : j ≥ i ⦄ → И T , (ty-tm[ j —→ T ] L ≡ L)
 
   Ty-LocallyClosed : Type → Set
-  Ty-LocallyClosed A = LocallyClosed ⦃ LnsType ⦄ A
+  Ty-LocallyClosed A = 0 ≻ty A
 
   Tm-LocallyClosed : Term → Set
-  Tm-LocallyClosed L = LocallyClosed ⦃ LnsTerm ⦄ L
+  Tm-LocallyClosed L = 0 ≻tm L
 
   Ty-Tm-LocallyClosed : Term → Set
-  Ty-Tm-LocallyClosed L = LocallyClosed ⦃ LnsTyTm ⦄ L
+  Ty-Tm-LocallyClosed L = 0 ≻ty-tm L
 \end{code}
+
+\citet{pitts_locally_2023} proves three lemmas about local closure that we will make use of later.
+As I simply adapted these proofs with the syntax of System F defined earlier, the proofs are
+detailed in the appendix \ref{appendix:f_local_closure}.
+
+\textbf{Lemma 2.6} states that if a type is locally closed at level $i$, then it is also locally
+closed at any level greater than $i$. The proof follows from the definition of local closure.
+\begin{code}
+  lemma2·6-ty : ∀ {i j L}
+    → j ≥ i
+    → i ≻ty L
+      -------
+    → j ≻ty L
+\end{code}
+The same can be said of the other kinds of local closure.
+\begin{code}
+  lemma2·6-tm : ∀ {i j L}
+    → j ≥ i → i ≻tm L → j ≻tm L
+  lemma2·6-ty-tm : ∀ {i j L}
+    → j ≥ i → i ≻ty-tm L → j ≻ty-tm L
+\end{code}
+
+\textbf{Lemma 2.7-1} states that if a type with a string leaves it unchanged, then opening it with
+any other string will also leave it unchanged. Once again, the same can be said of the other local
+closure properties.
+\begin{code}
+  lemma2·7-1-ty : ∀ {i x y L}
+    → ty-ty[ i —→ x ] L ≡ L
+    → ty-ty[ i —→ y ] L ≡ L
+
+  lemma2·7-1-tm : ∀ {i x y L}
+    → tm-tm[ i —→ x ] L ≡ L → tm-tm[ i —→ y ] L ≡ L
+  lemma2·7-1-ty-tm : ∀ {i x y L}
+    → ty-tm[ i —→ x ] L ≡ L → ty-tm[ i —→ y ] L ≡ L
+\end{code}
+
+And \textbf{Lemma 2.7-2} states that if a type is locally closed at level $i$, then opening it at
+$i$ or any greater index will leave the type unchanged. And the same applies to the other local
+closure properties.
+\begin{code}
+  lemma2·7-2-ty : ∀ {i j x A}
+    → j ≥ i       → i ≻ty A
+      ---------------------
+    → ty-ty[ j —→ x ] A ≡ A
+
+  lemma2·7-2-tm : ∀ {i j x L} → j ≥ i
+    → i ≻tm L → tm-tm[ j —→ x ] L ≡ L
+  lemma2·7-2-ty-tm : ∀ {i j x L} → j ≥ i
+    → i ≻ty-tm L → ty-tm[ j —→ x ] L ≡ L
+\end{code}
+
+\textit{As as aside, we could use instances so these three lemmas need only be proven once each. But
+since this is the only repetition it would save, it is not worth the effort for this implementation.
+See [TODO] for more detail.}
 
 We also have some local closure properties which will become useful in later proofs. I would like to
 draw particular attention to the first property, that if a type $\forall A$ is locally closed up to
-$i$, then $A$ is locally closed up to $i + 1$. Intuitively, this is because we increment the indices
-when we go under a $\Lambda$-abstraction.
+$i$, then $A$ is locally closed up to $i + 1$. Intuitively, this is because we increment the local
+closure index when we go under a $\Lambda$-abstraction. The property does not follow from Lemma 2.6
+as that would prove $i \succ \forall A$ implies $i + 1 \succ \forall A$ without removing the
+$\forall$.
 \begin{code}
-  i≻∀A⇒si≻A : ∀ {A i} → i ≻ (t-∀ A) → (suc i) ≻ A
+  i≻∀A⇒si≻A : ∀ {A i} → i ≻ty (t-∀ A) → (suc i) ≻ty A
   i≻∀A⇒si≻A {A} i≻∀ (suc j) =
     let И⟨ Иe₁ , Иe₂ ⟩ = i≻∀ j ⦃ ≤-pred it ⦄
     in И⟨ Иe₁ , (λ a {a∉} → ∀-inj (Иe₂ a {a∉})) ⟩
 \end{code}
 
 Recall the definition of local closure. To prove that something is locally closed up to $i$, we take
-a $j$ that is greater than $i$ as an argument, and then prove that the type remains unchanged when
-it's opened at $j$ with some cofinite identifier. Since we need to prove that $A$ is locally closed
-up to $i + 1$, we can deconstruct and write \texttt{suc j} instead. The hypothesis gives a proof
-that $\forall A = \forall B$. To obtain this proof, we need to choose some identifier which is not
-in the set \texttt{Иe₁}. By constructing a cofinite quantification ourselves, we can use the set
-\texttt{Иe₁} as our finite set of exceptions and choose an identifier that isn't in \texttt{Иe₁}.
-Then, by the injectivity of \texttt{t-∀}, the result is immediate from the hypothesis.
+a $j \in \nat$ that is greater than $i$ as an argument, and then prove that the type remains
+unchanged when opened at $j$ with a cofinite identifier. Since we need to prove that $A$ is locally
+closed up to $i + 1$, we can deconstruct and write \texttt{suc j} instead. Using $j$ with the
+hypothesis gives a proof that $\forall ([suc j \to a] A) = \forall A$. To obtain this proof, we need
+to choose some identifier which is not in the set \texttt{Иe₁}. By constructing a cofinite
+quantification ourselves, we can use the set \texttt{Иe₁} as our finite set of exceptions and choose
+an identifier that isn't in \texttt{Иe₁}, which we give the variable name $a$. Then we can use the
+injectivity of \texttt{t-∀} to get a proof of $([suc j \to a] A) = A$, which is exactly what is
+required.
 
-These proofs are similar, but get more complex as the \texttt{⇒} type consists of two types.
+We can prove a similar properties for \texttt{ƛ} and \texttt{Λ} in the same way.
 \begin{code}
-  n≻‵ℕ : ∀ {n} → n ≻ ‵ℕ
+  ≻ƛ⇒s≻ƛ : ∀ {L i} → i ≻tm (ƛ L) → (suc i) ≻tm L
+  ≻ƛ⇒s≻ƛ ≻ƛ (suc j) = let И⟨ Иe₁ , Иe₂ ⟩ = ≻ƛ j ⦃ ≤-pred it ⦄
+    in И⟨ Иe₁ , (λ a {a∉} → ƛ-inj (Иe₂ a {a∉})) ⟩
+
+  ≻Λ⇒s≻Λ : ∀ {L i} → i ≻ty-tm (Λ L) → (suc i) ≻ty-tm L
+  ≻Λ⇒s≻Λ i≻Λ (suc j) = let И⟨ Иe₁ , Иe₂ ⟩ = i≻Λ j ⦃ ≤-pred it ⦄
+    in И⟨ Иe₁ , (λ a {a∉} → Λ-inj (Иe₂ a {a∉})) ⟩
+\end{code}
+
+For some terms, opening will not increment the index, and so the proof is even simpler.
+\begin{code}
+  Λ-≻ : ∀ {L i} → i ≻tm (Λ L) → i ≻tm L
+  Λ-≻ i≻ j = let И⟨ Иe₁ , Иe₂ ⟩ = i≻ j
+    in И⟨ Иe₁ , (λ a {a∉} → Λ-inj (Иe₂ a {a∉})) ⟩
+
+  ‵suc-≻ : ∀ {L i} → i ≻tm (‵suc L) → i ≻tm L
+  ‵suc-≻ i≻ j = let И⟨ Иe₁ , Иe₂ ⟩ = i≻ j
+    in И⟨ Иe₁ , (λ a {a∉} → ‵suc-inj (Иe₂ a {a∉})) ⟩
+
+  []-≻ : ∀ {L A i} → i ≻tm (L [ A ]) → i ≻tm L
+  []-≻ {L} {A} {i} i≻ j = let И⟨ Иe₁ , Иe₂ ⟩ = i≻ j
+    in И⟨ Иe₁ , (λ a {a∉} → proj₁ ([]-inj (Иe₂ a {a∉}))) ⟩
+\end{code}
+
+The two below properties are trivial, since the opening operation will do nothing as there are no
+indices.
+\begin{code}
+  n≻‵ℕ : ∀ {n : ℕ} → n ≻ty ‵ℕ
   n≻‵ℕ j = И⟨ [] , (λ _ → refl) ⟩
 
   ty-fr-lc : ∀ {A} → Ty-LocallyClosed (t-fr A)
   ty-fr-lc j = И⟨ [] , (λ _ → refl) ⟩
+\end{code}
 
-  ⇒-≻ : ∀ {A B i} → i ≻ (A ⇒ B) → (i ≻ A) × (i ≻ B)
+And finally, we have a proof that for syntax which consists of two subexpressions, local closure can
+be moved between the main expression and the subexpressions. This follows the same method of using
+the hypothesis and injectivity.
+\begin{code}
+  ⇒-≻ : ∀ {A B i} → i ≻ty (A ⇒ B) → (i ≻ty A) × (i ≻ty B)
   ⇒-≻ {A} {B} {i} i≻A⇒B = ⟨ i≻A , i≻B ⟩
     where
-      i≻A : i ≻ A
+      i≻A : i ≻ty A
       i≻A j = let И⟨ Иe₁ , Иe₂ ⟩ = i≻A⇒B j
         in И⟨ Иe₁ , (λ a {a∉} → proj₁ (⇒-inj (Иe₂ a {a∉}))) ⟩
-      i≻B : i ≻ B
+      i≻B : i ≻ty B
       i≻B j = let И⟨ Иe₁ , Иe₂ ⟩ = i≻A⇒B j
         in И⟨ Иe₁ , (λ a {a∉} → proj₂ (⇒-inj (Иe₂ a {a∉}))) ⟩
 
-  ≻-⇒ : ∀ {A B i} → i ≻ A → i ≻ B → i ≻ (A ⇒ B)
+  ≻-⇒ : ∀ {A B i} → i ≻ty A → i ≻ty B → i ≻ty (A ⇒ B)
   ≻-⇒ i≻A i≻B j =
     let И⟨ A-Иe₁ , A-Иe₂ ⟩ = i≻A j
         И⟨ B-Иe₁ , B-Иe₂ ⟩ = i≻B j
     in И⟨ A-Иe₁ ++ B-Иe₁ , (λ a {a∉} →
       let ⟨ a∉A , a∉B ⟩ = ∉-++ a∉
       in cong₂ _⇒_ (A-Иe₂ a {a∉A}) (B-Иe₂ a {a∉B})) ⟩
-
-  ≻ƛ⇒s≻ƛ : ∀ {L i} → i ≻tm (ƛ L) → (suc i) ≻tm L
-  ≻ƛ⇒s≻ƛ ≻ƛ (suc j) = let И⟨ Иe₁ , Иe₂ ⟩ = ≻ƛ j ⦃ ≤-pred it ⦄
-    in И⟨ Иe₁ , (λ a {a∉} → ƛ-inj (Иe₂ a {a∉})) ⟩
 
   ·-≻ : ∀ {L M i} → i ≻tm (L · M) → (i ≻tm L) × (i ≻tm M)
   ·-≻ {L} {M} {i} i≻ = ⟨ i≻L , i≻M ⟩
@@ -609,22 +651,6 @@ These proofs are similar, but get more complex as the \texttt{⇒} type consists
       i≻M : i ≻tm M
       i≻M j = let И⟨ Иe₁ , Иe₂ ⟩ = i≻ j
         in И⟨ Иe₁ , (λ a {a∉} → proj₂ (·-inj (Иe₂ a {a∉}))) ⟩
-
-  Λ-≻ : ∀ {L i} → i ≻tm (Λ L) → i ≻tm L
-  Λ-≻ i≻ j = let И⟨ Иe₁ , Иe₂ ⟩ = i≻ j
-    in И⟨ Иe₁ , (λ a {a∉} → Λ-inj (Иe₂ a {a∉})) ⟩
-
-  ≻Λ⇒s≻Λ : ∀ {L i} → i ≻ty-tm (Λ L) → (suc i) ≻ty-tm L
-  ≻Λ⇒s≻Λ i≻Λ (suc j) = let И⟨ Иe₁ , Иe₂ ⟩ = i≻Λ j ⦃ ≤-pred it ⦄
-    in И⟨ Иe₁ , (λ a {a∉} → Λ-inj (Иe₂ a {a∉})) ⟩
-
-  []-≻ : ∀ {L A i} → i ≻tm (L [ A ]) → i ≻tm L
-  []-≻ {L} {A} {i} i≻ j = let И⟨ Иe₁ , Иe₂ ⟩ = i≻ j
-    in И⟨ Иe₁ , (λ a {a∉} → proj₁ ([]-inj (Иe₂ a {a∉}))) ⟩
-
-  ‵suc-≻ : ∀ {L i} → i ≻tm (‵suc L) → i ≻tm L
-  ‵suc-≻ i≻ j = let И⟨ Иe₁ , Иe₂ ⟩ = i≻ j
-    in И⟨ Иe₁ , (λ a {a∉} → ‵suc-inj (Иe₂ a {a∉})) ⟩
 \end{code}
 
 One important lemma which will be used later is called \texttt{open-rec-lc-lemma} by
@@ -1328,7 +1354,7 @@ uses a simple induction on the structure of the term.
     → tm-tm[ x := N ] (tm-tm[ i —→ y ] L)
       ≡ tm-tm[ i —→ y ] (tm-tm[ x := N ] L)
   subst-open {x = x} (fr z) x≢y i≻u with x ≟lchar z
-  ... | yes refl = sym (lemma2·7-2 ⦃ LnsTerm ⦄ ≤-refl i≻u)
+  ... | yes refl = sym (lemma2·7-2-tm ≤-refl i≻u)
   ... | no  _    = refl
   subst-open {_} {x} {y} {i} (# k) x≢y i≻u with i ≟ℕ k
   ... | no  _ = refl
@@ -1336,7 +1362,7 @@ uses a simple induction on the structure of the term.
   ...    | yes refl = contradiction refl x≢y
   ...    | no  _    = refl
   subst-open {i = i} (ƛ L) x≢y i≻u = cong ƛ_
-    (subst-open L x≢y (lemma2·6 ⦃ LnsTerm ⦄ (n≤1+n i) i≻u))
+    (subst-open L x≢y (lemma2·6-tm (n≤1+n i) i≻u))
   subst-open (L · M) x≢y i≻u = cong₂ _·_
     (subst-open L x≢y i≻u) (subst-open M x≢y i≻u)
   subst-open (Λ L) x≢y i≻u = cong Λ_ (subst-open L x≢y i≻u)
@@ -1413,7 +1439,7 @@ only allow closed terms in our language, then all well-typed terms are locally c
   ⊢⇒lc (⊢free okΓ lc-A ∋x) j = И⟨ [] , (λ a → refl) ⟩
   ⊢⇒lc (⊢ƛ lc-A И⟨ Иe₁ , Иe₂ ⟩) j = И⟨ Иe₁ , (λ a {a∉} → cong ƛ_
     (open-rec-lc-lemma (λ ())
-      (lemma2·7-2 ⦃ LnsTerm ⦄ z≤n (⊢⇒lc (Иe₂ a {a∉}))))) ⟩
+      (lemma2·7-2-tm z≤n (⊢⇒lc (Иe₂ a {a∉}))))) ⟩
 \end{code}
 For the $\vdash\lambda$ case, since the type judgement is in the form of a cofinite quantification,
 we need to create a cofinite quantification ourselves and use the same finite set for our
@@ -1422,17 +1448,17 @@ use the inductive hypothesis, which is called using \texttt{⊢⇒lc Иe₂ a {a
 \texttt{open-rec-lc-lemma} to complete the proof for this case.
 \begin{code}
   ⊢⇒lc {Γ} (⊢· ⊢A⇒B ⊢A) _ = И⟨ [] , (λ _ → cong₂ _·_
-    (lemma2·7-2 ⦃ LnsTerm ⦄ z≤n (⊢⇒lc ⊢A⇒B))
-    (lemma2·7-2 ⦃ LnsTerm ⦄ z≤n (⊢⇒lc ⊢A))) ⟩
+    (lemma2·7-2-tm z≤n (⊢⇒lc ⊢A⇒B))
+    (lemma2·7-2-tm z≤n (⊢⇒lc ⊢A))) ⟩
   ⊢⇒lc {Γ} (⊢Λ И⟨ Иe₁ , Иe₂ ⟩) j =
     И⟨ Иe₁ , (λ a {a∉} →
-      cong Λ_ (lemma2·7-2 ⦃ LnsTerm ⦄ z≤n
+      cong Λ_ (lemma2·7-2-tm z≤n
         (helper z≤n (⊢⇒lc (Иe₂ a {a∉}))))) ⟩
     where
       helper : ∀ {N i k q x} → k ≥ i → i ≻tm (ty-tm[ q —→ x ] N)
         → k ≻tm N
       helper {fr x} {k = k} k≥i i≻ty j = i≻ty k ⦃ k≥i ⦄
-      helper {# n} k≥i i≻ty = lemma2·6 ⦃ LnsTerm ⦄ k≥i i≻ty
+      helper {# n} k≥i i≻ty = lemma2·6-tm k≥i i≻ty
       helper {ƛ N} {i} {k} {q} {x} k≥i i≻ty j =
         let induc-hypo = helper {k = suc i} (≤-refl) (≻ƛ⇒s≻ƛ i≻ty)
             И⟨ Иe₁ , Иe₂ ⟩ = induc-hypo (suc j) ⦃ s≤s (≤-trans k≥i it) ⦄
@@ -1832,47 +1858,100 @@ Some miscellaneous proofs are required in the main chapters. Since they aren't o
 \section{Local Closure}
 \label{appendix:f_local_closure}
 \begin{code}
-  -- lemma2·6 : ∀ {A B : Set} ⦃ _ : Lns A B ⦄ {i j} {L : B}
-  --   → j ≥ i → i ≻ L → j ≻ L
-  lemma2·6 j≥i i≻L k = i≻L k ⦃ ≤-trans j≥i it ⦄
+  -- lemma2·6-ty : ∀ {i j A}
+  --   → j ≥ i
+  --   → i ≻ty A
+  --     -------
+  --   → j ≻ty A
+  lemma2·6-ty j≥i i≻A k =
+    i≻A k ⦃ ≤-trans j≥i it ⦄
 
-  -- lemma2·7-1 : ∀ {A B : Set} ⦃ _ : Lns A B ⦄ {i x y} {L : B}
-  --   → [ i —→ x ] L ≡ L → [ i —→ y ] L ≡ L
-  lemma2·7-1 {_} {_} {i} {x} {y} {L} assump =
+  -- lemma2·6-tm : ∀ {i j L}
+  --   → j ≥ i → i ≻tm L → j ≻tm L
+  lemma2·6-tm j≥i i≻L k =
+    i≻L k ⦃ ≤-trans j≥i it ⦄
+
+  -- lemma2·6-ty-tm : ∀ {i j L}
+  --   → j ≥ i → i ≻ty-tm L → j ≻ty-tm L
+  lemma2·6-ty-tm j≥i i≻L k =
+    i≻L k ⦃ ≤-trans j≥i it ⦄
+
+  -- lemma2·7-1-ty : ∀ {i x y A}
+  --   → ty-ty[ i —→ x ] A ≡ A
+  --   → ty-ty[ i —→ y ] A ≡ A
+  lemma2·7-1-ty {i} {x} {y} {A} assump =
     begin
-      [ i —→ y ] L
-    ≡⟨ sym (cong ([ i —→ y ]_) assump) ⟩
-      [ i —→ y ] ([ i —→ x ] L)
-    ≡⟨ ax1 i y x L ⟩
-      [ i —→ x ] L
+      ty-ty[ i —→ y ] A
+    ≡⟨ sym (cong (ty-ty[ i —→ y ]_) assump) ⟩
+      ty-ty[ i —→ y ] (ty-ty[ i —→ x ] A)
+    ≡⟨ ax1-ty i y x A ⟩
+      ty-ty[ i —→ x ] A
+    ≡⟨ assump ⟩
+      A
+    ∎
+
+  -- lemma2·7-1-tm : ∀ {i x y L}
+  --   → tm-tm[ i —→ x ] L ≡ L → tm-tm[ i —→ y ] L ≡ L
+  lemma2·7-1-tm {i} {x} {y} {L} assump =
+    begin
+      tm-tm[ i —→ y ] L
+    ≡⟨ sym (cong (tm-tm[ i —→ y ]_) assump) ⟩
+      tm-tm[ i —→ y ] (tm-tm[ i —→ x ] L)
+    ≡⟨ ax1-tm i y x L ⟩
+      tm-tm[ i —→ x ] L
     ≡⟨ assump ⟩
       L
     ∎
 
-  -- lemma2·7-2 : ∀ {A B : Set} ⦃ _ : Lns A B ⦄ {i j x} {L : B}
-  --   → j ≥ i    → i ≻ L
-  --     ----------------
-  --   → [ j —→ x ] L ≡ L
-  lemma2·7-2 {j = j} j≥i i≻L =
+  -- lemma2·7-1-ty-tm : ∀ {i x y L}
+  --   → ty-tm[ i —→ x ] L ≡ L → ty-tm[ i —→ y ] L ≡ L
+  lemma2·7-1-ty-tm {i} {x} {y} {L} assump =
+    begin
+      ty-tm[ i —→ y ] L
+    ≡⟨ sym (cong (ty-tm[ i —→ y ]_) assump) ⟩
+      ty-tm[ i —→ y ] (ty-tm[ i —→ x ] L)
+    ≡⟨ ax1-ty-tm i y x L ⟩
+      ty-tm[ i —→ x ] L
+    ≡⟨ assump ⟩
+      L
+    ∎
+
+  -- lemma2·7-2-ty : ∀ {i j x A}
+  --   → j ≥ i       → i ≻ty A
+  --     ---------------------
+  --   → ty-ty[ j —→ x ] L ≡ A
+  lemma2·7-2-ty {j = j} j≥i i≻A =
+    let И⟨ Иe₁ , Иe₂ ⟩ = i≻A j ⦃ j≥i ⦄ in
+      lemma2·7-1-ty (Иe₂ (fresh Иe₁) {fresh-correct Иe₁})
+
+  -- lemma2·7-2-tm : ∀ {i j x L} → j ≥ i
+  --   → i ≻tm L → tm-tm[ j —→ x ] L ≡ L
+  lemma2·7-2-tm {j = j} j≥i i≻L =
     let И⟨ Иe₁ , Иe₂ ⟩ = i≻L j ⦃ j≥i ⦄ in
-      lemma2·7-1 (Иe₂ (fresh Иe₁) {fresh-correct Иe₁})
+      lemma2·7-1-tm (Иe₂ (fresh Иe₁) {fresh-correct Иe₁})
+
+  -- lemma2·7-2-ty-tm : ∀ {i j x L} → j ≥ i
+  --   → i ≻ty-tm L → ty-tm[ j —→ x ] L ≡ L
+  lemma2·7-2-ty-tm {j = j} j≥i i≻L =
+    let И⟨ Иe₁ , Иe₂ ⟩ = i≻L j ⦃ j≥i ⦄ in
+      lemma2·7-1-ty-tm (Иe₂ (fresh Иe₁) {fresh-correct Иe₁})
 \end{code}
 \begin{code}
-  -- ax1-term : ∀ (i : ℕ) (a b : Id) (L : Term)
+  -- ax1-tm : ∀ (i : ℕ) (a b : Id) (L : Term)
   --   → tm-tm[ i —→ a ] (tm-tm[ i —→ b ] L) ≡ tm-tm[ i —→ b ] L
-  ax1-term i a b (fr x) = refl
-  ax1-term i a b (# k) with i ≟ℕ k
+  ax1-tm i a b (fr x) = refl
+  ax1-tm i a b (# k) with i ≟ℕ k
   ... | yes refl = refl
   ... | no  i≢k  with i ≟ℕ k
   ... |   yes refl = contradiction refl i≢k
   ... |   no  _    = refl
-  ax1-term i a b (ƛ L) rewrite ax1-term (suc i) a b L = refl
-  ax1-term i a b (L · M)
-    rewrite ax1-term i a b L | ax1-term i a b M = refl
-  ax1-term i a b (Λ L) rewrite ax1-term i a b L = refl
-  ax1-term i a b (L [ A ]) rewrite ax1-term i a b L = refl
-  ax1-term i a b ‵zero = refl
-  ax1-term i a b (‵suc L) rewrite ax1-term i a b L = refl
+  ax1-tm i a b (ƛ L) rewrite ax1-tm (suc i) a b L = refl
+  ax1-tm i a b (L · M)
+    rewrite ax1-tm i a b L | ax1-tm i a b M = refl
+  ax1-tm i a b (Λ L) rewrite ax1-tm i a b L = refl
+  ax1-tm i a b (L [ A ]) rewrite ax1-tm i a b L = refl
+  ax1-tm i a b ‵zero = refl
+  ax1-tm i a b (‵suc L) rewrite ax1-tm i a b L = refl
 
   -- ax1-ty-tm : ∀ (i : ℕ) (a b : Id) (L : Term)
   --   → ty-tm[ i —→ a ] (ty-tm[ i —→ b ] L) ≡ ty-tm[ i —→ b ] L
@@ -1885,7 +1964,7 @@ Some miscellaneous proofs are required in the main chapters. Since they aren't o
   ax1-ty-tm i a b (Λ L)
     rewrite ax1-ty-tm (suc i) a b L = refl
   ax1-ty-tm i a b (L [ A ])
-    rewrite ax1-type i a b A | ax1-ty-tm i a b L = refl
+    rewrite ax1-ty i a b A | ax1-ty-tm i a b L = refl
   ax1-ty-tm i a b ‵zero = refl
   ax1-ty-tm i a b (‵suc L)
     rewrite ax1-ty-tm i a b L = refl
@@ -2025,9 +2104,9 @@ Some miscellaneous proofs are required in the main chapters. Since they aren't o
   --   → j ≻ty (ty-ty[ X := C ] A)
   :=-≻ {‵ℕ} j≥i i≻A i≻C = n≻‵ℕ
   :=-≻ {t-fr Y} {X} j≥i i≻A i≻C with X ≟lchar Y
-  ... | yes refl = lemma2·6 ⦃ LnsType ⦄ j≥i i≻C
-  ... | no  X≢Y  = lemma2·6 ⦃ LnsType ⦄ j≥i i≻A
-  :=-≻ {t-# k} j≥i i≻A i≻C = lemma2·6 ⦃ LnsType ⦄ j≥i i≻A
+  ... | yes refl = lemma2·6-ty j≥i i≻C
+  ... | no  X≢Y  = lemma2·6-ty j≥i i≻A
+  :=-≻ {t-# k} j≥i i≻A i≻C = lemma2·6-ty j≥i i≻A
   :=-≻ {A ⇒ B} j≥i i≻ i≻C k =
     let ⟨ i≻A , i≻B ⟩ = ⇒-≻ i≻
         И⟨ A-Иe₁ , A-Иe₂ ⟩ = (:=-≻ j≥i i≻A i≻C) k
@@ -2036,7 +2115,7 @@ Some miscellaneous proofs are required in the main chapters. Since they aren't o
       let ⟨ a∉A , a∉B ⟩ = ∉-++ a∉
       in cong₂ _⇒_ (A-Иe₂ a {a∉A}) (B-Иe₂ a {a∉B})) ⟩
   :=-≻ {t-∀ A} {i = i}  j≥i i≻A i≻C k =
-    let И⟨ Иe₁ , Иe₂ ⟩ = (:=-≻ (s≤s j≥i) (i≻∀A⇒si≻A i≻A) (lemma2·6 ⦃ LnsType ⦄ (n≤1+n i) i≻C)) (suc k) ⦃ s≤s it ⦄
+    let И⟨ Иe₁ , Иe₂ ⟩ = (:=-≻ (s≤s j≥i) (i≻∀A⇒si≻A i≻A) (lemma2·6-ty (n≤1+n i) i≻C)) (suc k) ⦃ s≤s it ⦄
     in И⟨ Иe₁ , (λ a {a∉} → cong t-∀_ (Иe₂ a {a∉})) ⟩
 \end{code}
 
@@ -2178,7 +2257,7 @@ Some miscellaneous proofs are required in the main chapters. Since they aren't o
   ... | yes refl =
     begin
       N
-    ≡⟨ sym (lemma2·7-2 ⦃ LnsTyTm ⦄ ≤-refl (lemma2·6 ⦃ LnsTyTm ⦄ j≥i i≻N)) ⟩
+    ≡⟨ sym (lemma2·7-2-ty-tm ≤-refl (lemma2·6-ty-tm j≥i i≻N)) ⟩
       ty-tm[ j —→ y ] N
     ∎
   ... | no  x≢z  = refl
@@ -2247,7 +2326,7 @@ Some miscellaneous proofs are required in the main chapters. Since they aren't o
   --     ≡ ty-ty[ j —→ y ] (ty-ty[ x := C ] A)
   subst-open-ty-ty-ty-ty ‵ℕ x≢y j≥i i≻C = refl
   subst-open-ty-ty-ty-ty {x = x} {j = j} (t-fr z) x≢y j≥i i≻C with x ≟lchar z
-  ... | yes refl = sym (lemma2·7-2 ⦃ LnsType ⦄ j≥i i≻C)
+  ... | yes refl = sym (lemma2·7-2-ty j≥i i≻C)
   ... | no  x≢z  = refl
   subst-open-ty-ty-ty-ty {x = x} {y = y} {j = j} (t-# k) x≢y j≥i i≻C with j ≟ℕ k
   ... | no  j≢k  = refl
@@ -2384,7 +2463,7 @@ Some miscellaneous proofs are required in the main chapters. Since they aren't o
       helper : ∀ {A B i j}
         → j ≥ i
         → (suc i) ≻ty A
-        → i ≻ B → j ≻ (ty-ty[ i :→ B ] A)
+        → i ≻ty B → j ≻ty (ty-ty[ i :→ B ] A)
       helper {‵ℕ} j≥i si≻A lc-B j = И⟨ [] , (λ _ → refl) ⟩
       helper {t-fr x} j≥i si≻A lc-B j = И⟨ [] , (λ _ → refl) ⟩
       helper {t-# n} {_} {i} j≥i si≻A i≻B k with i ≟ℕ n
@@ -2404,7 +2483,7 @@ Some miscellaneous proofs are required in the main chapters. Since they aren't o
           (C-Иe₂ a {proj₂ (∉-++ {xs = A-Иe₁} a∉)})) ⟩
       helper {t-∀ A} {B} {i} j≥i si≻∀A i≻B k =
         let ssi≻A = i≻∀A⇒si≻A si≻∀A
-            И⟨ Иe₁ , Иe₂ ⟩ = (helper (s≤s j≥i) ssi≻A (lemma2·6 (n≤1+n i) i≻B)) (suc k) ⦃ s≤s it ⦄
+            И⟨ Иe₁ , Иe₂ ⟩ = (helper (s≤s j≥i) ssi≻A (lemma2·6-ty (n≤1+n i) i≻B)) (suc k) ⦃ s≤s it ⦄
         in И⟨ Иe₁ , (λ a {a∉} → cong t-∀_ (Иe₂ a {a∉})) ⟩
   ⊢⇒lc-ty {Γ} {‵zero} (⊢zero _) = n≻‵ℕ
   ⊢⇒lc-ty {Γ} {‵suc L} (⊢suc ⊢L) = n≻‵ℕ
@@ -2417,11 +2496,11 @@ Some miscellaneous proofs are required in the main chapters. Since they aren't o
     in И⟨ Иe₁ ++ A-Иe₁ , (λ a {a∉} → cong ƛ_
       (open-rec-lc-lemma-ty-tm-tm-tm (Иe₂ a {proj₁ (∉-++ a∉)}))) ⟩
   ⊢⇒lc-ty-tm {Γ} (⊢· ⊢L ⊢M) j = И⟨ [] , (λ a → cong₂ _·_
-    (lemma2·7-2 ⦃ LnsTyTm ⦄ it (⊢⇒lc-ty-tm ⊢L))
-    (lemma2·7-2 ⦃ LnsTyTm ⦄ it (⊢⇒lc-ty-tm ⊢M))) ⟩
+    (lemma2·7-2-ty-tm it (⊢⇒lc-ty-tm ⊢L))
+    (lemma2·7-2-ty-tm it (⊢⇒lc-ty-tm ⊢M))) ⟩
   ⊢⇒lc-ty-tm {Γ} {Λ L} (⊢Λ И⟨ Иe₁ , Иe₂ ⟩) j =
       let induc-hypo = ⊢⇒lc-ty-tm (Иe₂ (fresh Иe₁) {fresh-correct Иe₁})
-          sj≻ty-tm[]L = lemma2·6 ⦃ LnsTyTm ⦄ z≤n induc-hypo
+          sj≻ty-tm[]L = lemma2·6-ty-tm z≤n induc-hypo
           И⟨ sj≻L-Иe₁ , sj≻L-Иe₂ ⟩ = (helper L z≤n sj≻ty-tm[]L) (suc j) ⦃ s≤s it ⦄
       in И⟨ sj≻L-Иe₁ , (λ a {a∉} → cong Λ_ (sj≻L-Иe₂ a {a∉})) ⟩
     where
@@ -2431,11 +2510,11 @@ Some miscellaneous proofs are required in the main chapters. Since they aren't o
             k≢i = sym-≢ (<⇒≢ (≤-trans (s≤s j≥i) it))
         in И⟨ Иe₁ , (λ a {a∉} → open-rec-lc-lemma-ty-tm k≢i (Иe₂ a {a∉})) ⟩
   ⊢⇒lc-ty-tm {Γ} (⊢[] lc _ ⊢L) j = И⟨ [] , (λ a → cong₂ _[_]
-    (lemma2·7-2 ⦃ LnsTyTm ⦄ it (⊢⇒lc-ty-tm ⊢L))
-    (lemma2·7-2 ⦃ LnsType ⦄ it lc)) ⟩
+    (lemma2·7-2-ty-tm it (⊢⇒lc-ty-tm ⊢L))
+    (lemma2·7-2-ty it lc)) ⟩
   ⊢⇒lc-ty-tm (⊢zero _) j = И⟨ [] , (λ _ → refl) ⟩
   ⊢⇒lc-ty-tm {Γ} (⊢suc ⊢L) j = И⟨ [] , (λ a →
-    cong ‵suc_ (lemma2·7-2 ⦃ LnsTyTm ⦄ it (⊢⇒lc-ty-tm ⊢L))) ⟩
+    cong ‵suc_ (lemma2·7-2-ty-tm it (⊢⇒lc-ty-tm ⊢L))) ⟩
 \end{code}
 
 \chapter{Prior work submitted for TSPL}
