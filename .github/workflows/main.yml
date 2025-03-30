@@ -6,15 +6,27 @@ jobs:
     steps:
       - name: Set up Git repository
         uses: actions/checkout@v4
+
+      - name: Set up Agda
+        uses: wenkokke/setup-agda@v2
+        with:
+          agda-version: '2.7.0'
+          agda-stdlib-version: '2.1'
+
+      - name: Compile the .lagda.tex files
+        run: ./agda_build.sh tmpdir
+        working-directory: ./latex
+
       - name: Compile LaTeX document
         uses: xu-cheng/latex-action@v3
         with:
-          working_directory: ./latex
-          root_file: dissertation.lagda.tex
+          working_directory: ./latex/tmpdir
+          root_file: dissertation.tex
           latexmk_shell_escape: true
           latexmk_use_xelatex: true
+
       - name: Upload PDF file
         uses: actions/upload-artifact@v4
         with:
           name: PDF
-          path: ./latex/dissertation.lagda.pdf
+          path: ./latex/tmpdir/dissertation.pdf
