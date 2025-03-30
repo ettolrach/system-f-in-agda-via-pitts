@@ -72,16 +72,16 @@ drawback is too small to outweight the benefits.
 occurrences of a bound variable with a free variable, written $[i \to x] L$ for some De Bruijn
 index $i$, name $x$, and term $L$. For example,
 \begin{equation*}
-  [0 \to y] (0 q (\lambda \, 1 t 0)) \mapsto y q (\lambda \, y t 0).
+  [0 \to y] (0 q (\lambda \, 1 t 0)) \quad \mapsto \quad y q (\lambda \, y t 0).
 \end{equation*}
 Every occurence of the bound variable $0$ is replaced with the free variable $y$. Note how after we
 go under a new $\lambda$-abstraction, we have to increment this index to $1$ to keep referring to
 the same bound variable.
 
 Closing works similarly, and is the inverse of opening; it replaces all occurrences of a free
-variable to a given index. For example,
+variable with a given index. For example,
 \begin{equation*}
-  [0 \leftarrow y] (y q (\lambda \, y t 0)) \mapsto 0 q (\lambda \, 1 t 0).
+  [0 \leftarrow y] (y q (\lambda \, y t 0)) \quad \mapsto \quad 0 q (\lambda \, 1 t 0).
 \end{equation*}
 
 \paragraph*{Local closure.} A term is said to be \textit{locally closed} up to level $i$ if it
@@ -92,7 +92,7 @@ term $L$, we write that $L$ is locally closed at level $i$ as $i \succ L$. Forma
   i \succ L \triangleq \forall j \geq i, \; \cof a , \; [j \to a] L = L.
 \end{equation}
 If it is locally closed at level $0$, we simply call it \textit{locally closed}. Local closure is
-defined for System F in section \ref{chapter4:local_closure}.
+defined for System F in section \ref{chapter3:local_closure}.
 
 \paragraph*{Induction Principle.} Often with locally nameless terms, the induction principle is
 similar to how it is for named terms in all cases but the $\lambda$-abstraction case. This is
@@ -138,4 +138,4 @@ So, when proving the $\lambda$-abstraction case, the induction principle would a
 that the term $L$ is well-typed when, for cofinite $x$, the term $L$ is opened $[0 \to x] L$. Or in
 other words, given a property $P$ over type judgements, we need to prove that $\cof x , \; P(\Gamma
 , \, x \colon A \vdash [0 \to x] L \colon B) \implies P(\Gamma \vdash \lambda \, L \colon A \to B)$.
-An example of this is given in chapter \ref{chapter3:stlc_sub_and_eval}.
+An example of this is given in chapter TODO: REMOVE STLC REFERENCE.

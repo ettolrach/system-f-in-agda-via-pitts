@@ -1,7 +1,7 @@
-The idea of reducible expressions, called a \textit{redex}, was introduced by Alonzo Church
-\cite[p.~56]{pierce_types_2002}. We refer to any expression of the form $(\lambda \, x. M) N$ (or
-$(\Lambda M) [A]$ in System F) as a redex, since we can perform a $\beta$-reduction (see equation
-\ref{equation:untyped_beta_rules}).
+We refer to any expression of the form $(\lambda \, x. M) N$ (or $(\Lambda M) [A]$ in System F) as a
+\textit{redex} (short for reducible expressions), named so by Alonzo Church
+\citep[p.~56]{pierce_types_2002}. These expressions are reducible because we can perform a
+$\beta$-reduction (see equation \ref{equation:untyped_beta_rules}).
 
 There are several ways of evaluating the $\lambda$-calculus. One important decision is whether to
 treat $\lambda$-abstractions as values, or to reduce these if they are a redex.
@@ -16,16 +16,41 @@ to as \textit{full normalisation} \citep{wadler_programming_2022}. The reduction
 absent in weak-head reduction is the $\zeta$ rule (see equation \ref{equation:untyped_beta_rules}),
 also called \textit{reducing under a $\lambda$-abstraction}.
 
-Using weak-head reduction, since evaluation stops at $\lambda$-abstractions, the Church-Rosser
-property no longer applies (and, in fact, the system is no longer Turing complete). One of the early
-explorations of weak-head reduction was made by \citet{cagman_combinatory_1998}, comparing it to
-combinatory logic. They presented the necessity of another reduction rule which dictates when one
-can reduce under a $\lambda$-abstraction, which restores the Church-Rosser property
-\citep{hutchison_sharing_2005}.
+When using weak-head reduction, we run into an issue. Consider the following expression;
+\begin{align*}
+  \lambda \, q. \lambda \, r. q ((\lambda \, f. \lambda \, x . x) q r).
+\end{align*}
+We ought to continue evaluating this expression to $\lambda \, q. \lambda \, r. q r$. However, since
+the entire expression is in a $\lambda$-abstraction, and we consider these to be values, evaluation
+would stop.
 
-However, another, simpler method is to introduce primitives \citep{wadler_programming_2022}. These
-are a small subset of Dana Scott and Gordon Plotkin's Programming Computable Functions (PCF)
-\citep{plotkin_lcf_1977}; we introduce a value \texttt{‵zero} of type $\nat$ and a function
-\texttt{‵suc} of type $\nat \to \nat$ (since these are modelled after the naturals, we use the base
-type $\nat$). As this approach was used by \citet{chargueraud_locally_2012} and
-\citet{wadler_programming_2022}, we choose to follow the same approach here.
+One of the early explorations of weak-head reduction was made by \citet{cagman_combinatory_1998},
+wherein they presented the necessity of another reduction rule which dictates when one can reduce
+under a $\lambda$-abstraction, which would help evaluate the above expression
+\citep{hutchison_sharing_2005}. However, adding more reduction rules would cause proofs about
+evaluation to become longer.
+
+Instead, we will follow \citet{wadler_programming_2022} and introduce two primitive values:
+\texttt{‵zero} and \texttt{‵suc}. These are inspired by the same constructs in Dana Scott and Gordon
+Plotkin's Programming Computable Functions (PCF) \citep{plotkin_lcf_1977}. As the choice of symbol
+for the base type is arbitrary, we shall change it to be $\nat$ instead of $\iota$ to reflect the
+connection that the two new primitives have to the natural numbers. \texttt{‵zero} will be of type
+$\nat$ and \texttt{‵suc} will be of type $\nat \to \nat$.
+
+Now we can evaluate the above expression by modifying it slightly;
+\begin{align*}
+  &(\lambda \, q. \lambda \, r. q ((\lambda \, f. \lambda \, x . x) q r))
+    \texttt{‵suc} \;\texttt{‵zero}\\
+  &\mapsto_{\beta} (
+      \lambda \, r. \texttt{‵suc} \; ((\lambda \, f. \lambda \, x . x) \texttt{‵suc} \; r)
+    )
+    \texttt{‵zero}\\
+  &\mapsto_{\beta} \texttt{‵suc} ((\lambda \, f. \lambda \, x . x) \texttt{‵suc} \; \texttt{‵zero})\\
+  &\mapsto_{\beta} \texttt{‵suc} \; \texttt{‵zero}.
+\end{align*}
+
+Although this results in a different expression, it allows us to reduce the redex, which we couldn't
+before. This approach is more concise than adding the previously mentioned extra evaluation rules.
+In my develpoment of System F, I will consider $\lambda$-abstractions, $\Lambda$-abstractions,
+\texttt{‵zero}, and \texttt{‵suc} to be values. The evaluation rules used in my development are
+detailed in section \ref{chapter3:evaluation}.

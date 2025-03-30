@@ -30,17 +30,18 @@ are as follows \citep{wadler_programming_2022} (where $N[M/x]$ means replacing t
 The last reduction is $\eta$-reduction; for all $\lambda$-abstractions $\lambda \, x. L x$, we have
 that $\lambda \, x. f x \mapsto_{\eta} f$.
 
-If further $\beta$-reducations do not simplify a term, we say that it is in its \textit{normal
-form}. We shall represent an arbitrary number of successive $\beta$-reductions using the Kleene star
+If no $\beta$-reductions can be performed on a term, we say that it is in its \textit{normal form}.
+We shall represent an arbitrary number of successive $\beta$-reductions using the Kleene star
 $\mapsto_{\beta^{\star}}$. The Church-Rosser theorem states that for any term $L$, if it
 $\beta$-reduces to two terms $M$ and $N$, then there exists a common term $L'$ which both $M$ and
 $N$ eventually $\beta$-reduce to \citep{church_properties_1936}. This will be an important
-consideration when choosing an evaluation strategy (see section \ref{background:evaluation_strategy}.)
+consideration when choosing an evaluation strategy (see section
+\ref{background:evaluation_strategy}.)
 
-Notably, some terms may not have a normal form. A well-known example is \textit{little omega}
-$\omega \triangleq \lambda \, x. (x x)$ and \textit{omega} (sometimes called the \textit{omega
-combinator}) $\Omega \, \triangleq \, \omega \omega$. When $\Omega$ is applied to itself, it doesn't
-reduce any further.
+Notably, some terms may not have a normal form. Take \textit{little omega} $\omega \triangleq
+\lambda \, x. (x x)$ and \textit{omega} (sometimes called the \textit{omega combinator}) $\Omega \,
+\triangleq \, \omega \omega$. After a $\beta$ reduction step, $\Omega$ will remain unchanged and we
+can perform the same $\beta$ reduction.
 
 \begin{equation*}
   (\lambda \, x. (x x)) (\lambda \, x. (x x)) \quad
@@ -63,28 +64,32 @@ expression---their normal form. This is also called \textit{strong normalisation
 untyped $\lambda$-calculus (such as $\Omega$), thus, Turing-completeness is lost.
 
 In the STLC, some base types need to be chosen. These are indeterminates which are not given
-definitions. While Church originally used the symbols $\iota$ and $\sigma$ for base types, we will
-use $\nat$, for reasons given in section \ref{background:evaluation_strategy}. Without base types,
-our computational model becomes \textit{degenerate} (that is, there are no terms)
-\citep{pierce_types_2002}. As well as the base type, we also have a function (or arrow) type. For
-some types $\tau$ and $\sigma$, writing $\tau \to \sigma$ means that this term can be applied using
-a term of type $\tau$ and result in a type $\sigma$.
+definitions. \citet{church_formulation_1940} originally used the symbols $\iota$ and $\sigma$ for
+base types. For the below examples, I will also use $\iota$, but the choice of symbol
+is arbitrary. Without any base types, our computational model becomes \textit{degenerate} (that is,
+there are no terms) \citep{pierce_types_2002}. As well as the base type, we also have a function (or
+arrow) type $\to$. For some types $A$ and $B$, we say that a term $L$ has type $A \to B$ if $L$ can be applied using a term of type $A$ and gives a result of type $B$.
 
 We will also need a \textit{type context} (also called \textit{type environment}), which will
-usually be given the symbol $\Gamma$ or $\Delta$ and is separated using $\vdash$. This is a partial
-map from variables to types $\Gamma \colon V \to T$. Types are written next to terms using a colon.
-For example, if the context contained the mapping $x \colon \nat$, then we could write a function
-which applies $x$ to its argument;
+usually be given the symbol $\Gamma$ or $\Delta$. The purpose of a context is to keep track of
+the types of free variables. A context is a partial map from variables to types $\Gamma \colon
+V \to T$. Types are written next to terms using a colon. For example, if the context contained the
+mapping $x \colon \iota$, then we could write a function which applies $x$ to its argument as follows
+(notice how we separate the context from the term using the symbol $\vdash$);
 \begin{equation*}
-  x \colon \nat \in \Gamma \vdash (\lambda \, f \colon \nat \to \nat . f x) \colon \nat.
+  x \colon \iota \in \Gamma \vdash (\lambda \, f \colon \iota \to \iota . f x) \colon \iota.
 \end{equation*}
 
 Sometimes we may choose to omit the type of the bound variable for clarity, so we could write
-$(\lambda \, f. \lambda \, x. fx) \colon (\nat \to \nat) \to \nat$.
+$(\lambda \, f. \lambda \, x. fx) \colon \iota$.
+
+To give a type to an expression, we will use a set of \textit{typing rules}. If a term $L$ with a
+context $\Gamma$ can be given a type $A$, we write $\Gamma \vdash L \colon A$ and call this a
+\textit{type judgement}. As the focus of this work is on System F, we will omit the typing rules for
+the STLC and instead present the typing rules for System F only.
 
 In the STLC, we can't give a type to little omega, since we can't give a type to both the argument
-and the argument applied to itself ($(\lambda \, x  \colon ? . x x) \colon ??$). The typing rules for
-STLC are given in section \ref{section:background_locally_nameless} (equation \ref{equation:stlc_type_judgements}).
+and the argument applied to itself ($(\lambda \, x  \colon ? . x x) \colon ??$).
 
 \subsection{System F.}
 System F has been the formal background to what many modern programming
@@ -107,21 +112,25 @@ explicitly.
 
 System F is the STLC equipped with \textit{polymorphic types}, another term for type parameters. It
 was independently discovered by Jean-Yves \citet{girard_interpretation_1972} and John
-\citet{goos_towards_1974}. We can write this \textit{twice} function like so in System F:
+\citet{goos_towards_1974}. We introduce a $\Lambda$-abstraction (also called \textit{type-abstraction}) which will introduce a bound type variable, and type application.
 
+We can write this \textit{twice} function like so in System F:
 \begin{equation*}
   (\Lambda \, T. \lambda \, f \colon T \to T . \lambda \, x \colon T . f (f x))
   \colon \forall T . (T \to T) \to T \to T.
 \end{equation*}
 
-Unlike the Rust example, if we wanted to use this function, we would need to explicitly perform a
-type application to specify what type we're using, as otherwise type inference is required. We write
-type applications using [square brackets]. For instance,
+Unlike the Rust example above, if we wanted to use the above \textit{twice} function, we would need
+to explicitly perform a type application to specify what type we're using. The type inference
+required for implicit type application is beyond the scope of this formalisation. We write type
+applications using [square brackets]. For instance,
 \begin{align*}
-  s \colon \nat \to \nat, z \colon \nat \in \Gamma \vdash
-  &(\Lambda \, T. \lambda \, f \colon T \to T . \lambda \, x \colon T . f (f x))[\nat] s z \colon \nat\\
-  &\mapsto_{\beta} (\lambda \, f \colon \nat \to \nat . \lambda \, x \colon \nat . f (f x)) s z \colon \nat\\
-  &\mapsto_{\beta^{\star}} s s z \colon \nat.
+  s \colon \iota \to \iota, z \colon \iota \in \Gamma \vdash
+    &(\Lambda \, T. \lambda \, f \colon T \to T . \lambda \, x \colon T . f (f x))
+    [\iota] s z \colon \iota\\
+  &\mapsto_{\beta}
+    (\lambda \, f \colon \iota \to \iota . \lambda \, x \colon \iota . f (f x)) s z \colon \iota\\
+  &\mapsto_{\beta^{\star}} s s z \colon \iota.
 \end{align*}
 
-The type judgements for System F are given in section \ref{chapter4:type_judgements}.
+The typing rules for System F will be given in section \ref{chapter3:type_judgements}.

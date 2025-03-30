@@ -302,12 +302,12 @@ open DecPropMembership _≟lchar_ using (_∈_; _∉_; _∈?_)
 \section{The Lambda Calculus and System F}
 \input{background_lambda_calculus.tex}
 
+\section{Locally Nameless Representation}
+\input{background_locally_nameless.tex}
+
 \section{Evaluation strategy}
 \label{background:evaluation_strategy}
 \input{background_evaluation_strategy.tex}
-
-\section{Locally Nameless Representation}
-\input{background_locally_nameless.tex}
 
 \section{Prior research}
 System F was previously formalised in Agda by \citet{hutton_system_2019}. However, the authors
@@ -448,7 +448,7 @@ kinds of opening:
 \end{code}
 
 \section{Local closure}
-\label{chapter4:local_closure}
+\label{chapter3:local_closure}
 Like before, a term or kind locally closed at level $i$ if it remains unchanged after opening it at
 $i$, see equation \ref{equation:local_closure}.
 
@@ -1087,7 +1087,7 @@ If it's a bound type variable, it is again vacuously true.
 The last cases are the inductive steps and are trivial.
 
 \section{Type judgements}
-\label{chapter4:type_judgements}
+\label{chapter3:type_judgements}
 Modifying the ones presented in \citet{chargueraud_locally_2012}, since he uses subtyping, System F
 has these type judgements (a version with more familiar mathematical notation is given in appendix \ref{appendix:f_type_judgements}):
 \begin{code}
@@ -1654,6 +1654,7 @@ And to put these two properties to use, we need to replace the \texttt{:→} sub
 \end{code}
 
 \section{Evaluation}
+\label{chapter3:evaluation}
 As mentioned earlier, we will stop evaluating at abstractions.
 \begin{code}
   data Value : Term → Set where
@@ -2460,12 +2461,6 @@ This document is a literate Agda file. It has been tested to work with
 
 The full source code is available at \url{https://github.com/ettolrach/system-f-in-agda-via-pitts}.
 
-Since this document uses the Minted package, XeLaTeX needs to be run with the
-\texttt{--shell-escape} option. While Agda does provide its own typesetting of Agda code, it uses a
-sans-serif typeface. I decided to use the Minted package to provide a monospace typeface for the
-code blocks.
-
-To typecheck the document, run Agda with the \texttt{--latex} option. If successful, it will give no
-output and return an exit code \texttt{0}.
+Please see \texttt{./README.md} in the above linked repository for full compilation instructions.
 
 \end{document}
