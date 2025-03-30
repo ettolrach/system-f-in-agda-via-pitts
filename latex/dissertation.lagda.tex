@@ -394,7 +394,7 @@ regular arabic numerals ($0$) and bound type variables using bold arabic numeral
 for example,
 
 \begin{equation*}
-  \text{id} \triangleq (\Lambda \lambda \colon \mathbf{0}. 0) \colon \forall \mathbf{0} \to \mathbf{0}
+  \text{id} \triangleq (\Lambda \lambda 0) \colon \forall \mathbf{0} \to \mathbf{0}
 \end{equation*}
 \begin{code}
   id : Term
@@ -405,7 +405,7 @@ for example,
 In System F, we only require the opening operation \citep{chargueraud_locally_2012}. There are three
 kinds of opening:
 \begin{itemize}
-  \item opening a kind at an index by replacing the bound type variable at that index with a free
+  \item opening a type at an index by replacing the bound type variable at that index with a free
         type variable,
   \item opening a term at an index by replacing the bound type variable at that index in the term
         with a free type variable, and
@@ -449,8 +449,8 @@ kinds of opening:
 
 \section{Local closure}
 \label{chapter3:local_closure}
-Like before, a term or kind locally closed at level $i$ if it remains unchanged after opening it at
-$i$, see equation \ref{equation:local_closure}.
+Recall that a term is locally closed at level $i$ if it remains unchanged after opening it at $i$,
+see equation \ref{equation:local_closure}.
 
 To make future proofs simpler, we will make use of Agda's instances, which are similar to
 typeclasses in Haskell. We will follow how \citet{pitts_locally_2023} defined locally nameless sets,
