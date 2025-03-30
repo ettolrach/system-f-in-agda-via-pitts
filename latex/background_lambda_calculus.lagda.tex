@@ -92,9 +92,7 @@ languages call \textit{generics}. For an anachronistic example, in Rust, we coul
 which applies a function twice to an argument.
 
 \begin{minted}[samepage]{rust}
-fn twice<T, F>(f: F, x: T) -> T
-where
-    F: Fn(T) -> T,
+fn twice<T>(f: impl Fn(T) -> T, x: T) -> T
 {
     f(f(x))
 }
