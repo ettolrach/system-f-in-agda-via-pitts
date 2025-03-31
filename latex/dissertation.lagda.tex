@@ -806,21 +806,22 @@ proof, it has been detailed in appendix \ref{appendix:f_substitution_of_terms}.
     → j ≻ty (ty-ty[ X := C ] A)
 \end{code}
 
-The second is how substitution is idempotent if the free type variable that is being substituted for
-isn't present in the type. While this is also true for the other forms of substitution, we only need
-the result for type-in-type substitution. The proof is a trivial induction.
+The second is how type are invariant under substitution if the free type variable that is being
+substituted for isn't present in the type. While this is also true for the other forms of
+substitution, we only need the result for type-in-type substitution. The proof is a trivial
+induction.
 \begin{code}
-  :=-∉-idempotent : ∀ {A X B} → X ∉ ftv-ty A
+  :=-∉-invariant : ∀ {A X B} → X ∉ ftv-ty A
     → (ty-ty[ X := B ] A) ≡ A
-  :=-∉-idempotent {‵ℕ} X∉A = refl
-  :=-∉-idempotent {t-fr Y} {X} X∉A with X ≟lchar Y
+  :=-∉-invariant {‵ℕ} X∉A = refl
+  :=-∉-invariant {t-fr Y} {X} X∉A with X ≟lchar Y
   ... | yes refl = contradiction refl (∉∷[]⇒≢ X∉A)
   ... | no  X≢Y  = refl
-  :=-∉-idempotent {t-# k} X∉A = refl
-  :=-∉-idempotent {A ⇒ B} {X} {B = C} X∉ = cong₂ _⇒_
-    (:=-∉-idempotent {A} (proj₁ (∉-++ X∉)))
-    (:=-∉-idempotent {B} (proj₂ (∉-++ X∉)))
-  :=-∉-idempotent {t-∀ A} X∉A = cong t-∀_ (:=-∉-idempotent {A} X∉A)
+  :=-∉-invariant {t-# k} X∉A = refl
+  :=-∉-invariant {A ⇒ B} {X} {B = C} X∉ = cong₂ _⇒_
+    (:=-∉-invariant {A} (proj₁ (∉-++ X∉)))
+    (:=-∉-invariant {B} (proj₂ (∉-++ X∉)))
+  :=-∉-invariant {t-∀ A} X∉A = cong t-∀_ (:=-∉-invariant {A} X∉A)
 \end{code}
 
 And we also have an alternative substitution; substituting a term for a bound variable.
@@ -870,7 +871,7 @@ The definition of the other two substitution functions is in the appendix \ref{a
 Similar to before, we want to prove that if an index doesn't occur in a type, then substituting for
 that index will leave the type unchanged. The proof once again is a trivial induction and so left in appendix \ref{appendix:f_substitution_of_terms}.
 \begin{code}
-  ≻⇒:→-idempotent : ∀ {C i j} (A : Type)
+  ≻⇒:→-invariant : ∀ {C i j} (A : Type)
     → j ≥ i       → i ≻ty A
       ---------------------
     → ty-ty[ j :→ C ] A ≡ A
@@ -923,13 +924,13 @@ only interest ourselves with free type variables that are contained in a context
   domain-all-ftv (ctx , x ⦂ A) = (ftv-ty A) ++ domain-all-ftv ctx
   domain-all-ftv (ctx , X) = X ∷ domain-all-ftv ctx
 
-  domain-ftv-map-idempotent : ∀ {Γ f}
+  domain-ftv-map-invariant : ∀ {Γ f}
     → domain-ftv Γ ≡ (domain-ftv (map f Γ))
-  domain-ftv-map-idempotent {∅} = refl
-  domain-ftv-map-idempotent {Γ , x ⦂ A} =
-    domain-ftv-map-idempotent {Γ}
-  domain-ftv-map-idempotent {Γ , X} =
-    cong (X ∷_) (domain-ftv-map-idempotent {Γ})
+  domain-ftv-map-invariant {∅} = refl
+  domain-ftv-map-invariant {Γ , x ⦂ A} =
+    domain-ftv-map-invariant {Γ}
+  domain-ftv-map-invariant {Γ , X} =
+    cong (X ∷_) (domain-ftv-map-invariant {Γ})
 
   domain-++ : ∀ (Γ Δ : Context)
     → (domain-ftv Δ) ++ (domain-ftv Γ) ≡ domain-ftv (Γ + Δ)
@@ -1052,7 +1053,7 @@ We express the context as $\Gamma, X, \Delta$ and induct on the structure of $\D
     → Γ + (map (ty-ty[ X := C ]_) Δ) ∋ x ⦂ (ty-ty[ X := C ] A)
   ∋-map-ftv ∅ (ok-∷ftv okΓ X∉Γ) (T⦂ ∋x) = ≡-with-∋-ty
     ∋x
-    (sym (:=-∉-idempotent (∉-domain-all-∋ X∉Γ ∋x)))
+    (sym (:=-∉-invariant (∉-domain-all-∋ X∉Γ ∋x)))
 \end{code}
 If $\Delta$ is empty, then $X$ cannot occur in the type of $x$, as $X$ hasn't been bound when $x$
 was added to the context.
@@ -1089,7 +1090,7 @@ If the type is $\nat$, then it's vacuously true.
     with X ≟lchar Y
   ... | yes refl = All-map
     (λ x∈ → domain-ftv-++ʳ Γ (map (ty-ty[ X := C ]_) Δ)
-      (∈-≡ x∈ (domain-ftv-map-idempotent {Δ} {ty-ty[ X := C ]_})))
+      (∈-≡ x∈ (domain-ftv-map-invariant {Δ} {ty-ty[ X := C ]_})))
     C⊆Δ
   ... | no  X≢Y  = (helper Δ Y∈ (sym-≢ X≢Y)) All.∷ All.[]
     where
@@ -1510,7 +1511,7 @@ The proofs for the other two local closure predicates are presented in the appen
 \section{Substitution preserves types}
 Before proving the main substitution theorem, we'll need a lemma for extracting one kind of
 substitution out of another. We only need the type substitution version of this property. The proof
-is a simple induction and a consequence of the previously proven \texttt{≻⇒:→-idempotent}.
+is a simple induction and a consequence of the previously proven \texttt{≻⇒:→-invariant}.
 \begin{code}
   extract-subst : ∀ {X C A i j}
     (B : Type)
@@ -1520,7 +1521,7 @@ is a simple induction and a consequence of the previously proven \texttt{≻⇒:
         ≡ ty-ty[ X := C ] (ty-ty[ j :→ A ] B)
   extract-subst ‵ℕ j≥i i≻C = refl
   extract-subst {X} {C} (t-fr Y) j≥i i≻C with X ≟lchar Y
-  ... | yes refl = ≻⇒:→-idempotent C j≥i i≻C
+  ... | yes refl = ≻⇒:→-invariant C j≥i i≻C
   ... | no  X≢Y  = refl
   extract-subst {i = i} {j = j} (t-# n) j≥i i≻C with j ≟ℕ n
   ... | yes refl = refl
@@ -2087,22 +2088,22 @@ These functions are adapted from the PLFA textbook \citep{wadler_programming_202
 \end{minted}
 
 \begin{code}
-  -- ≻⇒:→-idempotent : ∀ {C i j} (A : Type)
+  -- ≻⇒:→-invariant : ∀ {C i j} (A : Type)
   --   → j ≥ i       → i ≻ty A
   --     ---------------------
   --   → ty-ty[ j :→ C ] A ≡ A
-  ≻⇒:→-idempotent ‵ℕ j≥i i≻A = refl
-  ≻⇒:→-idempotent (t-fr x) j≥i i≻A = refl
-  ≻⇒:→-idempotent {C} {i} {j} (t-# n) j≥i i≻A with j ≟ℕ n
+  ≻⇒:→-invariant ‵ℕ j≥i i≻A = refl
+  ≻⇒:→-invariant (t-fr x) j≥i i≻A = refl
+  ≻⇒:→-invariant {C} {i} {j} (t-# n) j≥i i≻A with j ≟ℕ n
   ... | no  j≢n  = refl
   ... | yes refl with i≻A j ⦃ j≥i ⦄
   ...   | И⟨ Иe₁ , Иe₂ ⟩ with n ≟ℕ n
   ...     | yes refl with () ← Иe₂ (fresh Иe₁) {fresh-correct Иe₁}
   ...     | no  n≢n  = contradiction refl n≢n
-  ≻⇒:→-idempotent (A ⇒ B) j≥i i≻ = let ⟨ i≻A , i≻B ⟩ = ⇒-≻ i≻
-    in cong₂ _⇒_ (≻⇒:→-idempotent A j≥i i≻A) (≻⇒:→-idempotent B j≥i i≻B)
-  ≻⇒:→-idempotent {i = i} {j = j} (t-∀ A) j≥i i≻ = cong t-∀_
-    (≻⇒:→-idempotent A (s≤s j≥i) (i≻∀A⇒si≻A i≻))
+  ≻⇒:→-invariant (A ⇒ B) j≥i i≻ = let ⟨ i≻A , i≻B ⟩ = ⇒-≻ i≻
+    in cong₂ _⇒_ (≻⇒:→-invariant A j≥i i≻A) (≻⇒:→-invariant B j≥i i≻B)
+  ≻⇒:→-invariant {i = i} {j = j} (t-∀ A) j≥i i≻ = cong t-∀_
+    (≻⇒:→-invariant A (s≤s j≥i) (i≻∀A⇒si≻A i≻))
 \end{code}
 
 \begin{code}
