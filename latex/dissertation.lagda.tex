@@ -343,10 +343,10 @@ module chapter3 where
 \end{code}
 
 \section{Syntax of types and terms}
-To represent identifiers, we'll use \texttt{List Char}, and thus define a type alias. I have
-previously worked on functions to generate new identifiers which can be found in appendix
-\ref{appendix:list_functions}. \texttt{fresh} generates a new identifier and \texttt{fresh-correct}
-gives a proof that this identifier does not exist in the given list.
+To represent identifiers, we use \texttt{List Char}, and thus define a type alias. Functions to
+generate new identifiers can be found in appendix \ref{appendix:list_functions}. Namely,
+\texttt{fresh} generates a new identifier and \texttt{fresh-correct} gives a proof that this
+identifier does not exist in the given list.
 \begin{code}
   Id : Set
   Id = List Char
@@ -1824,7 +1824,8 @@ As an example, we can apply the earlier defined \texttt{twice} function to apply
 \end{code}
 
 The Agda-generated code is ommitted here, but one could figure this out interactively by using
-Agda's normalise feature. For example, in Emacs, one can press C-c C-n and type \texttt{eval (gas 10) ⊢twice-suc-zero} to see the derivation being automatically generated.
+Agda's normalise feature. For example, in Emacs, one can press \texttt{C-c} \texttt{C-n} and type
+\texttt{eval (gas 10) ⊢twice-suc-zero} to see the derivation being automatically generated.
 
 \chapter{Conclusions}
 We have successfully developed an evaluator for System F using the locally nameless representation.
