@@ -315,10 +315,19 @@ formalised a variant of System F with language extensions known as \textit{Syste
 They also used a different approach, opting to make use of De Bruijn indices only. This paper will
 use the locally nameless representation, which hasn't been used for System F in Agda before.
 
+As mentioned before, \citet{pitts_locally_2023} explored a generalisation called Locally Nameless
+Sets in Agda. Since the scope of his work was only to prove properties of the syntax and not of any
+lanugage in particular, the helpfulness of his development is limited. By relying on only the
+opening and closing operations, one cannot manipulate language constructs enough to prove properties
+such as \texttt{subst-open}, as explained by \citet{kiselyov_generic_2025}. Although they present a
+library which does prove properties such as \texttt{subst-open}, their work is written in Coq and so
+cannot be used here.
+
 I have previously submitted some work on STLC using locally nameless representation for a course
-called \textit{Types and Semantics of Programming Languages} (TSPL). I have presented my prior work
-in appendix \ref{appendix:tspl}. There are some new additions to this work which are presented in
-the next chapter.
+called \textit{Types and Semantics of Programming Languages} (TSPL) \citep{ausel_simply_2025}. While
+this was very helpful in preparing my formalisation of System F, detailing it is not a prerequisite.
+The only functions which will be reused here are those for generating fresh variables (see appendix
+\ref{appendix:tspl}).
 
 \chapter{System F}
 Combining System F with the locally nameless representation was previously described by
@@ -330,7 +339,7 @@ module chapter4 where
     ++-∉; ∈-++ˡ; ∈-++ʳ; ∈-swap; ∉y∷ys⇒≢y; ∉y∷ys⇒∉ys;
     m+1≤n⇒m≤n; ∉∷[]⇒≢; ≢∧∉⇒∉∷; ∈∷[]⇒≡; ∉y∷ys⇒∉y∷[];
     ∈y∷ys∧≢y⇒∈ys; ∈-≡; ++-idʳ; _⊆_; ≡-⊆; ++-⊆; ⊆-++; ⊆⇒⊆∷;
-    x∈xs∧xs⊆ys⇒x∈ys)
+    ⊆⇒⊆++; x∈xs∧xs⊆ys⇒x∈ys)
   open import tspl_prior_work
     using (suc-preserves-≢; sym-≢; fresh; fresh-correct)
 \end{code}
@@ -569,6 +578,7 @@ $\forall$.
 \begin{code}
   i≻∀A⇒si≻A : ∀ {A i} → i ≻ty (t-∀ A) → (suc i) ≻ty A
   i≻∀A⇒si≻A {A} i≻∀ (suc j) =
+    -- "it" retrieves instance evidence that is not in scope.
     let И⟨ Иe₁ , Иe₂ ⟩ = i≻∀ j ⦃ ≤-pred it ⦄
     in И⟨ Иe₁ , (λ a {a∉} → ∀-inj (Иe₂ a {a∉})) ⟩
 \end{code}
@@ -2520,10 +2530,6 @@ Some miscellaneous proofs are required in the main chapters. Since they aren't o
 \chapter{Prior work submitted for TSPL}
 \label{appendix:tspl}
 \input{tspl_prior_work.tex}
-
-\chapter{Substitution and Evaluation in STLC}
-\label{appendix:stlc_sub_and_eval}
-\input{stlc.tex}
 
 \chapter{Compilation instructions}
 \label{appendix:compilation_instructions}

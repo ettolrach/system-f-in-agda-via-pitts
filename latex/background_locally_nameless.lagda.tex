@@ -94,48 +94,4 @@ term $L$, we write that $L$ is locally closed at level $i$ as $i \succ L$. Forma
 If it is locally closed at level $0$, we simply call it \textit{locally closed}. Local closure is
 defined for System F in section \ref{chapter3:local_closure}.
 
-\paragraph*{Induction Principle.} Often with locally nameless terms, the induction principle is
-similar to how it is for named terms in all cases but the $\lambda$-abstraction case. This is
-because it uses cofinite quantification. As an example, take type judgements for the STLC
-(implemented in appendix \ref{appendix:type_judgements}).
-\begin{equation}
-\label{equation:stlc_type_judgements}
-\begin{gathered}
-  \inferrule
-    { }
-    {\Gamma \vdash \texttt{‵zero} \colon \nat}
-    \; (\vdash\texttt{zero}) \quad
-  \inferrule
-    {\Gamma \vdash L \colon \nat}
-    {\Gamma \vdash \texttt{‵suc} \, L \colon \nat}
-    \; (\vdash\texttt{suc}) \quad
-  \inferrule
-    {x \colon A \in \Gamma}
-    {\Gamma \vdash x \colon A}
-    \; (\vdash\text{free}) \quad
-  \\
-  \inferrule
-    {\cof x , \; (\Gamma , \, x \colon A \vdash [0 \to x] L \colon B)}
-    {\Gamma \vdash \lambda \, L \colon A \to B}
-    \; (\vdash \lambda) \quad
-  \inferrule
-    {\Gamma \vdash L \colon (A \to B) \\ \Gamma \vdash M \colon A}
-    {\Gamma \vdash LM \colon B}
-    \; (\vdash\text{app})
-\end{gathered}
-\end{equation}
-
-The only difference to the named representation is the rule for $\lambda$-abstractions
-($\vdash\lambda$). Like with the named representation, we intend to prove that the term $L$ is
-well-typed with a free variable $x$ added to the context in place of the bound variable
-\citep[chapter~Lambda]{wadler_programming_2022}. However, to replace the bound varaible $0$ with
-$x$, we first need to open the term $L$ with the name $x$ at index $0$. Furthermore, we are
-replacing the bound $0$ with an arbitrary name $x$, so to make sure that the choice of $x$ is
-arbitrary, we need cofinite quantification (we cannot use $\forall$ because otherwise we would run
-into unintentional shadowing of free variables in the context).
-
-So, when proving the $\lambda$-abstraction case, the induction principle would allow us to assume
-that the term $L$ is well-typed when, for cofinite $x$, the term $L$ is opened $[0 \to x] L$. Or in
-other words, given a property $P$ over type judgements, we need to prove that $\cof x , \; P(\Gamma
-, \, x \colon A \vdash [0 \to x] L \colon B) \implies P(\Gamma \vdash \lambda \, L \colon A \to B)$.
-An example of this is given in chapter TODO: REMOVE STLC REFERENCE.
+\paragraph*{Induction Principle.} TODO: RE-EXPLAIN.
