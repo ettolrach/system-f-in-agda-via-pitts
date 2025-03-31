@@ -94,11 +94,11 @@ term $L$, we write that $L$ is locally closed at level $i$ as $i \succ L$. Forma
 If it is locally closed at level $0$, we simply call it \textit{locally closed}. Local closure is
 defined for System F in section \ref{chapter3:local_closure}.
 
-As detailed in \citet{aydemir_engineering_2008}, the definition of local closure can also use
-universal quantification. For example, the equation (\ref{equation:local_closure}) could read
-$\forall a \notin \fv(L), \; [j \to a] L = L$ (where $\text{fv} \colon \text{Terms} \to
-\text{Identifiers}$ returns all identifiers of free variables). The benefit of using cofinite
-quantification comes when we use quantified properties in assumptions of theorems.
+As detailed in \citet{aydemir_engineering_2008}, local closure can be defined using universal
+quantification instead. For example, equation (\ref{equation:local_closure}) could read $\forall a
+\notin \fv(L), \; [j \to a] L = L$ (where $\text{fv} \colon \text{Terms} \to \text{Identifiers}$
+returns all identifiers of free variables). The benefit of using cofinite quantification comes when
+we use quantified properties in assumptions of theorems.
 
 For example, suppose we have two properties $P$ and $Q$ of a term $L$, each of which hold for all
 fresh identifiers, and we wish to prove that there exists some identifier $z$ for which both
@@ -108,10 +108,16 @@ properties hold,
     \implies \exists z \; \text{such that} \; P(L, z) \wedge Q(L, z).
 \end{equation*}
 
-Since we know that there exist a finite number of free variables in a term, we can always find a
-fresh identifier. The proof is trivial since we can set $z = x = y$. However, in Agda, we would be
-given an arbitrary $x$ for which $P(L, x)$ holds and an arbitrary $y$ for which $Q(L, y)$ holds. We
-cannot set $x = y$.
+Since there are only a finite number of free variables in a term, we can always find a fresh
+identifier. Informally, the proof is trivial since we can choose a fresh identifier such that $z = x
+= y$.
+
+Proof-assistants like Agda model universal quantification as an argument to a function. In this
+example, $x$ and $y$ would be arguments of type Identifier. These are arbitrary, as in, we cannot
+make any assumptions on these arguments other than their type
+\citep[chapter~Quantifier]{wadler_programming_2022}. We would additionally be given evidence that $x
+\notin \fv(L)$ and that $P(L, x)$ holds, and that $y \notin \fv(L)$ and that $Q(L, x)$ holds.
+Importantly, unlike the informal proof, we cannot set $x = y$.
 
 To solve this, we can use cofinite quantification. By writing
 \begin{equation*}
