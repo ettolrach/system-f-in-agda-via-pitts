@@ -111,6 +111,7 @@
 \DeclareMathOperator{\cof}{\text{И}}
 \DeclareMathOperator{\lambdabar}{\text{ƛ}}
 \DeclareMathOperator{\fv}{\text{fv}}
+\DeclareMathOperator{\ftv}{\text{ftv}}
 
 % Use minted for Agda
 
@@ -476,7 +477,8 @@ each case being trivial (proven using reflexivity).
 
 The same can be said of the other kinds of opening. Repeating proofs for the three kinds of opening
 will be a recurring theme. The proofs for the other two opening operations are very similar and left
-in appendix \ref{appendix:f_local_closure}.
+in appendix \ref{appendix:f_local_closure}. In fact, repeated proofs will be omitted from the main
+text henceforth and placed in the appendix unless the other proofs are substantially different.
 \begin{code}
   ax1-tm : ∀ (i : ℕ) (a b : Id) (L : Term)
     → tm-tm[ i —→ a ] (tm-tm[ i —→ b ] L) ≡ tm-tm[ i —→ b ] L
@@ -534,9 +536,9 @@ The same can be said of the other kinds of local closure.
     → j ≥ i → i ≻ty-tm L → j ≻ty-tm L
 \end{code}
 
-\textbf{Lemma 2.7-1} states that if a type with a string leaves it unchanged, then opening it with
-any other string will also leave it unchanged. Once again, the same can be said of the other local
-closure properties.
+\textbf{Lemma 2.7-1} states that if opening a type with an identifier leaves it unchanged, then
+opening it with any other identifier will also leave it unchanged. Once again, the same can be said
+of the other local closure properties.
 \begin{code}
   lemma2·7-1-ty : ∀ {i x y L}
     → ty-ty[ i —→ x ] L ≡ L
@@ -586,8 +588,8 @@ a $j \in \nat$ that is greater than $i$ as an argument, and then prove that the 
 unchanged when opened at $j$ with a cofinite identifier. Since we need to prove that $A$ is locally
 closed up to $i + 1$, we can deconstruct and write \texttt{suc j} instead. Using $j$ with the
 hypothesis gives a proof that $\forall ([suc j \to a] A) = \forall A$. To obtain this proof, we need
-to choose some identifier which is not in the set \texttt{Иe₁}. By constructing a cofinite
-quantification ourselves, we can use the set \texttt{Иe₁} as our finite set of exceptions and choose
+to choose some identifier which is not in the list \texttt{Иe₁}. By constructing a cofinite
+quantification ourselves, we can use the list \texttt{Иe₁} as our list of exceptions and choose
 an identifier that isn't in \texttt{Иe₁}, which we give the variable name $a$. Then we can use the
 injectivity of \texttt{∀ᵀ} to get a proof of $([suc j \to a] A) = A$, which is exactly what is
 required.
@@ -619,7 +621,7 @@ For some terms, opening will not increment the index, and so the proof is even s
 \end{code}
 
 The two below properties are trivial, since the opening operation will do nothing as there are no
-indices.
+indices in the types.
 \begin{code}
   n≻‵ℕ : ∀ {n : ℕ} → n ≻ty ‵ℕ
   n≻‵ℕ j = И⟨ [] , (λ _ → refl) ⟩
@@ -798,18 +800,18 @@ The definition of the other two substitution functions is in appendix
 \end{code}
 \end{comment}
 
-This substitution is central to proving evaluation properties, so we'll require two lemmas about how
-it interacts with local closure. The first proves that if types $A$ and $C$ are locally closed up to
+This substitution is central to proving evaluation properties, so we require two lemmas about its
+interaction with local closure. The first proves that if types $A$ and $C$ are locally closed up to
 $i$, then the substitution $[X := C] A$ is locally closed up to $i$ too. The proof is a consequence
-of lemma 2.6 and is done by induction on the structure of types. Since it's a very straight-forward
-proof, it has been detailed in appendix \ref{appendix:f_substitution_of_terms}.
+of lemma 2.6 and is done by induction on the structure of types. Since the proof is a
+straight-forward induction, it has been detailed in appendix \ref{appendix:f_substitution_of_terms}.
 \begin{code}
   :=-≻ : ∀ {A X C i j} → j ≥ i → i ≻ty A → i ≻ty C
     → j ≻ty (ty-ty[ X := C ] A)
 \end{code}
 
 The second is how types are invariant under substitution if the free type variable that is being
-substituted for isn't present in the type. While this is also true for the other forms of
+substituted for is not present in the type. While this is also true for the other forms of
 substitution, we only need the result for type-in-type substitution. The proof is a trivial
 induction.
 \begin{code}
@@ -890,7 +892,7 @@ As previously described, type contexts keep track of free type variables and the
 
 We can either add a free variable of some type, or a free type variable to the context. Contexts are
 isomorphic to lists \citep{wadler_programming_2022}, so we can concatenate them and map over the
-types of free variables. We will need this later in proofs.
+types of free variables.
 \begin{code}
   _+_ : Context → Context → Context
   Γ + ∅ = Γ
@@ -903,16 +905,8 @@ types of free variables. We will need this later in proofs.
   map f (Γ , X) = (map f Γ) , X
 \end{code}
 
-\paragraph*{Ok environments.} We need a predicate to tell when an environment is well-formed, which we define as:
-\begin{itemize}
-  \item There are no duplicate free type variables.
-  \item If a free variable's type contains a free type variable, then the free variable must be
-  added to the context after the free type variable (or in other words, that the free type variable
-  is \textit{in scope}).
-\end{itemize}
-
-Before we can define the predicate, however, we need to define the \textit{domain} of a context. We
-only interest ourselves with free type variables that are contained in a context
+\paragraph*{Domains.} The \textit{domain} of a context is a list of all the identifiers used. We
+only interest ourselves with the free type variables that are contained in a context
 (\texttt{domain-ftv}) and those contained in the types of the free variables in the context
 (\texttt{domain-all-ftv}). We also have a few properties of concatenation and mapping.
 \begin{code}
@@ -945,7 +939,16 @@ only interest ourselves with free type variables that are contained in a context
   domain-ftv-++ʳ {X} Γ Δ X∈Δ = ∈-≡ (∈-++ˡ X∈Δ) (domain-++ Γ Δ)
 \end{code}
 
-We closely follow how \citet{chargueraud_locally_2012} defines the `Ok' predicate.
+\paragraph*{Ok environments.} We need a predicate to tell when an environment is well-formed, or
+`Ok'. Any context where the following three rules hold is `Ok'.
+\begin{itemize}
+  \item An empty context is always `Ok'.
+  \item Let $x$ be a free variable. If $x$'s type contains a free type variable, then $x$ must be
+  added to the context after the free type variable (or in other words, the free type variable must
+  be \textit{in scope}). We also restrict ourselves to locally closed types; we do not add any bound
+  variables to the context, so we should not add any bound type variables either.
+  \item There are no duplicate free type variables.
+\end{itemize}
 \begin{code}
   data Ok : Context → Set where
     ok-∅ : Ok ∅
@@ -954,12 +957,8 @@ We closely follow how \citet{chargueraud_locally_2012} defines the `Ok' predicat
     ok-∷ftv : ∀ {Γ X} → Ok Γ → X ∉ domain-all-ftv Γ → Ok (Γ , X)
 \end{code}
 
-For example, we can show that a context is `Ok' like so.
-\begin{code}
-  _ : Ok ((∅ , ('T' ∷ [])) + (∅ , ('x' ∷ []) ⦂ (frᵀ ('T' ∷ []))))
-  _ = ok-∷fv
-    (ok-∷ftv ok-∅ (λ ())) ty-fr-lc ((here refl) All.∷ All.[])
-\end{code}
+Examples of proving that a context is `Ok' can be found below equation
+(\ref{equation:twice_big_omega}).
 
 We also have two convenience functions which are simple consequences of the definition of `Ok'.
 \begin{code}
@@ -972,7 +971,7 @@ We also have two convenience functions which are simple consequences of the defi
   extract-⊆ (ok-∷fv okΓ lc-A A⊆Γ) = A⊆Γ
 \end{code}
 
-Accessing the context is done in two different ways:
+\paragraph*{Accessing variables in the context.} Accessing the context is done in two different ways:
 \begin{itemize}
   \item If a free variable is required, then the accessor is the constructor \texttt{\_∋\_⦂\_}.
   \item If a free type variable is required, then the accessor is the constructor \texttt{\_∋\_}.
@@ -1005,13 +1004,6 @@ from \citet[chapter~Lambda]{wadler_programming_2022}.
   T′ { x≢y = x≢y } x = T (toWitnessFalse x≢y) x
 \end{code}
 
-Now we can access the context like so:
-\begin{code}
-  _ : ((∅ , ('f' ∷ []) ⦂ (‵ℕ ⇒ ‵ℕ)) , ('T' ∷ [])) , ('x' ∷ []) ⦂ frᵀ ('T' ∷ [])
-      ∋ ('f' ∷ []) ⦂ (‵ℕ ⇒ ‵ℕ)
-  _ = T′ (T⦂ H′)
-\end{code}
-
 We also need some functions for switching between evidence that a variable is in the context and
 evidence that a variable is in the domain of the context.
 \begin{code}
@@ -1029,11 +1021,9 @@ evidence that a variable is in the domain of the context.
 
   ∉-domain-all-∋ : ∀ {Γ X x A} → X ∉ domain-all-ftv Γ → Γ ∋ x ⦂ A
     → X ∉ ftv-ty A
-  ∉-domain-all-∋ X∉Γ (H x) = proj₁ (∉-++ X∉Γ)
-  ∉-domain-all-∋ X∉Γ (T _ ∋x) =
-    ∉-domain-all-∋ (proj₂ (∉-++ X∉Γ)) ∋x
-  ∉-domain-all-∋ X∉Γ (T⦂ ∋x) =
-    ∉-domain-all-∋ (proj₂ (∉-++ X∉Γ)) ∋x
+  ∉-domain-all-∋ X∉Γ (H refl) = proj₁ (∉-++ X∉Γ)
+  ∉-domain-all-∋ X∉Γ (T _ ∋x) = ∉-domain-all-∋ (proj₂ (∉-++ X∉Γ)) ∋x
+  ∉-domain-all-∋ X∉Γ (T⦂ ∋x) = ∉-domain-all-∋ (proj₂ (∉-++ X∉Γ)) ∋x
 
   ⊆-change-ctx : ∀ {Γ A Δ} → ftv-ty A ⊆ domain-ftv Γ
     → (∀ {X} → Γ ∋ X → Δ ∋ X)
@@ -1231,9 +1221,21 @@ We can give a type to \textit{twice} and $\Omega$ now.
       ok-ctx = ok-∷fv ok-∅ lc-forall All.[]
 \end{code}
 
+We want to apply an equality in a type judgement. It is easiest to do so by defining
+these helper functions.
+\begin{code}
+  -- Apply equality within type judgements.
+  ≡-with-⊢-tm : ∀ {Γ L M A} → Γ ⊢ L ⦂ A → L ≡ M → Γ ⊢ M ⦂ A
+  ≡-with-⊢-tm ⊢L refl = ⊢L
+  ≡-with-⊢-ty : ∀ {Γ L A B} → Γ ⊢ L ⦂ A → A ≡ B → Γ ⊢ L ⦂ B
+  ≡-with-⊢-ty ⊢L refl = ⊢L
+  ≡-with-⊢-ctx : ∀ {Γ Δ L A} → Γ ⊢ L ⦂ A → Γ ≡ Δ → Δ ⊢ L ⦂ A
+  ≡-with-⊢-ctx ⊢L refl = ⊢L
+\end{code}
+
 \section{Typing properties}
-We first would like to show that all well-typed terms have an `Ok' environment, a simple induction
-on the type judgement.
+We first would like to show that all well-typed terms have an `Ok' environment. This is proven with
+a simple induction on the type judgement.
 \begin{code}
   ⊢⇒Ok : ∀ {Γ L A} → Γ ⊢ L ⦂ A → Ok Γ
   ⊢⇒Ok (⊢free okΓ lc-A ∋x) = okΓ
@@ -1249,8 +1251,8 @@ on the type judgement.
   ⊢⇒Ok (⊢suc ⊢L) = ⊢⇒Ok ⊢L
 \end{code}
 
-The proofs of these next properties is similar to those in \citet{wadler_programming_2022}, except
-that we require more \texttt{ext} lemmas for the renaming property.
+If we have a map which takes evidence that a context contains a free variable to a different
+context, then we can extend the two contexts with another free variable.
 \begin{code}
   -- Extending contexts.
   ext-tm : ∀ {Γ Δ}
@@ -1275,9 +1277,14 @@ that we require more \texttt{ext} lemmas for the renaming property.
     → (∀ {X y A} → (Γ , y ⦂ A) ∋ X → (Δ , y ⦂ A) ∋ X)
   ext-ty-tm ρ (S⦂ ∋X) = S⦂ (ρ ∋X)
 \end{code}
+Let $x$ be a variable identifier and $y$ be the identifier of the new variable to be added to the
+context. In each instance of the lemma, if $y = x$, then we are already done and simply return $x$.
+Otherwise, we use the relevant constructor to go one step deeper into the context and then apply the
+mapping.
 
 The renaming property is a good example to explain the inductive hypothesis when dealing with
-cofinite quantification.
+cofinite quantification. The proof is by induction on the evidence that $L$ is well-typed in
+$\Gamma$.
 \begin{code}
   -- Renaming (a.k.a. rebasing) contexts.
   rename : ∀ {Γ Δ}
@@ -1287,20 +1294,16 @@ cofinite quantification.
       ---------------------------------
     → (∀ {L A} → Γ ⊢ L ⦂ A → Δ ⊢ L ⦂ A)
   rename okΔ ρ-tm ρ-ty (⊢free okΓ lc-A x) = ⊢free okΔ lc-A (ρ-tm x)
-  rename {Γ} {Δ} okΔ ρ-tm ρ-ty {_} {A ⇒ B} (⊢ƛ lc-A И⟨ Иe₁ , Иe₂ ⟩) =
-    ⊢ƛ lc-A И⟨ Иe₁ , (λ a {a∉} →
-      rename
-        (OkΔ,x a a∉)
-        (ext-tm ρ-tm)
-        (ext-ty-tm ρ-ty)
-        (Иe₂ a {proj₂ (∉-++ a∉)})) ⟩
-    where
-      OkΔ,x : (x : Id) → x ∉ Иe₁ → Ok (Δ , x ⦂ A)
-      OkΔ,x x x∉ with ⊢⇒Ok (Иe₂ x {x∉})
-      ... | ok-∷fv OkΓ lc-A ftvA⊆Γ =
-        ok-∷fv okΔ lc-A (⊆-change-ctx {Γ} {A} ftvA⊆Γ ρ-ty)
+\end{code}
+We use \texttt{ρ-tm} to refer to the map that takes evidence that a free variable is in $\Gamma$ to
+evidence that the free variable is in $\Delta$, and \texttt{ρ-ty} for the same using free type
+variables. The case for a free variable is a simple use \texttt{ρ-tm}.
+\begin{code}
   rename okΔ ρ-tm ρ-ty (⊢· ⊢A⇒B ⊢A) =
     ⊢· (rename okΔ ρ-tm ρ-ty ⊢A⇒B) (rename okΔ ρ-tm ρ-ty ⊢A)
+\end{code}
+The $\vdash\cdot$ case is simply an application of the inductive hypothesis.
+\begin{code}
   rename {Γ} {Δ} okΔ ρ-tm ρ-ty (⊢Λ И⟨ Иe₁ , Иe₂ ⟩) =
     ⊢Λ И⟨ Иe₁ ++ domain-all-ftv Δ , (λ T {T∉} →
       let ⟨ T∉Иe₁ , T∉Δ ⟩ = ∉-++ T∉
@@ -1309,28 +1312,68 @@ cofinite quantification.
         (ext-tm-ty ρ-tm)
         (ext-ty ρ-ty)
         (Иe₂ T {T∉Иe₁}) ) ⟩
+\end{code}
+The $\vdash\Lambda$ case is more complex. First, the type judgement is deconstructed: \texttt{⊢Λ И⟨
+Иe₁ , Иe₂ ⟩}. The function \texttt{Иe₂} will give evidence of the type judgement $\Gamma , T \vdash
+[0 \to T] L \colon [0 \to T] B$ for some identifier $T \notin \texttt{Иe₁}$.
+
+We need to create our own $\vdash\Lambda$ type judgement and then create our own cofinite
+quantification. We will use the list the assumption's \texttt{Иe₁} for the identifiers we will
+disallow but also append all identifiers used for the free type variables in the types of free
+variables in $\Delta$ (\texttt{domain-all-ftv Δ}). Then we use a lambda function to receive a $T$
+that is not in the previously defined list.
+
+We can then call \texttt{Иe₂} with our newly created $T$. We induct by calling \texttt{rename} on
+the evidence given be \texttt{Иe₂} (along with the other necessary arguments).
+
+Notice that if we did not use cofinite quantification, we could not create a $T$ which is both not
+in \texttt{Иe₁} and not in \texttt{domain-all-ftv Δ}.
+\begin{code}
+  rename {Γ} {Δ} okΔ ρ-tm ρ-ty {_} {A ⇒ B} (⊢ƛ lc-A И⟨ Иe₁ , Иe₂ ⟩) =
+    ⊢ƛ lc-A И⟨ Иe₁ , (λ a {a∉} →
+      rename
+        (OkΔ,x a a∉)
+        (ext-tm ρ-tm)
+        (ext-ty-tm ρ-ty)
+        (Иe₂ a {a∉})) ⟩
+    where
+      OkΔ,x : (x : Id) → x ∉ Иe₁ → Ok (Δ , x ⦂ A)
+      OkΔ,x x x∉ with ⊢⇒Ok (Иe₂ x {x∉})
+      ... | ok-∷fv OkΓ lc-A ftvA⊆Γ =
+        ok-∷fv okΔ lc-A (⊆-change-ctx {Γ} {A} ftvA⊆Γ ρ-ty)
+\end{code}
+The case for $\vdash\lambdabar$ is very similar, except that we only do not need to append any other
+list to \texttt{Иe₁} in our own cofinite quantification.
+\begin{code}
   rename okΔ ρ-tm ρ-ty (⊢[] lc A⊆Γ ⊢L) = ⊢[]
     lc
     (All-map (λ px → ∋⇒∈ (ρ-ty (∈⇒∋ px))) A⊆Γ)
     (rename okΔ ρ-tm ρ-ty ⊢L)
+\end{code}
+For a type application $\vdash[]$, we need to transform the evidence of $\ftv(A) \subseteq \Gamma$
+to the new context $\ftv(A) \subseteq \Delta$. We do this by applying the \texttt{ρ-ty} assumption
+on each of the free type variables, using \texttt{∈⇒∋} and \texttt{∋⇒∈} to help switch between
+context and list inclusion. The rest is just an application of the inductive hypothesis.
+\begin{code}
   rename okΔ ρ-tm ρ-ty (⊢zero okΓ) = ⊢zero okΔ
   rename okΔ ρ-tm ρ-ty (⊢suc ⊢L) = ⊢suc (rename okΔ ρ-tm ρ-ty ⊢L)
 \end{code}
-Specifically, take the case of $\vdash\Lambda$. Here, we have a proof that, if we use an identifier
-which is not in the list \texttt{Иe₁} (suppose $T$), then \texttt{Иe₂} will supply us the type
-judgement $\Gamma , T \vdash [0 \to T] L \colon [0 \to T] B$. We can then call the inductive
-hypothesis on this type judgement; notice how we call \texttt{rename} with the argument \texttt{Иe₂
-T {T∉Иe₁}}.
+The $\vdash\text{zero}$ case is trivial and $\vdash\text{suc}$ is a simple application of the
+inductive hypothesis.
 
-We have a few remaining properties. Again, the proof here is similar to how they are proven in
-\citet{wadler_programming_2022}, just with the addition of the `Ok' predicate. They are all a
-consequence of the \texttt{rename} lemma. The full proof for \texttt{swap} and \texttt{drop} is left
-in appendix \ref{appendix:f_type_properties}.
+We have a few remaining properties. If a term is well-typed in the empty context, it is well-typed
+in any context. This is proven using \texttt{rename} where the mappings are constructed using the
+absurd pattern since there are no variables in the empty context.
 \begin{code}
   -- Weakening contexts.
   weaken : ∀ {Γ L A} → Ok Γ → ∅ ⊢ L ⦂ A → Γ ⊢ L ⦂ A
   weaken okΓ ⊢L = rename okΓ (λ ()) (λ ()) ⊢L
+\end{code}
 
+We want to swap variables at the top of the context and drop shadowed ones. Since these are also a
+corollary of the \texttt{rename} lemma, their proof is left in appendix
+\ref{appendix:f_type_properties}.
+\begin{code}
   -- Swapping variables in a context.
   swap : ∀ {Γ x y L A B C}
     → x ≢ y
@@ -1344,19 +1387,15 @@ in appendix \ref{appendix:f_type_properties}.
   drop : ∀ {Γ x L A B C}
     → (Γ , x ⦂ A) , x ⦂ B ⊢ L ⦂ C
     → Γ , x ⦂ B ⊢ L ⦂ C
-
-  -- Apply equality within type judgements.
-  ≡-with-⊢-tm : ∀ {Γ L M A} → Γ ⊢ L ⦂ A → L ≡ M → Γ ⊢ M ⦂ A
-  ≡-with-⊢-tm ⊢L refl = ⊢L
-  ≡-with-⊢-ty : ∀ {Γ L A B} → Γ ⊢ L ⦂ A → A ≡ B → Γ ⊢ L ⦂ B
-  ≡-with-⊢-ty ⊢L refl = ⊢L
-  ≡-with-⊢-ctx : ∀ {Γ Δ L A} → Γ ⊢ L ⦂ A → Γ ≡ Δ → Δ ⊢ L ⦂ A
-  ≡-with-⊢-ctx ⊢L refl = ⊢L
 \end{code}
 
-We will also need a lemma called \texttt{subst-open} by \citet{chargueraud_locally_2012}. This will
-be used in the main substitution properties later (\texttt{subst} and \texttt{subst-ty}). The proof
-uses a simple induction on the structure of the term.
+Note, the proofs of \texttt{ext-*}, \texttt{weaken}, \texttt{swap-*}, and \texttt{drop} are closely
+adapted from \citep[chapter~Properties]{wadler_programming_2022}.
+
+The next lemma is called \texttt{subst-open} by \citet{chargueraud_locally_2012}. This will be used
+in the main substitution properties later (\texttt{subst} and \texttt{subst-ty}). The proof is a
+trivial induction induction on the structure of the term. Note that this is for a
+\textit{term-in-term} substitution.
 \begin{code}
   subst-open : ∀ {N x y i} (L : Term)
     → x ≢ y → (i ≻tm N)
@@ -1379,7 +1418,10 @@ uses a simple induction on the structure of the term.
     cong₂ _[_] (subst-open L x≢y i≻u) refl
   subst-open ‵zero x≢y i≻u = refl
   subst-open (‵suc L) x≢y i≻u = cong ‵suc_ (subst-open L x≢y i≻u)
+\end{code}
 
+We want to apply this to a term in a type judgement, so we define this helper function.
+\begin{code}
   subst-open-ctx : ∀ {Γ A N x y i} (L : Term)
     → x ≢ y → (i ≻tm N)
     → Γ ⊢ tm-tm[ x := N ] (tm-tm[ i —→ y ] L) ⦂ A
@@ -1388,8 +1430,8 @@ uses a simple induction on the structure of the term.
     ≡-with-⊢-tm assump (subst-open L x≢y i≻N)
 \end{code}
 
-We also have these variations whose proof is placed in the appendix
-\ref{appendix:f_type_properties}.
+We now prove \texttt{subst-open} for the other kinds of substitution. As their proofs are similarly
+a trivial induction, their proofs are placed in appendix \ref{appendix:f_type_properties}.
 \begin{code}
   subst-open-ty-tm : ∀ {N x y i j} (L : Term)
     → x ≢ y → j ≥ i → (i ≻ty-tm N)
@@ -1428,9 +1470,10 @@ We also have these variations whose proof is placed in the appendix
     → Γ ⊢ ty-tm[ j —→ y ] (ty-tm[ x := C ] L) ⦂ A
 \end{code}
 
-To actually swap between the two substitutions, we have a lemma called \texttt{subst-intro}. It says
-that, so long as we choose a fresh identifier $x$, we can swap between \texttt{:→} and \texttt{:=}
-with opening. The proof is a trivial induction, and so detailed in appendix \ref{appendix:f_type_properties}.
+To swap between the two substitutions, we have a lemma called \texttt{subst-intro} by
+\citet{chargueraud_locally_2012}. It says that, so long as we choose a fresh identifier $x$, we can
+swap between \texttt{:=} with opening and \texttt{:→}. The proof is a trivial induction, and so
+detailed in appendix \ref{appendix:f_type_properties}.
 \begin{code}
   subst-intro : ∀ {x i} (L N : Term) → x ∉ fv-tm L
     → tm-tm[ i :→ N ] L ≡ tm-tm[ x := N ] (tm-tm[ i —→ x ] L)
