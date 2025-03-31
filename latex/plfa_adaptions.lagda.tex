@@ -216,6 +216,9 @@ module plfa_adaptions where
   ⊆⇒⊆∷ : ∀ {xs ys a} → xs ⊆ ys → xs ⊆ (a ∷ ys)
   ⊆⇒⊆∷ {xs} {ys} {a} xs⊆ys = All-map (λ px → ∈-swap {ys = a ∷ []} (∈-++ˡ px)) xs⊆ys
 
+  ⊆⇒⊆++ : ∀ {xs ys zs} → xs ⊆ ys → xs ⊆ (ys ++ zs)
+  ⊆⇒⊆++ {xs} {ys} {zs} xs⊆ys = All-map (λ px → ∈-++ˡ px) xs⊆ys
+
   x∈xs∧xs⊆ys⇒x∈ys : ∀ {x xs ys} → x ∈ xs → xs ⊆ ys → x ∈ ys
   x∈xs∧xs⊆ys⇒x∈ys {x} {x' ∷ xs} {ys} x∈xs (px All.∷ xs⊆ys) with x ≟lchar x'
   ... | yes refl = px

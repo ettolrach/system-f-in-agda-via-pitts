@@ -71,7 +71,7 @@
 \newunicodechar{∘}{{\notosansmono{∘}}}
 \newunicodechar{≠}{{\notosansmono{≠}}}
 \newunicodechar{‵}{{\notosansmono{‵}}}
-\newunicodechar{ƛ}{{\notosansmono{ƛ}}}
+\newunicodechar{ƛ}{{\ibmplexmath{ƛ}}}
 \newunicodechar{≻}{{\ibmplexmath{≻}}}
 \newunicodechar{⦃}{{\ibmplexmath{⦃}}}
 \newunicodechar{⦄}{{\ibmplexmath{⦄}}}
@@ -109,6 +109,7 @@
 \DeclareMathOperator{\Log}{Log}
 \DeclareMathOperator{\Arg}{Arg}
 \DeclareMathOperator{\cof}{\text{И}}
+\DeclareMathOperator{\lambdabar}{\text{ƛ}}
 
 % Use minted for Agda
 
@@ -315,24 +316,30 @@ formalised a variant of System F with language extensions known as \textit{Syste
 They also used a different approach, opting to make use of De Bruijn indices only. This paper will
 use the locally nameless representation, which hasn't been used for System F in Agda before.
 
+As mentioned before, \citet{pitts_locally_2023} explored a generalisation called Locally Nameless
+Sets in Agda. Since the scope of his work was only to prove properties of the syntax and not of any
+lanugage in particular, the helpfulness of his development is limited. By relying on only the
+opening and closing operations, one cannot manipulate language constructs enough to prove properties
+such as \texttt{subst-open}, as explained by \citet{kiselyov_generic_2025}. Although they present a
+library which does prove properties such as \texttt{subst-open}, their work is written in Coq and so
+cannot be used here.
+
 I have previously submitted some work on STLC using locally nameless representation for a course
-called \textit{Types and Semantics of Programming Languages} (TSPL). I have presented my prior work
-in appendix \ref{appendix:tspl}. There are some new additions to this work which are presented in
-the next chapter.
+called \textit{Types and Semantics of Programming Languages} (TSPL) \citep{ausel_simply_2025}. While
+this was very helpful in preparing my formalisation of System F, detailing it is not a prerequisite.
+The only functions which will be reused here are those for generating fresh variables (see appendix
+\ref{appendix:tspl}).
 
 \chapter{System F formalisation}
 Combining System F with the locally nameless representation was previously described by
-\citet{chargueraud_locally_2012}.
+\citet{chargueraud_locally_2012}. We first import various the previously defined cofinite
+quantification and various helper functions, see appendices \ref{appendix:tspl} and
+\ref{appendix:plfa} for full details.
 \begin{code}
 module chapter3 where
   open import cofinite
-  open import plfa_adaptions using (All-++; ++-All; ∉-++;
-    ++-∉; ∈-++ˡ; ∈-++ʳ; ∈-swap; ∉y∷ys⇒≢y; ∉y∷ys⇒∉ys;
-    m+1≤n⇒m≤n; ∉∷[]⇒≢; ≢∧∉⇒∉∷; ∈∷[]⇒≡; ∉y∷ys⇒∉y∷[];
-    ∈y∷ys∧≢y⇒∈ys; ∈-≡; ++-idʳ; _⊆_; ≡-⊆; ++-⊆; ⊆-++; ⊆⇒⊆∷;
-    x∈xs∧xs⊆ys⇒x∈ys)
+  open import plfa_adaptions
   open import tspl_prior_work
-    using (suc-preserves-≢; sym-≢; fresh; fresh-correct)
 \end{code}
 
 \section{Syntax of types and terms}
@@ -341,8 +348,6 @@ previously worked on functions to generate new identifiers which can be found in
 \ref{appendix:list_functions}. \texttt{fresh} generates a new identifier and \texttt{fresh-correct}
 gives a proof that this identifier does not exist in the given list.
 \begin{code}
-  open import tspl_prior_work
-    using (suc-preserves-≢; sym-≢; fresh; fresh-correct)
   Id : Set
   Id = List Char
 \end{code}
@@ -569,6 +574,7 @@ $\forall$.
 \begin{code}
   i≻∀A⇒si≻A : ∀ {A i} → i ≻ty (t-∀ A) → (suc i) ≻ty A
   i≻∀A⇒si≻A {A} i≻∀ (suc j) =
+    -- "it" retrieves instance evidence that is not in scope.
     let И⟨ Иe₁ , Иe₂ ⟩ = i≻∀ j ⦃ ≤-pred it ⦄
     in И⟨ Иe₁ , (λ a {a∉} → ∀-inj (Иe₂ a {a∉})) ⟩
 \end{code}
@@ -814,8 +820,7 @@ the result for type-in-type substitution. The proof is a trivial induction.
   :=-∉-idempotent {A ⇒ B} {X} {B = C} X∉ = cong₂ _⇒_
     (:=-∉-idempotent {A} (proj₁ (∉-++ X∉)))
     (:=-∉-idempotent {B} (proj₂ (∉-++ X∉)))
-  :=-∉-idempotent {t-∀ A} X∉A =
-    cong t-∀_ (:=-∉-idempotent {A} X∉A)
+  :=-∉-idempotent {t-∀ A} X∉A = cong t-∀_ (:=-∉-idempotent {A} X∉A)
 \end{code}
 
 And we also have an alternative substitution; substituting a term for a bound variable.
@@ -872,8 +877,7 @@ that index will leave the type unchanged. The proof once again is a trivial indu
 \end{code}
 
 \section{Type contexts}
-Type contexts work as they did for the STLC. We can either add a free variable of some type, or a
-free type variable to the context.
+As previously described, type contexts keep track of free type variables and the type of free variables.
 \begin{code}
   data Context : Set where
     ∅ : Context
@@ -881,8 +885,9 @@ free type variable to the context.
     _,_ : Context → Id → Context
 \end{code}
 
-Contexts are isomorphic to lists \citep{wadler_programming_2022}, so we can concatenate them and
-define map over the types of free variables. We will need this later in proofs.
+We can either add a free variable of some type, or a free type variable to the context. Contexts are
+isomorphic to lists \citep{wadler_programming_2022}, so we can concatenate them and map over the
+types of free variables. We will need this later in proofs.
 \begin{code}
   _+_ : Context → Context → Context
   Γ + ∅ = Γ
@@ -895,14 +900,16 @@ define map over the types of free variables. We will need this later in proofs.
   map f (Γ , X) = (map f Γ) , X
 \end{code}
 
-\paragraph*{Ok environments.} We need a predicate to tell when an environment is well-formed.
-Namely, we want to ensure we don't have duplicate free type variables and that any free variables
-whose type contains a free type variable only occurs \textit{after} said free type variable has been
-added to the context (or in other words, that the free type variable is \textit{in scope}). Since
-the STLC has no free type variables, there wasn't a need for this predicate.
+\paragraph*{Ok environments.} We need a predicate to tell when an environment is well-formed, which we define as:
+\begin{itemize}
+  \item There are no duplicate free type variables.
+  \item If a free variable's type contains a free type variable, then the free variable must be
+  added to the context after the free type variable (or in other words, that the free type variable
+  is \textit{in scope}).
+\end{itemize}
 
-Before we can define the predicate, however, we need to be able to reason about the domain of a
-context. We're only interested in the free type variables that are contained in a context
+Before we can define the predicate, however, we need to define the \textit{domain} of a context. We
+only interest ourselves with free type variables that are contained in a context
 (\texttt{domain-ftv}) and those contained in the types of the free variables in the context
 (\texttt{domain-all-ftv}). We also have a few properties of concatenation and mapping.
 \begin{code}
@@ -969,9 +976,7 @@ Accessing the context is done in two different ways:
 \end{itemize}
 
 Each accessor has three constructors; one for getting the variable at the top of the context, one
-for going deeper, and one for changing between free and free type variables. As for the STLC, we
-provide some convenience functions with the \texttt{′} character to find the relevant evidence
-automatically. These are adapted from \citet[chapter~Lambda]{wadler_programming_2022}.
+for going deeper, and one for changing between free and free type variables.
 \begin{code}
   data _∋_ : Context → Id → Set where
     Z : ∀ {Γ X} → (Γ , X) ∋ X
@@ -984,7 +989,11 @@ automatically. These are adapted from \citet[chapter~Lambda]{wadler_programming_
     T : ∀ {Γ x y A B}
       → x ≢ y → (Γ ∋ x ⦂ A) → (Γ , y ⦂ B) ∋ x ⦂ A
     T⦂ : ∀ {Γ x Y A} → (Γ ∋ x ⦂ A) → (Γ , Y) ∋ x ⦂ A
+\end{code}
 
+We define two convenience functionsto find the relevant evidence automatically. These are adapted
+from \citet[chapter~Lambda]{wadler_programming_2022}.
+\begin{code}
   H′ : ∀ {Γ x A} → (Γ , x ⦂ A) ∋ x ⦂ A
   H′ = H refl
 
@@ -993,11 +1002,10 @@ automatically. These are adapted from \citet[chapter~Lambda]{wadler_programming_
   T′ { x≢y = x≢y } x = T (toWitnessFalse x≢y) x
 \end{code}
 
-Here's an example of accessing the context.
+Now we can access the context like so:
 \begin{code}
-  _ : ((∅ , ('f' ∷ []) ⦂ (‵ℕ ⇒ ‵ℕ)) , ('T' ∷ []))
-        , ('x' ∷ []) ⦂ t-fr ('T' ∷ [])
-    ∋ ('f' ∷ []) ⦂ (‵ℕ ⇒ ‵ℕ)
+  _ : ((∅ , ('f' ∷ []) ⦂ (‵ℕ ⇒ ‵ℕ)) , ('T' ∷ [])) , ('x' ∷ []) ⦂ t-fr ('T' ∷ [])
+      ∋ ('f' ∷ []) ⦂ (‵ℕ ⇒ ‵ℕ)
   _ = T′ (T⦂ H′)
 \end{code}
 
@@ -1042,9 +1050,9 @@ We express the context as $\Gamma, X, \Delta$ and induct on the structure of $\D
     → Ok ((Γ , X) + Δ)
     → ((Γ , X) + Δ) ∋ x ⦂ A
     → Γ + (map (ty-ty[ X := C ]_) Δ) ∋ x ⦂ (ty-ty[ X := C ] A)
-  ∋-map-ftv ∅ (ok-∷ftv okΓ X∉Γ) (T⦂ ∋x) =
-    ≡-with-∋-ty ∋x
-      (sym (:=-∉-idempotent (∉-domain-all-∋ X∉Γ ∋x)))
+  ∋-map-ftv ∅ (ok-∷ftv okΓ X∉Γ) (T⦂ ∋x) = ≡-with-∋-ty
+    ∋x
+    (sym (:=-∉-idempotent (∉-domain-all-∋ X∉Γ ∋x)))
 \end{code}
 If $\Delta$ is empty, then $X$ cannot occur in the type of $x$, as $X$ hasn't been bound when $x$
 was added to the context.
@@ -1072,10 +1080,10 @@ structure of the type $A$.
      → ftv-ty A ⊆ domain-ftv ((Γ , X) + Δ)
        -------------------------------------------
      → ftv-ty (ty-ty[ X := C ] A)
-       ⊆ domain-ftv (Γ + map (ty-ty[ X := C ]_) Δ)
+         ⊆ domain-ftv (Γ + map (ty-ty[ X := C ]_) Δ)
   ftv⊆dom-:= {X} {‵ℕ} Γ Δ lc-C C⊆Δ okΓ+map A⊆dom = All.[]
 \end{code}
-If the type if $\nat$, then it's vacuously true.
+If the type is $\nat$, then it's vacuously true.
 \begin{code}
   ftv⊆dom-:= {X} {t-fr Y} {C} Γ Δ _ C⊆Δ _ (Y∈ All.∷ All.[])
     with X ≟lchar Y
@@ -1098,17 +1106,17 @@ If the type if $\nat$, then it's vacuously true.
 If it's a free type variable, then we need to check whether it's equal to $X$. If it is, we use the
 assumption \texttt{ftv-ty C ⊆ domain-ftv Δ} and apply the mapping to the context.
 \begin{code}
-  ftv⊆dom-:= {X} {t-# n} {C} Γ Δ lc-C C⊆Δ okΓ+map A⊆dom = All.[]
+  ftv⊆dom-:= {X} {t-# n} Γ Δ lc-C C⊆Δ okΓ+map A⊆dom = All.[]
 \end{code}
 If it's a bound type variable, it is again vacuously true.
 \begin{code}
-  ftv⊆dom-:= {X} {A ⇒ B} {C} Γ Δ lc-C C⊆Δ okΓ+map ⊆dom =
+  ftv⊆dom-:= {X} {A ⇒ B} Γ Δ lc-C C⊆Δ okΓ+map ⊆dom =
     let ⟨ A⊆ , B⊆ ⟩ = ⊆-++ ⊆dom
     in ++-⊆
       (ftv⊆dom-:= {A = A} Γ Δ lc-C C⊆Δ okΓ+map A⊆)
       (ftv⊆dom-:= {A = B} Γ Δ lc-C C⊆Δ okΓ+map B⊆)
-  ftv⊆dom-:= {X} {t-∀ A} {C} Γ Δ lc-C C⊆Δ okΓ+map A⊆dom =
-    ftv⊆dom-:= {X} {A} {C} Γ Δ lc-C C⊆Δ okΓ+map A⊆dom
+  ftv⊆dom-:= {X} {t-∀ A} Γ Δ lc-C C⊆Δ okΓ+map A⊆dom =
+    ftv⊆dom-:= {X} {A} Γ Δ lc-C C⊆Δ okΓ+map A⊆dom
 \end{code}
 The last cases are the inductive steps and are trivial.
 
@@ -1161,20 +1169,20 @@ has these type judgements (a version with more familiar mathematical notation is
       → Γ ⊢ ‵suc L ⦂ ‵ℕ
 \end{code}
 
-The first five rules are the same as they were for the STLC (with the exception of the locally
-closed requirement ($0 \succ A$) and that the ($\vdash \lambda$) case was adapted to the new syntax,
-it includes a `$\colon A$' after the $\lambda$ in the consequent). Notice how the two new rules for
-type abstraction are similar to the two rules for $\lambda$-abstraction. For the ($\vdash\Lambda$)
-judgement, both the term and the type need to be opened with the cofinite type variable $T$ because
-bound type variables can be referenced in both the term and the type. For the ($\vdash[]$)
-judgement, if one were to rewrite the antecedant type in fully named syntax, it would be $\Gamma
-\vdash L \colon \forall A. B$, which more closely mirrors the ($\vdash\text{app}$) judgement. There
-is only one part to the antecedant because we don't keep track of free type variables in the
-context.
+Observe there is a rule for typing a free variable but not a bound variable. Now consider the
+$\vdash\lambdabar$ rule. Since the term $L$ will contain bound variables, we will open the term to
+replace these with a free variable. We use cofinite quantification to choose an identifier for the
+free variable which does not cause accidental shadowing. After opening, the type rule is the same as
+for the fully named syntax \citep[chapter~Lambda]{wadler_programming_2022}, apart from the added
+type local closure requirement.
 
 The only real difference between these and the rules presented by \citet{chargueraud_locally_2012}
-(besides the substyping) is that we only allow a type-application for types where the free variables
-are entirely contained in the context.
+(besides the substyping) is in $\vdash[]$. We add an explicit rule to only allow a type-application
+for types where the free variables are entirely contained in the context. Recall that we restrict
+our metalanguage to closed terms, those without free (type) variables. Thus, all free (type)
+variables must be contained in the context. We did not need this explicit rule for free variables as
+their presence in the context is guaranteed by the $\vdash\text{free}$ rule. But as free type
+variables are eliminated in the $\vdash[]$ rule, we need to put this guarantee here.
 
 We can give a type to \textit{twice} and $\Omega$ now.
 \begin{align}
@@ -1185,41 +1193,39 @@ We can give a type to \textit{twice} and $\Omega$ now.
     \colon (\forall \mathbf{0} \to \mathbf{0}) \to (\forall \mathbf{0} \to \mathbf{0}) \notag
 \end{align}
 \begin{code}
-  module example where
-    twice : ∅ ⊢ (Λ ƛ (ƛ ((# 1) · ((# 1) · (# 0)))))
-        ⦂ t-∀ (((t-# 0) ⇒ (t-# 0))
-          ⇒ ((t-# 0) ⇒ (t-# 0)))
-    twice = ⊢Λ И⟨ [] , (λ X {X∉} → ⊢ƛ fr⇒fr-lc И⟨ [] , (λ f {f∉} →
-      ⊢ƛ ty-fr-lc И⟨ (f ∷ []) , (λ x {x∉} → ⊢·
+  twice : ∅ ⊢ (Λ ƛ (ƛ ((# 1) · ((# 1) · (# 0)))))
+      ⦂ t-∀ (((t-# 0) ⇒ (t-# 0)) ⇒ ((t-# 0) ⇒ (t-# 0)))
+  twice = ⊢Λ И⟨ [] , (λ X {X∉} → ⊢ƛ fr⇒fr-lc И⟨ [] , (λ f {f∉} →
+    ⊢ƛ ty-fr-lc И⟨ (f ∷ []) , (λ x {x∉} → ⊢·
+      (⊢free ok-ctx fr⇒fr-lc (T (f≢x x∉) H′))
+      (⊢·
         (⊢free ok-ctx fr⇒fr-lc (T (f≢x x∉) H′))
-        (⊢·
-          (⊢free ok-ctx fr⇒fr-lc (T (f≢x x∉) H′))
-          (⊢free ok-ctx ty-fr-lc H′))) ⟩) ⟩) ⟩
-      where
-        fr⇒fr-lc : ∀ {A} → Ty-LocallyClosed (t-fr A ⇒ t-fr A)
-        fr⇒fr-lc j = И⟨ [] , (λ _ → refl) ⟩
-        f≢x : ∀ {f x} → x ∉ f ∷ [] → f ≢ x
-        f≢x x∉ = sym-≢ (∉∷[]⇒≢ x∉)
-        ok-ctx : ∀ {f X x}
-          → Ok (((∅ , X) , f ⦂ (t-fr X ⇒ t-fr X)) , x ⦂ t-fr X)
-        ok-ctx = ok-∷fv
-                   (ok-∷fv (ok-∷ftv ok-∅ (λ ()))
-                     fr⇒fr-lc
-                     (here refl All.∷ here refl All.∷ All.[]))
-                   ty-fr-lc
-                   ((here refl) All.∷ All.[])
+        (⊢free ok-ctx ty-fr-lc H′))) ⟩) ⟩) ⟩
+    where
+      fr⇒fr-lc : ∀ {A} → Ty-LocallyClosed (t-fr A ⇒ t-fr A)
+      fr⇒fr-lc j = И⟨ [] , (λ _ → refl) ⟩
+      f≢x : ∀ {f x} → x ∉ f ∷ [] → f ≢ x
+      f≢x x∉ = sym-≢ (∉∷[]⇒≢ x∉)
+      ok-ctx : ∀ {f X x}
+        → Ok (((∅ , X) , f ⦂ (t-fr X ⇒ t-fr X)) , x ⦂ t-fr X)
+      ok-ctx = ok-∷fv
+                  (ok-∷fv (ok-∷ftv ok-∅ (λ ()))
+                    fr⇒fr-lc
+                    (here refl All.∷ here refl All.∷ All.[]))
+                  ty-fr-lc
+                  ((here refl) All.∷ All.[])
 
-    Ω : ∅ ⊢ (ƛ (((# 0) [ t-∀ ((t-# 0) ⇒ (t-# 0)) ]) · (# 0)))
-        ⦂ (t-∀ ((t-# 0) ⇒ (t-# 0))) ⇒ (t-∀ ((t-# 0) ⇒ (t-# 0)))
-    Ω = ⊢ƛ lc-forall И⟨ [] , (λ x {x∉} →
-      ⊢·
-        (⊢[] lc-forall All.[] (⊢free ok-ctx lc-forall H′))
-        (⊢free ok-ctx lc-forall H′)) ⟩
-      where
-        lc-forall : Ty-LocallyClosed (t-∀ (t-# 0 ⇒ t-# 0))
-        lc-forall j = И⟨ [] , (λ _ → refl) ⟩
-        ok-ctx : ∀ {x} →  Ok (∅ , x ⦂ (t-∀ (t-# 0 ⇒ t-# 0)))
-        ok-ctx = ok-∷fv ok-∅ lc-forall All.[]
+  Ω : ∅ ⊢ (ƛ (((# 0) [ t-∀ ((t-# 0) ⇒ (t-# 0)) ]) · (# 0)))
+      ⦂ (t-∀ ((t-# 0) ⇒ (t-# 0))) ⇒ (t-∀ ((t-# 0) ⇒ (t-# 0)))
+  Ω = ⊢ƛ lc-forall И⟨ [] , (λ x {x∉} →
+    ⊢·
+      (⊢[] lc-forall All.[] (⊢free ok-ctx lc-forall H′))
+      (⊢free ok-ctx lc-forall H′)) ⟩
+    where
+      lc-forall : Ty-LocallyClosed (t-∀ (t-# 0 ⇒ t-# 0))
+      lc-forall j = И⟨ [] , (λ _ → refl) ⟩
+      ok-ctx : ∀ {x} →  Ok (∅ , x ⦂ (t-∀ (t-# 0 ⇒ t-# 0)))
+      ok-ctx = ok-∷fv ok-∅ lc-forall All.[]
 \end{code}
 
 \section{Typing properties}
@@ -1607,10 +1613,10 @@ the \texttt{:=} substitution out of the \texttt{:→} one is exactly the reason 
 The last two cases are a simple application of the inductive hypothesis.
 
 For \texttt{subst}, our proof is very similar to how it is in \citet{wadler_programming_2022}, with
-cofinite induction and \texttt{subst-open} being the only notable additions. As mentioned in the
-STLC section, Agda believes that the $\vdash\lambda$ case doesn't terminate. However, as we're
-recursing on the deconstructed type judgement, we are ensuring that we're recursing on a strict
-subexpression of the argument, which is exactly the requirement for termination that Agda uses
+cofinite induction and \texttt{subst-open} being the only notable additions. Agda believes that the
+$\vdash\lambda$ case doesn't terminate. However, as we're recursing on the deconstructed type
+judgement, we are ensuring that the recursive call uses a strict subexpression of the argument,
+which is exactly the requirement for termination that Agda uses
 \citep{the_agda_community_termination_2024}.
 \begin{code}
   {-# TERMINATING #-}
@@ -1810,7 +1816,7 @@ As an example, we can apply the earlier defined \texttt{twice} function to apply
           · (ƛ ‵suc (# 0))) · ‵zero
         ⦂ ‵ℕ
   ⊢twice-suc-zero = ⊢·
-    (⊢· (⊢[] n≻‵ℕ All.[] example.twice)
+    (⊢· (⊢[] n≻‵ℕ All.[] twice)
       (⊢ƛ n≻‵ℕ И⟨ [] , (λ a →
         ⊢suc (⊢free (ok-∷fv ok-∅ n≻‵ℕ All.[]) n≻‵ℕ H′)) ⟩))
     (⊢zero ok-∅)
@@ -1847,10 +1853,10 @@ more complex langauge.
 
 \appendix
 
-\chapter{Miscellaneous Proofs}
-\label{appendix:misc_proofs}
+\chapter{PLFA Adaptions}
+\label{appendix:plfa}
 
-Some miscellaneous proofs are required in the main chapters. Since they aren't of interest, they are presented here in the appendix.
+These functions are adapted from the PLFA textbook \citep{wadler_programming_2022}.
 
 \input{plfa_adaptions.tex}
 
@@ -2520,10 +2526,6 @@ Some miscellaneous proofs are required in the main chapters. Since they aren't o
 \chapter{Prior work submitted for TSPL}
 \label{appendix:tspl}
 \input{tspl_prior_work.tex}
-
-\chapter{Substitution and Evaluation in STLC}
-\label{appendix:stlc_sub_and_eval}
-\input{stlc.tex}
 
 \chapter{Compilation instructions}
 \label{appendix:compilation_instructions}
