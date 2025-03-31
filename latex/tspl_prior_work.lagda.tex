@@ -63,8 +63,9 @@ module tspl_prior_work where
 \section{Functions on lists and creating strings}
 \label{appendix:list_functions}
 \begin{code}
-  Id : Set
-  Id = List Char
+  private
+    Id : Set
+    Id = List Char
 
   All≤⇒<⇒All< : ∀ {n m : ℕ} (xs : List ℕ)
     → n < m

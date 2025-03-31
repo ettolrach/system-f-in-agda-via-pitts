@@ -8,13 +8,14 @@ treat $\lambda$-abstractions as values, or to reduce these if they are a redex.
 
 When evaluating, we need to consider some terms to be \textit{values}. These cannot be reduced any
 further. One method is to consider $\lambda$-abstractions to be values and to only evaluate
-\textit{closed} terms, that is, terms without any free variables. This is called weak-head
-reduction, and the values are called weak-head normal forms \citep{wadler_programming_2022}. This
-method is also used by popular programming languages such as Haskell \citep{hutchison_sharing_2005}.
-The definition of the $\lambda$-calculus as Church first described it uses what is nowadays referred
-to as \textit{full normalisation} \citep{wadler_programming_2022}. The reduction rule which is
-absent in weak-head reduction is the $\zeta$ rule (see equation \ref{equation:untyped_beta_rules}),
-also called \textit{reducing under a $\lambda$-abstraction}.
+\textit{closed} terms, that is, terms without any free variables or free type variables. This is
+called weak-head reduction, and the values are called weak-head normal forms
+\citep{wadler_programming_2022}. This method is also used by popular programming languages such as
+Haskell \citep{hutchison_sharing_2005}. The definition of the $\lambda$-calculus as Church first
+described it uses what is nowadays referred to as \textit{full normalisation}
+\citep{wadler_programming_2022}. The reduction rule which is absent in weak-head reduction is the
+$\zeta$ rule (see equation \ref{equation:untyped_beta_rules}), also called \textit{reducing under a
+$\lambda$-abstraction}.
 
 When using weak-head reduction, we run into an issue. Consider the following expression;
 \begin{align*}
