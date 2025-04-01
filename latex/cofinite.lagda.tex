@@ -1,26 +1,56 @@
-Often, we may want to prove a property for \textit{almost} all members of a set; a finite subset is
-chosen for which the property is not proven (or disproven), while the property holds for all members
-not in this subset. For example, for \textit{almost} all natural numbers $n$, $n \geq 2$. Or in
-number theory, \textit{almost} all natural numbers can be written as a product of primes. To prove
-this, one would need to give a set of numbers which the proof will ignore (in the example, $\{ (0),
-1 \}$), and then prove it for all $n \in \nat$ with the extra assumption that $n \not \in \{0, 1\}$.
+Before describing locally nameless representation, we need to define \textit{cofinite
+quantification}.
 
-While formalising this notion of exception isn't usually useful in mathematics, we will find this to
-be very useful later on. This can be viewed as a special kind of quantification, called
-\textit{cofinite quantification} \citep{aydemir_engineering_2008}.
-
-This quantification uses the symbol $\cof$. We write, for some set $X$ and property $P$,
+This quantification uses the symbol $\cof$. We write, for some (finite or countably infinite) set $X$ and property $P$,
 \begin{equation}
   \label{equation:cofinite}
   \cof x \in X, P(x) \iff
   \exists S \subsetneq X, \, S \text{ is finite}, \, \forall x \in X \setminus S, \, P(x).
 \end{equation}
 
+That is, the property $P$ may or may not hold for some finite subset $S \subseteq X$, but for all
+elements $x \in (X \setminus S)$, the property $P(x)$ holds.
+
+For some motivation for this quantification, suppose we have two properties $P$ and $Q$ of a term
+$L$, each of which hold for all fresh identifiers, and we wish to prove that there exists some
+identifier $z$ for which both properties hold. Written formally,
+\begin{equation*}
+  \forall x, y \notin \fv(L), \; P(L, x) \wedge Q(L, y)
+  \implies \exists z \; \text{such that} \; P(L, z) \wedge Q(L, z).
+\end{equation*}
+
+Since there are only a finite number of free variables in a term, we can always find a fresh
+identifier. Informally, the proof is trivial since we can choose a fresh identifier such that $z = x
+= y$.
+
+Proof-assistants like Agda model universal quantification as an argument to a function. In this
+example, $x$ and $y$ would be arguments of type Identifier. These are arbitrary, as in, we cannot
+make any assumptions on these arguments other than their type
+\citep[chapter~Quantifier]{wadler_programming_2022}. We would additionally be given evidence that $x
+\notin \fv(L)$ and that $P(L, x)$ holds, and that $y \notin \fv(L)$ and that $Q(L, x)$ holds.
+Importantly, unlike the informal proof, we cannot set $x = y$.
+
+To solve this, we can use cofinite quantification. By writing
+\begin{equation*}
+  \cof x, y, \; P(L, x) \wedge Q(L, y)
+  \implies \exists z \; \text{such that} \; P(L, z) \wedge Q(L, z),
+\end{equation*}
+Agda will now give us a proof that for any $x \notin S_1$ and $y \notin S_2$ for some sets $S_1$ and
+$S_2$, the properties $P(L, x)$ and $Q(L, y)$ hold. We now choose a $z \notin S_1 \cup
+S_2$ (note that as both $S_1$ and $S_2$ are by definition finite, this doesn't require the
+axiom of choice). This $z$ will satisfy $P(L, z)$ since $z \notin S_1$ and it will also satisfy
+$Q(L, z)$ since $z \notin S_2$.
+
+This technique of combining several different `disallowed' sets will be used in chapter
+\ref{chapter3} for theorems such as \texttt{rename}.
+
 While the Agda implementation that \citet{pitts_locally_2023} gives uses an arbitrary set, I chose
-to use the specific \texttt{List Char}, since we will only quantify over strings.
+to use the specific \texttt{List Char}, since we will only quantify over strings. This is abstracted
+using a type alias to a type called \texttt{Id}. I also use \texttt{List} instead of \texttt{FSet}
+(finite set) since lists will suffice for our purposes. The rest of the definition is adapted from
+his definition of cofinite quantification.
 \begin{code}
 module cofinite where
-  open import plfa_adaptions using (∉∷[]⇒≢)
 \end{code}
 \begin{comment}
 \begin{code}
@@ -57,26 +87,20 @@ module cofinite where
 \end{code}
 \end{comment}
 \begin{code}
-  record Cof (P : List Char → Set) : Set where
+  private
+    Id : Set
+    Id = List Char
+
+  record Cof (P : Id → Set) : Set where
     inductive
     eta-equality
     constructor И⟨_,_⟩
     field
-      Иe₁ : List (List Char)
-      Иe₂ : (a : List Char) {_ : a ∉ Иe₁} → P a
+      Иe₁ : List Id
+      Иe₂ : (a : Id) {_ : a ∉ Иe₁} → P a
   open Cof public
-  
-  Cof-syntax : (P : List Char → Set) → Set
+
+  Cof-syntax : (P : Id → Set) → Set
   Cof-syntax = Cof
   syntax Cof-syntax (λ a → P) = И a , P
-\end{code}
-
-For a simple example, I can show \textit{almost} all strings have a length greater or equal to $1$
-(with the exception being the empty string).
-
-\begin{code}
-  simple-cof : {s : List Char} → И s , (1 ≤ length s)
-  simple-cof = И⟨ [] ∷ [] , (
-    λ{[] {a∉}  → contradiction refl (∉∷[]⇒≢ a∉)
-    ; (x ∷ xs) → s≤s z≤n}) ⟩
 \end{code}
