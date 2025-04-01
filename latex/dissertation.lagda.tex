@@ -203,7 +203,9 @@ Most of the prior literature uses the proof-assistant Coq for its formalisation 
 nameless representation. A generalisation of this representation, called \textit{locally nameless
 sets}, has previously been explored in another proof assistant, Agda, by Andrew
 \citet{pitts_locally_2023}. While this generalisation did not focus on the $\lambda$-calculus, it
-proves that the syntax is able to be used effectively in Agda.
+proves that the syntax is able to be used effectively in Agda. This work is central in motivating an
+Agda development of a formal langauge like System F using locally nameless representation, as it
+helped develop the crucial initial proofs of the syntax and informed future proof strategies.
 
 I present the first formalisation of System F using the locally nameless representation in Agda that
 I am aware of. Specifically, I successfully create a formalisation which proves the following
@@ -292,13 +294,13 @@ open DecPropMembership _≟lchar_ using (_∈_; _∉_; _∈?_)
 \end{code}
 \end{comment}
 
-\section{Cofinite Quantification}
-\label{background:cofinite}
-\input{cofinite.tex}
-
 \section{The Lambda Calculus and System F}
 \label{background:lambda_calculus}
 \input{background_lambda_calculus.tex}
+
+\section{Cofinite Quantification}
+\label{background:cofinite}
+\input{cofinite.tex}
 
 \section{Locally Nameless Representation}
 \label{background:locally_nameless}
