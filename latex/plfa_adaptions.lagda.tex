@@ -80,8 +80,10 @@ module plfa_adaptions where
     → (Any P xs ⊎ Any P ys) → Any P (xs ++ ys)
   ++-Any [] ys (inj₂ AnyPys) = AnyPys
   ++-Any (x ∷ xs) ys (inj₁ (here Px)) = here Px
-  ++-Any (x ∷ xs) ys (inj₁ (there AnyPxs)) = there (++-Any xs ys (inj₁ AnyPxs))
-  ++-Any (x ∷ xs) ys (inj₂ AnyPys) = there (++-Any xs ys (inj₂ AnyPys))
+  ++-Any (x ∷ xs) ys (inj₁ (there AnyPxs)) =
+    there (++-Any xs ys (inj₁ AnyPxs))
+  ++-Any (x ∷ xs) ys (inj₂ AnyPys) =
+    there (++-Any xs ys (inj₂ AnyPys))
 
   All¬⇒¬Any : ∀ {A : Set} {P : A → Set} {xs : List A}
     → All (¬_ ∘ P) xs
@@ -201,11 +203,14 @@ module plfa_adaptions where
   ≡-⊆ : ∀ {xs ys zs} → xs ⊆ zs → xs ≡ ys → ys ⊆ zs
   ≡-⊆ xs⊆ refl = xs⊆
 
-  ++-⊆ : ∀ {xs ys zs : List (List Char)} → xs ⊆ zs → ys ⊆ zs → (xs ++ ys) ⊆ zs
+  ++-⊆ : ∀ {xs ys zs : List (List Char)} 
+    → xs ⊆ zs → ys ⊆ zs → (xs ++ ys) ⊆ zs
   ++-⊆ {[]} {ys} {zs} All.[] ys⊆zs = ys⊆zs
-  ++-⊆ {x ∷ xs} {ys} {zs} (x∈zs All.∷ xs⊆zs) ys⊆zs = x∈zs All.∷ ++-⊆ xs⊆zs ys⊆zs
+  ++-⊆ {x ∷ xs} {ys} {zs} (x∈zs All.∷ xs⊆zs) ys⊆zs =
+    x∈zs All.∷ ++-⊆ xs⊆zs ys⊆zs
 
-  ⊆-++ : ∀ {xs ys zs : List (List Char)} → (xs ++ ys) ⊆ zs → (xs ⊆ zs) × (ys ⊆ zs)
+  ⊆-++ : ∀ {xs ys zs : List (List Char)}
+    → (xs ++ ys) ⊆ zs → (xs ⊆ zs) × (ys ⊆ zs)
   ⊆-++ {[]} {ys} All.[] = ⟨ All.[] , All.[] ⟩
   ⊆-++ {[]} {ys} (px All.∷ xs++ys⊆) =
     ⟨ All.[] , (px All.∷ xs++ys⊆) ⟩
@@ -213,14 +218,20 @@ module plfa_adaptions where
     ⟨ (px All.∷ ⊆-++ xs++ys⊆ .proj₁)
     , (⊆-++ xs++ys⊆ .proj₂) ⟩
 
-  ⊆⇒⊆∷ : ∀ {xs ys a} → xs ⊆ ys → xs ⊆ (a ∷ ys)
-  ⊆⇒⊆∷ {xs} {ys} {a} xs⊆ys = All-map (λ px → ∈-swap {ys = a ∷ []} (∈-++ˡ px)) xs⊆ys
+  ⊆⇒⊆∷ : ∀ {xs ys a} 
+    → xs ⊆ ys → xs ⊆ (a ∷ ys)
+  ⊆⇒⊆∷ {xs} {ys} {a} xs⊆ys =
+    All-map (λ px → ∈-swap {ys = a ∷ []} (∈-++ˡ px)) xs⊆ys
 
-  ⊆⇒⊆++ : ∀ {xs ys zs} → xs ⊆ ys → xs ⊆ (ys ++ zs)
-  ⊆⇒⊆++ {xs} {ys} {zs} xs⊆ys = All-map (λ px → ∈-++ˡ px) xs⊆ys
+  ⊆⇒⊆++ : ∀ {xs ys zs}
+    → xs ⊆ ys → xs ⊆ (ys ++ zs)
+  ⊆⇒⊆++ {xs} {ys} {zs} xs⊆ys =
+    All-map (λ px → ∈-++ˡ px) xs⊆ys
 
-  x∈xs∧xs⊆ys⇒x∈ys : ∀ {x xs ys} → x ∈ xs → xs ⊆ ys → x ∈ ys
-  x∈xs∧xs⊆ys⇒x∈ys {x} {x' ∷ xs} {ys} x∈xs (px All.∷ xs⊆ys) with x ≟lchar x'
+  x∈xs∧xs⊆ys⇒x∈ys : ∀ {x xs ys}
+    → x ∈ xs → xs ⊆ ys → x ∈ ys
+  x∈xs∧xs⊆ys⇒x∈ys {x} {x' ∷ xs} {ys} x∈xs (px All.∷ xs⊆ys)
+    with x ≟lchar x'
   ... | yes refl = px
   ... | no  x≢x' = x∈xs∧xs⊆ys⇒x∈ys (∈y∷ys∧≢y⇒∈ys x∈xs x≢x') xs⊆ys
 \end{code}

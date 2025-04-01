@@ -5,19 +5,18 @@ Consider this expression,
   x \colon \iota \in \Gamma \vdash (\lambda \, y \colon \iota \to \iota. y x) \colon \iota.
 \end{equation*}
 
-Using an $\alpha$-renaming $y \mapsto_{\alpha} f$, we get a different expression which is
+Using an $\alpha$-conversion $y \mapsto_{\alpha} f$, we get a different expression which is
 equivalent.
 \begin{equation*}
   x \colon \iota \in \Gamma \vdash (\lambda \, f \colon \iota \to \iota. f x) \colon \iota.
 \end{equation*}
-In fact, $\alpha$-renaming forms an equivalence relation \citep[section~5.3]{pierce_types_2002}, and
-so is also called $\alpha$-equivalence \citep{aydemir_engineering_2008}. Like any other equivalence
+As previously mentioned, $\alpha$-conversion forms an equivalence relation. Like any other equivalence
 relation, this induces a quotient set. We say that we have \textit{quotient} inductive definitions
 \citep{aydemir_engineering_2008}; we have both an inductive definition of the $\lambda$-calculus,
 but also (infinitely) many $\alpha$-equivalence classes. In some proof assistants, this makes proofs
 difficult, as they cannot handle quotient definitions well \citep{pitts_locally_2023}.
 
-We can solve this by using \textit{De Bruijn indices}, which eliminate $\alpha$-renamings. De Bruijn
+We can solve this by using \textit{De Bruijn indices}, which eliminate $\alpha$-conversions. De Bruijn
 indices, first described by Nicolaas Govert \citet{de_bruijn_lambda_1972}, are a natural number
 which reference a variable. The natural number is how many binders from the current reference the
 variable is bound at. In our example,
