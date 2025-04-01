@@ -1,4 +1,3 @@
-
 \subsection{De Bruijn indices}
 \label{section:background_debruijn}
 Consider this expression,
@@ -58,14 +57,24 @@ or with another variable in the context,
   x \colon \nat, y \colon \nat \to \nat \in \Gamma \vdash (\lambda \, 0 x) \colon \nat.
 \end{equation*}
 
+Although locally nameless representation was described earlier, our approach of combining it with
+cofinite quantification was first described by \citet{aydemir_engineering_2008}.
+
 As part of using locally nameless terms, common operations and properties (called `infrastructure'
-by \citet{aydemir_engineering_2008}) need to be defined for the target language. A recent article by
-Andrew \citet{pitts_locally_2023} uses Agda to explore an abstraction of this representation called
-locally nameless sets, and shows that this infrastructure can be defined in a syntax-agnostic way.
+by \citet{aydemir_engineering_2008}) need to be defined for the target language, which will be
+detailed below. A recent article by Andrew \citet{pitts_locally_2023} uses Agda to explore an
+abstraction of this representation called locally nameless sets, and shows that this infrastructure
+can be defined in a syntax-agnostic way.
+
+For the development of the System F formalisation in chapter \ref{chapter3}, the infrastructure
+required is term and type opening (section \ref{chapter3:opening}), local closure (section
+\ref{chapter3:local_closure}), and the various substitutions (section
+\ref{chapter3:substitution_syntax}). Term opening and local closure are defined below.
 
 The drawback of using this representation is that we need to define infrastructure and prove some
-properties of the syntax before we can prove the properties of the metalangauge. But usually, this
-drawback is too small to outweight the benefits.
+properties of the syntax (detailed in sections \ref{chapter3:opening} to
+\ref{chapter3:substitution_syntax}) before we can prove the properties of the metalangauge. But
+usually, this drawback is too small to outweight the benefits.
 
 \paragraph*{Opening and closing.} Two fundamental operations on locally nameless terms are
 \textit{term opening} and \textit{term closing} \citep{pitts_locally_2023}. Opening will replace all

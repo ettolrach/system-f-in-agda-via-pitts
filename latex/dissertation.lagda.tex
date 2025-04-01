@@ -38,7 +38,6 @@
 \usepackage{newunicodechar}
 \newfontface{\notoserif}{NotoSerif-VariableFont_wdth,wght.ttf}[Path = fonts/]
 \newfontface{\ibmplexmath}{IBMPlexMath-Regular.otf}[Path = fonts/]
-\newfontface{\libertinusmath}{LibertinusMath-Regular.otf}[Path = fonts/]
 \newunicodechar{ℕ}{{\ibmplexmath{ℕ}}}
 \newunicodechar{∀}{{\ibmplexmath{∀}}}
 \newunicodechar{≡}{{\ibmplexmath{≡}}}
@@ -187,29 +186,47 @@ Any acknowledgements go here.
 
 \chapter{Introduction}
 
-\textit{System F} is a theoretical model of computation first described independently by
-Jean \citet{girard_interpretation_1972} and John \citet{goos_towards_1974}. A previous formalisation of this
-in the proof-assistant Agda has been presented in \citep{hutton_system_2019}, but the authors used a
-syntax involving only De Bruijn indices.
+\textit{System F} is a theoretical model of computation first described independently by Jean
+\citet{girard_interpretation_1972} and John \citet{goos_towards_1974} and is based on the
+$\lambda$-calculus, first described by Alonzo \citet{church_set_1932}. Background to these is given
+in section \ref{background:lambda_calculus}.
 
-The \textit{locally nameless representation} is an alternative representation for the
-$\lambda$-calculus which uses De Bruijn indices for bound variables and identifiers (as in, regular
-names) for free variables. As described by Arthur \citet{chargueraud_locally_2012}, this can also be
-used for System F.
+Usually, $\lambda$-calculus is written using \textit{fully named} syntax: all variables are given
+identifiers (usually strings). An alternative representation uses de Bruijn indices, where a
+variable is referred to using a natural number representing how many binders ago the variable was
+bound, first described by Nicolaas Govert \citet{de_bruijn_lambda_1972}. By using identifiers for
+free variables and de Bruijn indices for bound variables, we use a syntax called the \textit{locally
+nameless representation}. More detail on this syntax is given in section
+\ref{background:locally_nameless}.
 
-Most of the prior literature in this representation has been made in Coq. A generalisation of this
-syntax, called \textit{locally nameless sets}, has been explored in Agda previously by Andrew
-\citet{pitts_locally_2023}. While this generalisation didn't specifically focus on the
-$\lambda$-calculus, it proves that the syntax is able to be used effectively in Agda.
+Most of the prior literature uses the proof-assistant Coq for its formalisation of the locally
+nameless representation. A generalisation of this representation, called \textit{locally nameless
+sets}, has previously been explored in another proof assistant, Agda, by Andrew
+\citet{pitts_locally_2023}. While this generalisation did not focus on the $\lambda$-calculus, it
+proves that the syntax is able to be used effectively in Agda.
 
-We present the first formalisation of System F using the locally nameless representation in Agda.
+I present the first formalisation of System F using the locally nameless representation in Agda that
+I am aware of. Specifically, I successfully create a formalisation which proves the following
+properties of System F using locally nameless representation:
+\begin{itemize}
+  \item System F terms and types can be represented and manipulated using locally nameless
+  representation (sections \ref{chapter3:syntax} to \ref{chapter3:substitution_syntax}).
+  \item Using the previously defined syntax, we can introduce typing rules to restrict ourselves to
+  well-typed terms and prove some well-known properties such as renaming of type contexts (sections
+  \ref{chapter3:contexts} to \ref{chapter3:typed_is_locally_closed}).
+  \item Substitution preserves types \ref{chapter3:substitution_preserves_types}.
+  \item An evaluator can be built by using the progress and preservation properties
+  \ref{chapter3:evaluation}.
+\end{itemize}
+An evaluaton of my formalisation as well as future work will be presented in chapter \ref{chapter4}.
 
-This document is a literate Agda file and uses {\color{violet}colour}. Please see appendix
-\ref{appendix:compilation_instructions} for details.
+To do so, I will follow the work of Arthur \citet{chargueraud_locally_2012}, where he describes a
+formalisation of System F with subtyping in Coq. Although I will closely follow him initially, from
+section \ref{chapter3:contexts} onwards, my proofs will diverge from his approach.
 
-\begin{code}
-module dissertation where
-\end{code}
+This document is a literate Agda file and uses {\color{violet}colour}. All Agda code typeset in
+colour has been typechecked by Agda. Please see appendix \ref{appendix:compilation_instructions} for
+details.
 
 \chapter{Background}
 
@@ -217,42 +234,18 @@ module dissertation where
 Agda is a dependently-typed functional programming language based on Martin--Löf type theory, which
 makes it suitable as a proof-assistant using intuitionistic logic \citep{norell_towards_2007}.
 
-In Agda, most definitions are done inductively, that is, using recursion. For example, following the
-Peano axioms for the natural numbers $\nat$ \citep{boolos_freges_1995}, we may define them like so.
-
+In Agda, like many other programming languages, we need to declare a module for our program.
 \begin{code}
-module Example where
-  data ℕ : Set where
-    zero : ℕ
-    suc  : ℕ → ℕ
+module dissertation where
 \end{code}
 
+A brief overview of Agda is presented in appendix \ref{appendix:agda_overview}. An in-depth guide to
+Agda is presented in \citet{wadler_programming_2022}. Knowledge of Agda (or proof-assistants which
+are similar) will be assumed henceforth.
 
-\paragraph*{Propositions as types.} First noted by William A. Howard in 1969
-\citep{howard_formulae-as-types_1980}, there is a direct correspondence between proofs and programs.
-\citet{wadler_propositions_2015} calls this correspondence \textit{propositions as types}, known as
-the Curry-Howard correspondence by some authors. Thanks to this correspondence, a correct Agda
-function with the appropriate type signature matching the claim (proposition) suffices for a proof.
-For example, a proof that addition is associative would use recursion, which corresponds to
-induction, as shown below.
-
-\begin{code}
-  -- We can import from the standard library, here we're using
-  -- the reflexive and congruence properties of equality.
-  open import Relation.Binary.PropositionalEquality
-    using (_≡_; refl; cong)
-
-  _+_ : ℕ → ℕ → ℕ
-  zero  + m = m
-  suc n + m = suc (n + m)
-
-  +-assoc : ∀ (m n p : ℕ) → (m + n) + p ≡ m + (n + p)
-  +-assoc zero    n p = refl
-  +-assoc (suc m) n p = cong suc (+-assoc m n p)
-\end{code}
-
-Imports from the standard library \citep{the_agda_community_agda_2024} are omitted, but are
-available in the full source file (see appendix \ref{appendix:compilation_instructions}).
+We will make use of the Agda standard library \citep{the_agda_community_agda_2024}. The specific
+imports are omitted, but are included in the full source code (see appendix
+\ref{appendix:compilation_instructions}).
 \begin{comment}
 \begin{code}
 -- Data types (naturals, strings, characters)
@@ -300,13 +293,15 @@ open DecPropMembership _≟lchar_ using (_∈_; _∉_; _∈?_)
 \end{comment}
 
 \section{Cofinite Quantification}
-
+\label{background:cofinite}
 \input{cofinite.tex}
 
 \section{The Lambda Calculus and System F}
+\label{background:lambda_calculus}
 \input{background_lambda_calculus.tex}
 
 \section{Locally Nameless Representation}
+\label{background:locally_nameless}
 \input{background_locally_nameless.tex}
 
 \section{Evaluation strategy}
@@ -316,7 +311,7 @@ open DecPropMembership _≟lchar_ using (_∈_; _∉_; _∈?_)
 \section{Prior research}
 System F was previously formalised in Agda by \citet{hutton_system_2019}. However, the authors
 formalised a variant of System F with language extensions known as \textit{System F$_{\omega \mu}$}.
-They also used a different approach, opting to make use of De Bruijn indices only. This paper will
+They also used a different approach, opting to make use of de Bruijn indices only. This paper will
 use the locally nameless representation, which hasn't been used for System F in Agda before.
 
 As mentioned before, \citet{pitts_locally_2023} explored a generalisation called Locally Nameless
@@ -346,7 +341,21 @@ module chapter3 where
   open import tspl_prior_work
 \end{code}
 
+As the following code covers a lot of detail, and since I am limited by the page count of this
+dissertation, I will leave some proofs from this chapter and present them in appendix
+\ref{appendix:f} instead. I will only do this in two cases:
+\begin{itemize}
+  \item If the proof is trivial (for example, an induction where each case is proven immediately
+  using \texttt{refl} and each inductive step is a simple recursive call).
+  \item The proof is near-identical to a previous proof. This will occur because some theorems need
+  to be proven three times (see page \pageref{page:repeated_proofs}).
+\end{itemize}
+
+Even though the proofs are missing, the type signature of the function is still present, and since
+we can use forward declarations, Agda still ensures that these are correct.
+
 \section{Syntax of types and terms}
+\label{chapter3:syntax}
 To represent identifiers, we use \texttt{List Char}, and thus define a type alias. Functions to
 generate new identifiers can be found in appendix \ref{appendix:list_functions}. Namely,
 \texttt{fresh} generates a new identifier and \texttt{fresh-correct} gives a proof that this
@@ -356,10 +365,7 @@ identifier does not exist in the given list.
   Id = List Char
 \end{code}
 
-In System F, types become part of the syntax, as they now become a part of how terms are built.
-Note, some authors use $\Pi$ for the $\forall$ type instead, such as \citet{hutton_system_2019}, and
-some use the lowercase $\lambda$ for both term and type abstraction, such as
-\citet{pierce_types_2002}.
+First we need to define our syntax, we have types and terms.
 \begin{code}
   data Type : Set where
     ‵ℕ      : Type                -- Base type.
@@ -405,12 +411,9 @@ for example,
 \begin{equation*}
   \text{id} \triangleq (\Lambda \lambda 0) \colon \forall \mathbf{0} \to \mathbf{0}
 \end{equation*}
-\begin{code}
-  id : Term
-  id = Λ ƛ # 0
-\end{code}
 
 \section{Opening}
+\label{chapter3:opening}
 In System F, we only require the opening operation \citep{chargueraud_locally_2012}. There are three
 kinds of opening:
 \begin{itemize}
@@ -477,9 +480,8 @@ each case being trivial (proven using reflexivity).
 \end{code}
 
 The same can be said of the other kinds of opening. Repeating proofs for the three kinds of opening
-will be a recurring theme. The proofs for the other two opening operations are very similar and left
-in appendix \ref{appendix:f_local_closure}. In fact, repeated proofs will be omitted from the main
-text henceforth and placed in the appendix unless the other proofs are substantially different.
+will be a recurring theme \label{page:repeated_proofs}. The proofs for the other two opening
+operations are very similar and left in appendix \ref{appendix:f_local_closure}.
 \begin{code}
   ax1-tm : ∀ (i : ℕ) (a b : Id) (L : Term)
     → tm-tm[ i —→ a ] (tm-tm[ i —→ b ] L) ≡ tm-tm[ i —→ b ] L
@@ -672,35 +674,12 @@ several versions of the proof.
 
 We cannot use a generic proof because it is proven by induction on the structure of the term or
 type. For the base cases, the proof is immediate by reflexivity, and for the inductive cases, the
-inductive hypothesis immediately gives the result.
+inductive hypothesis immediately gives the result, so the proof is left in appendix
+\ref{appendix:f_local_closure}.
 \begin{code}
   open-rec-lc-lemma : ∀ {L : Term} {i j u v} → i ≢ j
     → tm-tm[ i —→ u ] (tm-tm[ j —→ v ] L) ≡ tm-tm[ j —→ v ] L
     → tm-tm[ i —→ u ] L ≡ L
-  open-rec-lc-lemma {fr x} i≢j assump = refl
-  open-rec-lc-lemma {# k} {i} {j} i≢j assump
-    with i ≟ℕ j | i ≟ℕ k
-  ... | yes refl | _ = contradiction refl i≢j
-  ... | no _     | no _ = refl
-  ... | no _     | yes refl with j ≟ℕ k
-  ...   | yes refl = contradiction refl i≢j
-  ...   | no j≢k with k ≟ℕ k
-  ...     | yes refl with () ← assump
-  ...     | no  k≢k  = contradiction refl k≢k
-  open-rec-lc-lemma {ƛ L} {i} {j} i≢j assump
-    rewrite open-rec-lc-lemma {L} {suc i} {suc j}
-      (suc-preserves-≢ i≢j)
-      (ƛ-inj assump) = refl
-  open-rec-lc-lemma {L · M} i≢j assump rewrite
-      open-rec-lc-lemma {L} i≢j (proj₁ (·-inj assump))
-    | open-rec-lc-lemma {M} i≢j (proj₂ (·-inj assump)) = refl
-  open-rec-lc-lemma {Λ L} i≢j assump
-    rewrite open-rec-lc-lemma {L} i≢j (Λ-inj assump) = refl
-  open-rec-lc-lemma {L [ x ]} i≢j assump
-    rewrite open-rec-lc-lemma {L} i≢j (proj₁ ([]-inj assump)) = refl
-  open-rec-lc-lemma {‵zero} i≢j assump = refl
-  open-rec-lc-lemma {‵suc L} i≢j assump
-    rewrite open-rec-lc-lemma {L} i≢j (‵suc-inj assump) = refl
 \end{code}
 
 The proofs of the related versions of this lemma are left in appendix \ref{appendix:f_local_closure} as they are very similar.
@@ -717,6 +696,7 @@ The proofs of the related versions of this lemma are left in appendix \ref{appen
 \end{code}
 
 \section{Free variables}
+\label{chapter3:free_variables}
 We want to collect free variables in terms and free type variables in terms and types. As before,
 there are three such functons we need to define. The full definitions of the other two functions is
 left in appendix \ref{appendix:f_free_variables}.
@@ -759,6 +739,7 @@ left in appendix \ref{appendix:f_free_variables}.
 \end{comment}
 
 \section{Substitution of types and terms}
+\label{chapter3:substitution_syntax}
 We can substitute a term for a free variable, and a type for a free type variable in a term and a
 type. Thus, we have three functions. We define them recursively.
 \begin{code}
@@ -818,15 +799,6 @@ induction.
 \begin{code}
   :=-∉-invariant : ∀ {A X B} → X ∉ ftv-ty A
     → (ty-ty[ X := B ] A) ≡ A
-  :=-∉-invariant {‵ℕ} X∉A = refl
-  :=-∉-invariant {frᵀ Y} {X} X∉A with X ≟lchar Y
-  ... | yes refl = contradiction refl (∉∷[]⇒≢ X∉A)
-  ... | no  X≢Y  = refl
-  :=-∉-invariant {#ᵀ k} X∉A = refl
-  :=-∉-invariant {A ⇒ B} {X} {B = C} X∉ = cong₂ _⇒_
-    (:=-∉-invariant {A} (proj₁ (∉-++ X∉)))
-    (:=-∉-invariant {B} (proj₂ (∉-++ X∉)))
-  :=-∉-invariant {∀ᵀ A} X∉A = cong ∀ᵀ_ (:=-∉-invariant {A} X∉A)
 \end{code}
 
 And we also have an alternative substitution; substituting a term for a bound variable.
@@ -876,13 +848,13 @@ The definition of the other two substitution functions is in the appendix \ref{a
 Similar to before, we want to prove that if an index doesn't occur in a type, then substituting for
 that index will leave the type unchanged. The proof once again is a trivial induction and so left in appendix \ref{appendix:f_substitution_of_terms}.
 \begin{code}
-  ≻⇒:→-invariant : ∀ {C i j} (A : Type)
-    → j ≥ i       → i ≻ty A
-      ---------------------
+  ≻⇒:→-invariant : ∀ {C i j} (A : Type) → j ≥ i
+    → i ≻ty A
     → ty-ty[ j :→ C ] A ≡ A
 \end{code}
 
 \section{Type contexts}
+\label{chapter3:contexts}
 As previously described, type contexts keep track of free type variables and the type of free variables.
 \begin{code}
   data Context : Set where
@@ -908,8 +880,8 @@ types of free variables.
 
 \paragraph*{Domains.} The \textit{domain} of a context is a list of all the identifiers used. We
 only interest ourselves with the free type variables that are contained in a context
-(\texttt{domain-ftv}) and those contained in the types of the free variables in the context
-(\texttt{domain-all-ftv}). We also have a few properties of concatenation and mapping.
+(\texttt{domain-ftv}), and the free type variables in a context together with those contained in the
+types of the free variables in the context (\texttt{domain-all-ftv}).
 \begin{code}
   domain-ftv : Context → List Id
   domain-ftv ∅ = []
@@ -920,21 +892,27 @@ only interest ourselves with the free type variables that are contained in a con
   domain-all-ftv ∅ = []
   domain-all-ftv (ctx , x ⦂ A) = (ftv-ty A) ++ domain-all-ftv ctx
   domain-all-ftv (ctx , X) = X ∷ domain-all-ftv ctx
+\end{code}
 
+We also have a few properties of concatenation and mapping. Since applying a map to a context
+$\Gamma$ will only change the type of free variables, the free type variables will not change after
+the map is applied. The proof is a simple induction on $\Gamma$ and so left in appendix
+\ref{appendix:f_contexts}.
+\begin{code}
   domain-ftv-map-invariant : ∀ {Γ f}
     → domain-ftv Γ ≡ (domain-ftv (map f Γ))
-  domain-ftv-map-invariant {∅} = refl
-  domain-ftv-map-invariant {Γ , x ⦂ A} =
-    domain-ftv-map-invariant {Γ}
-  domain-ftv-map-invariant {Γ , X} =
-    cong (X ∷_) (domain-ftv-map-invariant {Γ})
+\end{code}
 
+We require two further lemmas about concatenation in the future. We can switch between context and
+list concatenation, the proof of which is a simple induction on one of the contexts ($\Delta$ in the
+below code block) and so left in appendix \ref{appendix:f_contexts}.
+\begin{code}
   domain-++ : ∀ (Γ Δ : Context)
     → (domain-ftv Δ) ++ (domain-ftv Γ) ≡ domain-ftv (Γ + Δ)
-  domain-++ Γ ∅ = refl
-  domain-++ Γ (Δ , x ⦂ A) = domain-++ Γ Δ
-  domain-++ Γ (Δ , Y) = cong (Y ∷_) (domain-++ Γ Δ)
+\end{code}
 
+If $X \in \texttt{domain-ftv}(\Delta)$, then $X \in \texttt{domain-ftv}(\Gamma + \Delta)$.
+\begin{code}
   domain-ftv-++ʳ : ∀ {X} (Γ Δ : Context)
     → X ∈ (domain-ftv Δ) → X ∈ domain-ftv (Γ + Δ)
   domain-ftv-++ʳ {X} Γ Δ X∈Δ = ∈-≡ (∈-++ˡ X∈Δ) (domain-++ Γ Δ)
@@ -1031,7 +1009,11 @@ evidence that a variable is in the domain of the context.
     → ftv-ty A ⊆ domain-ftv Δ
   ⊆-change-ctx {Γ} {A} A⊆Γ ρ =
     All-map (λ px → ∋⇒∈ (ρ (∈⇒∋ px))) A⊆Γ
+\end{code}
 
+We would like to apply an equality in a context accessor. Specifically, if types $A$ and $B$ are
+equal, then $\Gamma \ni x \colon A$ ought to be equal to $\Gamma \ni x \colon B$.
+\begin{code}
   ≡-with-∋-ty : ∀ {Γ x A B} → Γ ∋ x ⦂ A → A ≡ B → Γ ∋ x ⦂ B
   ≡-with-∋-ty ∋x refl = ∋x
 \end{code}
@@ -1222,10 +1204,9 @@ We can give a type to \textit{twice} and $\Omega$ now.
       ok-ctx = ok-∷fv ok-∅ lc-forall All.[]
 \end{code}
 
-We want to apply an equality in a type judgement. It is easiest to do so by defining
-these helper functions.
+We want to apply an equality in a type judgement, so we define helper functions as we did for type
+accessors.
 \begin{code}
-  -- Apply equality within type judgements.
   ≡-with-⊢-tm : ∀ {Γ L M A} → Γ ⊢ L ⦂ A → L ≡ M → Γ ⊢ M ⦂ A
   ≡-with-⊢-tm ⊢L refl = ⊢L
   ≡-with-⊢-ty : ∀ {Γ L A B} → Γ ⊢ L ⦂ A → A ≡ B → Γ ⊢ L ⦂ B
@@ -1235,6 +1216,7 @@ these helper functions.
 \end{code}
 
 \section{Typing properties}
+\label{chapter3:typing_properties}
 We first would like to show that all well-typed terms have an `Ok' environment. This is proven with
 a simple induction on the type judgement.
 \begin{code}
@@ -1485,6 +1467,7 @@ detailed in appendix \ref{appendix:f_type_properties}.
 \end{code}
 
 \section{Well-typed terms are locally closed}
+\label{chapter3:typed_is_locally_closed}
 If the typing rules are correct, then all well-typed terms are locally closed. Intuitively, since we
 only allow closed terms in our language, then all well-typed terms are locally closed. We prove this by inducting on the type judgement.
 \begin{code}
@@ -1555,6 +1538,7 @@ The proofs for the other two local closure predicates are presented in the appen
 \end{code}
 
 \section{Substitution preserves types}
+\label{chapter3:substitution_preserves_types}
 Before proving the main substitution theorem, we'll need a lemma for extracting one kind of
 substitution out of another. We only need the type substitution version of this property. The proof
 is a simple induction and a consequence of the previously proven \texttt{≻⇒:→-invariant}.
@@ -1874,34 +1858,47 @@ Agda's normalise feature. For example, in Emacs, one can press \texttt{C-c} \tex
 \texttt{eval (gas 10) ⊢twice-suc-zero} to see the derivation being automatically generated.
 
 \chapter{Conclusions}
-We have successfully developed an evaluator for System F using the locally nameless representation.
+\label{chapter4}
+We have successfully developed an evaluator for System F using the locally nameless representation
+and have proven many important properties of the language, culminating in progress and preservation.
+However, to do so, we required proofs which were very difficult to explain. It is unclear if a
+different proof approach would have given a simpler function body. Additionally, despite following
+Agda's requirements for termination, the compiler still complains that \texttt{subst} does not
+terminate. Of course, termination-checking is undecidable, but a proof of \texttt{subst} without the
+\texttt{\{\#- TERMINATING -\#\}} pragma would be desirable.
 
 \paragraph*{Future work} Most, if not all, of the prior literature on locally nameless
 representation, including the work presented here, uses an extrinsically typed approach. This means
 that we defined the syntax of the langauge first and then restricted ourselves to only work with
-well-typed terms. Using intrinsic typing, we instead define the typing rules and immediately
+well-typed terms. Using intrinsic typing, we instead first define the typing rules and immediately
 restrict ourselves to only well-typed terms. For the STLC,
 \citet[chapter~De~Bruijn]{wadler_programming_2022} found that this results in some theorems becoming
-trivial, such as preservation, and the overall code being more concise. As preservation proved to be
-the most difficult theorem in this work, this would certainly be welcome. The main problem with this
-is that the locally nameless representation requires a lot of properties of syntax to be proven. We
-would need two contexts, one for free variables and one for bound variables, and this may diminish
-the conciseness that an intrinsic typed approach is supposed to give.
+trivial, such as preservation, and the overall code being more concise. As preservation
+(specifically \texttt{subst} and \texttt{subst-ty}) proved to be the most difficult theorem in this
+work, this would certainly be welcome. The main problem with an intrinsically typed approach is that
+the locally nameless representation requires infrastructure for the syntax to be defined. Since
+bound variables outside of a $\lambda$-abstraction are ill-typed, it would prove difficult to
+combine an intrinsically typed approach with the infrastructure required.
 
-The language we presented here is plain System F, which isn't usually a subject of interest. The
-POPLMark challenge asks for an implementation of System F with subtyping
-\citep{chargueraud_locally_2012}; implementing this shouldn't be too hard, as it would only require
-a few extra type judgements for subtyping, extra evaluation rules, and some further restrictions on
-the `Ok' predicate. System F$_\omega$ is an important variant which has previously been studied by
-\citet{hutton_system_2019} in Agda, but a locally nameless approach is yet to be used for such a
-more complex langauge.
+The language we presented here is plain System F, but often the literature studies more complex
+systems. The \textsc{PoplMark} challenge asks for an implementation of System F with subtyping
+\citep{hutchison_mechanized_2005}; implementing this would only require extending the formalisation
+with a few extra type judgements for subtyping, extra evaluation rules, and some further
+restrictions on the `Ok' predicate. As mentioned above, System F$_\omega$ has previously been
+formalised by \citet{hutton_system_2019} in Agda, and a locally nameless approach has been used for
+System F$_\omega^\ast$ by \citet{rendel_typed_2009}, an extension of System F$_\omega$ which allows
+typed self-representation. Thus, an Agda development would not be unreasonable to develop.
 
 \bibliographystyle{plainnat}
 \bibliography{dissertation}
 
 \appendix
 
-\chapter{PLFA Adaptions}
+\chapter{A brief overiew of Agda}
+\label{appendix:agda_overview}
+\input{agda_example.tex}
+
+\chapter{PLFA adaptions}
 \label{appendix:plfa}
 
 These functions are adapted from the PLFA textbook \citep{wadler_programming_2022}.
@@ -1909,6 +1906,7 @@ These functions are adapted from the PLFA textbook \citep{wadler_programming_202
 \input{plfa_adaptions.tex}
 
 \chapter{Miscellaneous System F proofs}
+\label{appendix:f}
 \section{Local Closure}
 \label{appendix:f_local_closure}
 \begin{code}
@@ -2025,6 +2023,34 @@ These functions are adapted from the PLFA textbook \citep{wadler_programming_202
 \end{code}
 
 \begin{code}
+  -- open-rec-lc-lemma : ∀ {L : Term} {i j u v} → i ≢ j
+  --   → tm-tm[ i —→ u ] (tm-tm[ j —→ v ] L) ≡ tm-tm[ j —→ v ] L
+  --   → tm-tm[ i —→ u ] L ≡ L
+  open-rec-lc-lemma {fr x} i≢j assump = refl
+  open-rec-lc-lemma {# k} {i} {j} i≢j assump
+    with i ≟ℕ j | i ≟ℕ k
+  ... | yes refl | _ = contradiction refl i≢j
+  ... | no _     | no _ = refl
+  ... | no _     | yes refl with j ≟ℕ k
+  ...   | yes refl = contradiction refl i≢j
+  ...   | no j≢k with k ≟ℕ k
+  ...     | yes refl with () ← assump
+  ...     | no  k≢k  = contradiction refl k≢k
+  open-rec-lc-lemma {ƛ L} {i} {j} i≢j assump
+    rewrite open-rec-lc-lemma {L} {suc i} {suc j}
+      (suc-preserves-≢ i≢j)
+      (ƛ-inj assump) = refl
+  open-rec-lc-lemma {L · M} i≢j assump rewrite
+      open-rec-lc-lemma {L} i≢j (proj₁ (·-inj assump))
+    | open-rec-lc-lemma {M} i≢j (proj₂ (·-inj assump)) = refl
+  open-rec-lc-lemma {Λ L} i≢j assump
+    rewrite open-rec-lc-lemma {L} i≢j (Λ-inj assump) = refl
+  open-rec-lc-lemma {L [ x ]} i≢j assump
+    rewrite open-rec-lc-lemma {L} i≢j (proj₁ ([]-inj assump)) = refl
+  open-rec-lc-lemma {‵zero} i≢j assump = refl
+  open-rec-lc-lemma {‵suc L} i≢j assump
+    rewrite open-rec-lc-lemma {L} i≢j (‵suc-inj assump) = refl
+
   -- open-rec-lc-lemma-ty : ∀ {A i j u v}
   --   → i ≢ j
   --   → ty-ty[ i —→ u ] (ty-ty[ j —→ v ] A) ≡ ty-ty[ j —→ v ] A
@@ -2171,6 +2197,18 @@ These functions are adapted from the PLFA textbook \citep{wadler_programming_202
   :=-≻ {∀ᵀ A} {i = i}  j≥i i≻A i≻C k =
     let И⟨ Иe₁ , Иe₂ ⟩ = (:=-≻ (s≤s j≥i) (i≻∀A⇒si≻A i≻A) (lemma2·6-ty (n≤1+n i) i≻C)) (suc k) ⦃ s≤s it ⦄
     in И⟨ Иe₁ , (λ a {a∉} → cong ∀ᵀ_ (Иe₂ a {a∉})) ⟩
+
+  -- :=-∉-invariant : ∀ {A X B} → X ∉ ftv-ty A
+  --   → (ty-ty[ X := B ] A) ≡ A
+  :=-∉-invariant {‵ℕ} X∉A = refl
+  :=-∉-invariant {frᵀ Y} {X} X∉A with X ≟lchar Y
+  ... | yes refl = contradiction refl (∉∷[]⇒≢ X∉A)
+  ... | no  X≢Y  = refl
+  :=-∉-invariant {#ᵀ k} X∉A = refl
+  :=-∉-invariant {A ⇒ B} {X} {B = C} X∉ = cong₂ _⇒_
+    (:=-∉-invariant {A} (proj₁ (∉-++ X∉)))
+    (:=-∉-invariant {B} (proj₂ (∉-++ X∉)))
+  :=-∉-invariant {∀ᵀ A} X∉A = cong ∀ᵀ_ (:=-∉-invariant {A} X∉A)
 \end{code}
 
 \begin{minted}{agda}
@@ -2193,6 +2231,24 @@ These functions are adapted from the PLFA textbook \citep{wadler_programming_202
   ty-tm[ k :→ T ] ‵zero = ‵zero
   ty-tm[ k :→ T ] (‵suc L) = ‵suc ty-tm[ k :→ T ] L
 \end{minted}
+
+\section{Type contexts}
+\label{appendix:f_contexts}
+\begin{code}
+  -- domain-ftv-map-invariant : ∀ {Γ f}
+  --   → domain-ftv Γ ≡ (domain-ftv (map f Γ))
+  domain-ftv-map-invariant {∅} = refl
+  domain-ftv-map-invariant {Γ , x ⦂ A} =
+    domain-ftv-map-invariant {Γ}
+  domain-ftv-map-invariant {Γ , X} =
+    cong (X ∷_) (domain-ftv-map-invariant {Γ})
+
+  -- domain-++ : ∀ (Γ Δ : Context)
+  --   → (domain-ftv Δ) ++ (domain-ftv Γ) ≡ domain-ftv (Γ + Δ)
+  domain-++ Γ ∅ = refl
+  domain-++ Γ (Δ , x ⦂ A) = domain-++ Γ Δ
+  domain-++ Γ (Δ , Y) = cong (Y ∷_) (domain-++ Γ Δ)
+\end{code}
 
 \section{Type judgements}
 \label{appendix:f_type_judgements}

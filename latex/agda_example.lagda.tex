@@ -1,0 +1,104 @@
+\begin{code}
+module agda_example where
+\end{code}
+
+In Agda, most definitions are done inductively, that is, using recursion. For example, following the
+Peano axioms for the natural numbers $\nat$ \citep{boolos_freges_1995}, we may define them like so.
+\begin{code}
+  data ℕ : Set where
+    zero : ℕ
+    suc  : ℕ → ℕ
+\end{code}
+We define a \textit{data} type \texttt{ℕ} which is of type \texttt{Set}. \texttt{Set} is not a set,
+but a type. While \texttt{Set} isn't Agda's most basic type, we can treat as such without issues for
+this document. We define two constructors of \texttt{ℕ}: one called \texttt{zero} which is of type
+\texttt{ℕ}, and one called \texttt{suc} which is a function taking an argument of type \texttt{ℕ}
+and returns a new \texttt{ℕ}.
+
+\paragraph*{Propositions as types.} First noted by William A. Howard in 1969
+\citep{howard_formulae-as-types_1980}, there is a direct correspondence between proofs and programs.
+\citet{wadler_propositions_2015} calls this correspondence \textit{propositions as types}, known as
+the Curry-Howard correspondence by some authors. Thanks to this correspondence, a correct Agda
+function with the appropriate type signature matching the claim (proposition) suffices for a proof.
+For example, a proof that addition is associative would use recursion, which corresponds to
+induction. We shall now introduce all necessary knowledge to understand this proof.
+
+Equality is defined by reflexivity, that is, anything is equal to itself. In Agda, we declare
+equality to be written using \texttt{≡}.
+\begin{code}
+  infix 4 _≡_
+  data _≡_ {A : Set} (x : A) : A → Set where
+    refl : x ≡ x
+\end{code}
+The first line gives Agda information on how tightly the operator should bind. Then, we use an
+implicit argument so Agda uses its inference to find something of type \texttt{Set} and assigns it
+to a variable named \texttt{A} which can now be used in the rest of the type signature. Implicit
+arguments use \{curly brackets\}. Then the first argument is of some type \texttt{A}. If we want to
+give an explicit argument a name, we need to use (round brackets). The second argument is also of
+type \texttt{A}, and the expression will return something of type \texttt{Set}.
+
+We then define a constructor for \texttt{\_≡\_}, named \texttt{refl}. For any \texttt{x} of type
+\texttt{A}, we have that \texttt{refl x} will construct \texttt{x ≡ x}. This is the only way to
+construct equality in Agda.
+
+We also know that equality is a congruence.
+\begin{code}
+  cong : ∀ {A B : Set} (f : A → B) {x y : A}
+    → x ≡ y
+    → f x ≡ f y
+  cong f refl = refl
+\end{code}
+For some function \texttt{f : A → B} and arguments \texttt{x} and \texttt{y} of type \texttt{A}, if
+\texttt{x ≡ y}, then \texttt{f x ≡ f y}. We use implicit arguments for \texttt{A} and \texttt{B} and
+arguments \texttt{x} and \texttt{y}. Notice how we used a line break to make the type signature
+easier to read.
+
+In the function body, we take in our first argument and give it the name \texttt{f}, this is the
+function \texttt{f} in the type signature, but we could have given it a different name, like
+\texttt{g}. The next argument is the evidence that \texttt{x ≡ y}. We can use
+\textit{pattern-matching} to deconstruct the argument and present its constructors instead; since
+equality only has the one arguemnt---\texttt{refl}---this will be the second argument. In doing so,
+Agda now knows that \texttt{x} and \texttt{y} are the same, so the proof holds by reflexivity.
+
+We can define addition recursively. The function \texttt{\_+\_} takes as arguments two natural
+numbers. Notice how we need not name the arguments like we have done before.
+\begin{code}
+  _+_ : ℕ → ℕ → ℕ
+\end{code}
+
+As our first argument, we would have a variable of type \texttt{ℕ}. But using pattern-matching
+again, we can replace it with the two constructors for \texttt{ℕ} defined earlier.
+\begin{code}
+  zero  + m = m
+  suc n + m = suc (n + m)
+\end{code}
+
+Finally, we can prove that addition is associative.
+\begin{code}
+  +-assoc : ∀ (m n p : ℕ) → (m + n) + p ≡ m + (n + p)
+  +-assoc zero    n p = refl
+\end{code}
+For the \texttt{zero} case, we are trying to prove \texttt{n + p ≡ n + p}, which is true by
+reflexivity.
+\begin{code}
+  +-assoc (suc m) n p = cong suc (+-assoc m n p)
+\end{code}
+For the \texttt{suc} case (the inductive step), the inductive hypothesis corresponds to the
+recursive call \texttt{+-assoc m n p}. We need to prove that \texttt{suc ((m + n) + p) ≡ suc (m + (n
++ p))} holds. By using the fact that equality is a congruence, we can use the inductive hypothesis
+to prove the result. This is equivalent to calling \texttt{cong} with the parameter \texttt{f} being
+\texttt{suc} and \texttt{x ≡ y} being \texttt{+-assoc m n p}.
+
+We can also make use of forward-declarations. Similar to languages like C, we can define a
+function's type signature and give its body later. Consider this Agda code.
+\begin{code}
+  add-twice : ℕ → ℕ
+  
+  add-four-times : ℕ → ℕ
+  add-four-times n = (add-twice n) + (add-twice n)
+
+  add-twice n = n + n
+\end{code}
+We define a function called \texttt{add-twice} without a function body. Then we define another
+function \texttt{add-four-times} which uses the \texttt{add-twice} function in its body. The
+function body of \texttt{add-twice} is only given afterwards.
