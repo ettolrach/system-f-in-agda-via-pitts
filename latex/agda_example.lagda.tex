@@ -17,11 +17,12 @@ and returns a new \texttt{ℕ}.
 
 \paragraph*{Propositions as types.} First noted by William A. Howard in 1969
 \citep{howard_formulae-as-types_1980}, there is a direct correspondence between proofs and programs.
-\citet{wadler_propositions_2015} calls this correspondence \textit{propositions as types}, known as
-the Curry-Howard correspondence by some authors. Thanks to this correspondence, a correct Agda
-function with the appropriate type signature matching the claim (proposition) suffices for a proof.
-For example, a proof that addition is associative would use recursion, which corresponds to
-induction. We shall now introduce all necessary knowledge to understand this proof.
+The correspondence is called \textit{propositions as types}, first named so by Martin-Löf in 1968
+\citep{wadler_propositions_2015}. The correspondence is also known as the Curry-Howard
+correspondence by some authors. Thanks to this correspondence, a correct Agda function with the
+appropriate type signature matching the claim (proposition) suffices for a proof. For example, a
+proof that addition is associative would use recursion, which corresponds to induction. We shall now
+introduce all necessary knowledge to understand this proof.
 
 Equality is defined by reflexivity, that is, anything is equal to itself. In Agda, we declare
 equality to be written using \texttt{≡}.
@@ -53,7 +54,7 @@ For some function \texttt{f : A → B} and arguments \texttt{x} and \texttt{y} o
 arguments \texttt{x} and \texttt{y}. Notice how we used a line break to make the type signature
 easier to read.
 
-In the function body, we take in our first argument and give it the name \texttt{f}, this is the
+In the function body, we take in our first argument and give it the name \texttt{f}. This is the
 function \texttt{f} in the type signature, but we could have given it a different name, like
 \texttt{g}. The next argument is the evidence that \texttt{x ≡ y}. We can use
 \textit{pattern-matching} to deconstruct the argument and present its constructors instead; since
