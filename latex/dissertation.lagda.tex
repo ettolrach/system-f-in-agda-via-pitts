@@ -2652,66 +2652,226 @@ typechecked by the compiler and is identical to the code below.
 \end{code}
 
 \chapter{Local closure definition equivalence}
-We aim to prove that our definition of local closure is equivalent to the definition that Pitts TODO
-CITE gives.
+We aim to prove that our definition of local closure is equivalent to the definition that
+\citet{pitts_locally_2023} gives.
 
 \begin{code}
   open import Data.Product using (∃; ∃-syntax)
-  _≻'_ : ℕ → Type → Set
-  i ≻' A = (j : ℕ) ⦃ _ : j ≥ i ⦄ → ∃[ T ] (ty-ty[ j —→ T ] A ≡ A)
+  _≻'ty_ : ℕ → Type → Set
+  i ≻'ty A = (j : ℕ) ⦃ _ : j ≥ i ⦄ → ∃[ T ] (ty-ty[ j —→ T ] A ≡ A)
 \end{code}
 
 Specifically, we will prove an if and only if relation between the two. We will only prove this for
 the type-in-type local closure, but the proof for the other two openings works similarly.
 \begin{code}
-  ≻ty⇒≻' : ∀ (i : ℕ) (A : Type)
-    → i ≻ty A → i ≻' A
+  ≻ty⇒≻'ty : ∀ (i : ℕ) (A : Type)
+    → i ≻ty A → i ≻'ty A
 
-  ≻'⇒≻ty : ∀ (i : ℕ) (A : Type)
-    → i ≻' A → i ≻ty A
+  ≻'ty⇒≻ty : ∀ (i : ℕ) (A : Type)
+    → i ≻'ty A → i ≻ty A
 \end{code}
 
-The proof that the cofinite definition implies the existential one is simple. The cofinite
-quantification gives a `disallow' list. Simply choose an identifier not in that list, and use
-this identifier for the existential quantification.
+The first proof is straight-forward. Since we can always create a new identifier, we simply create
+one that is not in the `disallow' list provided by the cofinite quantifier.
+
 \begin{code}
-  ≻ty⇒≻' i A i≻tyA j =
+  ≻ty⇒≻'ty i A i≻tyA j =
     let И⟨ Иe₁ , Иe₂ ⟩ = i≻tyA j
-    in ⟨ (fresh Иe₁) , (Иe₂ (fresh Иe₁) {fresh-correct Иe₁}) ⟩
+    in ⟨ (fresh Иe₁) , Иe₂ (fresh Иe₁) {fresh-correct Иe₁} ⟩
 \end{code}
 
-Proving the other implication is much more difficult. To do this we need to use an alternative
-definition of local closure given by TODO: CITE CHARGUÉRAUD.
+Now we prove the other implication by induction on the structure of the type.
+
+The base cases \texttt{‵ℕ}, and \texttt{frᵀ} are trivial. For a bound variable, if the bound
+variable is not the same as the index, we don't replace and so the proof is completed by
+reflexivity. If they are the same, then that means that the other local closure would have opened
+the term, which would \textit{not} have left the term unchanged---a contradiction. The other cases
+are the inductive steps and simply use the inductive hypothesis together with the injectivity of
+\texttt{⇒}, \texttt{∀ᵀ}, and \texttt{‵suc}.
 \begin{code}
-  data _lc-at_ : Type → ℕ → Set where
-    lc-at-‵ℕ : ∀ {i}
-      → ‵ℕ lc-at i
-    
-    lc-at-frᵀ : ∀ {X i}
-      → (frᵀ X) lc-at i
-    
-    lc-at-#ᵀ : ∀ {j i} ⦃ _ : j < i ⦄
-      → (#ᵀ j) lc-at i
-
-    lc-at-⇒ : ∀ {i A B} → A lc-at i → B lc-at i
-      → (A ⇒ B) lc-at i
-
-    lc-at-∀ᵀ : ∀ {i A} → A lc-at (suc i)
-      → (∀ᵀ A) lc-at i
-\end{code}
-
-Now we prove the implication by induction on the structure of the type.
-\begin{code}
-  ≻'⇒≻ty i ‵ℕ i≻'A = n≻‵ℕ
-  ≻'⇒≻ty i (frᵀ X) i≻'A j = И⟨ [] , (λ _ → refl) ⟩
-  ≻'⇒≻ty i (#ᵀ k) i≻'A j with j ≟ℕ k
+  ≻'ty⇒≻ty i ‵ℕ i≻'tyA = n≻‵ℕ
+  ≻'ty⇒≻ty i (frᵀ X) i≻'tyA j = И⟨ [] , (λ _ → refl) ⟩
+  ≻'ty⇒≻ty i (#ᵀ k) i≻'tyA j with j ≟ℕ k
   ... | no  j≢k  = И⟨ [] , (λ _ → refl) ⟩
-  ... | yes refl with i≻'A j
+  ... | yes refl with i≻'tyA j
   ...   | ⟨ X , op-invariant ⟩ with k ≟ℕ k
   ...     | yes refl with () ← op-invariant
   ...     | no  k≢k  = contradiction refl k≢k
-  ≻'⇒≻ty i (A ⇒ B) i≻'A j = {!!}
-  ≻'⇒≻ty i (∀ᵀ A) i≻'A = {!!}
+  ≻'ty⇒≻ty i (A ⇒ B) i≻'ty j =
+    let И⟨ A-Иe₁ , A-Иe₂ ⟩ = (≻'ty⇒≻ty i A i≻'tyA) j
+        И⟨ B-Иe₁ , B-Иe₂ ⟩ = (≻'ty⇒≻ty i B i≻'tyB) j
+    in И⟨ A-Иe₁ ++ B-Иe₁ , (λ X {X∉} →
+      let ⟨ X∉A , X∉B ⟩ = ∉-++ X∉
+      in cong₂ _⇒_ (A-Иe₂ X {X∉A}) (B-Иe₂ X {X∉B})) ⟩
+    where
+      i≻'tyA : i ≻'ty A
+      i≻'tyA j = let ⟨ X , op-invariant ⟩ = i≻'ty j
+        in ⟨ X , proj₁ (⇒-inj op-invariant) ⟩
+      i≻'tyB : i ≻'ty B
+      i≻'tyB j = let ⟨ X , op-invariant ⟩ = i≻'ty j
+        in ⟨ X , proj₂ (⇒-inj op-invariant) ⟩
+  ≻'ty⇒≻ty i (∀ᵀ A) i≻'ty j =
+    let И⟨ Иe₁ , Иe₂ ⟩ = induc-hypo (suc j) ⦃ s≤s it ⦄
+    in И⟨ Иe₁ , (λ X {X∉} → (cong ∀ᵀ_ (Иe₂ X {X∉}))) ⟩
+    where
+      si≻'tyA : (suc i) ≻'ty A
+      si≻'tyA (suc j) =
+        let ⟨ X , op-invariant ⟩ = i≻'ty j ⦃ ≤-pred it ⦄
+        in ⟨ X , ∀-inj op-invariant ⟩
+      induc-hypo : (suc i) ≻ty A
+      induc-hypo = ≻'ty⇒≻ty (suc i) A si≻'tyA
+\end{code}
+
+The proofs for the other kinds of local closure work by the same reasoning.
+\begin{code}
+  _≻'tm_ : ℕ → Term → Set
+  i ≻'tm L = (j : ℕ) ⦃ _ : j ≥ i ⦄ → ∃[ T ] (tm-tm[ j —→ T ] L ≡ L)
+
+  ≻tm⇒≻'tm : ∀ (i : ℕ) (L : Term)
+    → i ≻tm L → i ≻'tm L
+  ≻tm⇒≻'tm i L i≻tmA j = let И⟨ Иe₁ , Иe₂ ⟩ = i≻tmA j
+    in ⟨ (fresh Иe₁) , Иe₂ (fresh Иe₁) {fresh-correct Иe₁} ⟩
+
+  ≻'tm⇒≻tm : ∀ (i : ℕ) (L : Term)
+    → i ≻'tm L → i ≻tm L
+  ≻'tm⇒≻tm i (fr x) i≻'L j = И⟨ [] , (λ _ → refl) ⟩
+  ≻'tm⇒≻tm i (# k) i≻'L j with j ≟ℕ k
+  ... | no  _    = И⟨ [] , (λ _ → refl) ⟩
+  ... | yes refl with i≻'L j
+  ...   | ⟨ X , op-invariant ⟩ with k ≟ℕ k
+  ...     | yes refl with () ← op-invariant
+  ...     | no  k≢k = contradiction refl k≢k
+  ≻'tm⇒≻tm i (ƛ L) i≻' j =
+    let И⟨ Иe₁ , Иe₂ ⟩ = induc-hypo (suc j) ⦃ s≤s it ⦄
+    in И⟨ Иe₁ , (λ a {a∉} → cong ƛ_ (Иe₂ a {a∉})) ⟩
+    where
+      si≻'L : (suc i) ≻'tm L
+      si≻'L (suc j) =
+        let ⟨ X , op-invariant ⟩ = i≻' j ⦃ ≤-pred it ⦄
+        in ⟨ X , ƛ-inj op-invariant ⟩
+      induc-hypo : (suc i) ≻tm L
+      induc-hypo = ≻'tm⇒≻tm (suc i) L si≻'L
+  ≻'tm⇒≻tm i (L · M) i≻' j =
+    let И⟨ L-Иe₁ , L-Иe₂ ⟩ = (≻'tm⇒≻tm i L i≻'L) j
+        И⟨ M-Иe₁ , M-Иe₂ ⟩ = (≻'tm⇒≻tm i M i≻'M) j
+    in И⟨ L-Иe₁ ++ M-Иe₁ , (λ a {a∉} →
+      let ⟨ a∉L , a∉M ⟩ = ∉-++ a∉
+      in cong₂ _·_ (L-Иe₂ a {a∉L}) (M-Иe₂ a {a∉M})) ⟩
+    where
+      i≻'L : i ≻'tm L
+      i≻'L j = let ⟨ x , op-invariant ⟩ = i≻' j
+        in ⟨ x , proj₁ (·-inj op-invariant) ⟩
+      i≻'M : i ≻'tm M
+      i≻'M j = let ⟨ x , op-invariant ⟩ = i≻' j
+        in ⟨ x , proj₂ (·-inj op-invariant) ⟩      
+  ≻'tm⇒≻tm i (Λ L) i≻' j =
+    let И⟨ Иe₁ , Иe₂ ⟩ = induc-hypo j
+    in И⟨ Иe₁ , (λ a {a∉} → cong Λ_ (Иe₂ a {a∉})) ⟩
+    where
+      i≻'L : i ≻'tm L
+      i≻'L j =
+        let ⟨ X , op-invariant ⟩ = i≻' j
+        in ⟨ X , Λ-inj op-invariant ⟩
+      induc-hypo : i ≻tm L
+      induc-hypo = ≻'tm⇒≻tm i L i≻'L
+  ≻'tm⇒≻tm i (L [ A ]) i≻' j =
+    let И⟨ Иe₁ , Иe₂ ⟩ = induc-hypo j
+    in И⟨ Иe₁ , (λ a {a∉} → cong _[ A ] (Иe₂ a {a∉})) ⟩
+    where
+      i≻'L : i ≻'tm L
+      i≻'L j =
+        let ⟨ X , op-invariant ⟩ = i≻' j
+        in ⟨ X , proj₁ ([]-inj op-invariant) ⟩
+      induc-hypo : i ≻tm L
+      induc-hypo = ≻'tm⇒≻tm i L i≻'L
+  ≻'tm⇒≻tm i ‵zero i≻' j = И⟨ [] , (λ _ → refl) ⟩
+  ≻'tm⇒≻tm i (‵suc L) i≻' j =
+    let И⟨ Иe₁ , Иe₂ ⟩ = induc-hypo j
+    in И⟨ Иe₁ , (λ a {a∉} → cong ‵suc_ (Иe₂ a {a∉})) ⟩
+    where
+      i≻'L : i ≻'tm L
+      i≻'L j =
+        let ⟨ X , op-invariant ⟩ = i≻' j
+        in ⟨ X , ‵suc-inj op-invariant ⟩
+      induc-hypo : i ≻tm L
+      induc-hypo = ≻'tm⇒≻tm i L i≻'L
+
+  _≻'ty-tm_ : ℕ → Term → Set
+  i ≻'ty-tm L = (j : ℕ) ⦃ _ : j ≥ i ⦄ → ∃[ a ] (ty-tm[ j —→ a ] L ≡ L)
+
+  ≻ty-tm⇒≻'ty-tm : ∀ (i : ℕ) (L : Term)
+    → i ≻ty-tm L → i ≻'ty-tm L
+  ≻ty-tm⇒≻'ty-tm i L i≻L j =
+    let И⟨ Иe₁ , Иe₂ ⟩ = i≻L j
+    in ⟨ (fresh Иe₁) , Иe₂ (fresh Иe₁) {fresh-correct Иe₁} ⟩
+
+  ≻'ty-tm⇒≻ty-tm : ∀ (i : ℕ) (L : Term)
+    → i ≻'ty-tm L → i ≻ty-tm L
+  ≻'ty-tm⇒≻ty-tm i (fr x) i≻'L j = И⟨ [] , (λ _ → refl) ⟩
+  ≻'ty-tm⇒≻ty-tm i (# k) i≻'L j = И⟨ [] , (λ _ → refl) ⟩
+  ≻'ty-tm⇒≻ty-tm i (ƛ L) i≻' j =
+    let И⟨ Иe₁ , Иe₂ ⟩ = induc-hypo j
+    in И⟨ Иe₁ , (λ a {a∉} → cong ƛ_ (Иe₂ a {a∉})) ⟩
+    where
+      i≻'L : i ≻'ty-tm L
+      i≻'L j =
+        let ⟨ X , op-invariant ⟩ = i≻' j
+        in ⟨ X , ƛ-inj op-invariant ⟩
+      induc-hypo : i ≻ty-tm L
+      induc-hypo = ≻'ty-tm⇒≻ty-tm i L i≻'L
+  ≻'ty-tm⇒≻ty-tm i (L · M) i≻' j =
+    let И⟨ L-Иe₁ , L-Иe₂ ⟩ = (≻'ty-tm⇒≻ty-tm i L i≻'L) j
+        И⟨ M-Иe₁ , M-Иe₂ ⟩ = (≻'ty-tm⇒≻ty-tm i M i≻'M) j
+    in И⟨ L-Иe₁ ++ M-Иe₁ , (λ a {a∉} →
+      let ⟨ a∉L , a∉M ⟩ = ∉-++ a∉
+      in cong₂ _·_ (L-Иe₂ a {a∉L}) (M-Иe₂ a {a∉M})) ⟩
+    where
+      i≻'L : i ≻'ty-tm L
+      i≻'L j = let ⟨ x , op-invariant ⟩ = i≻' j
+        in ⟨ x , proj₁ (·-inj op-invariant) ⟩
+      i≻'M : i ≻'ty-tm M
+      i≻'M j = let ⟨ x , op-invariant ⟩ = i≻' j
+        in ⟨ x , proj₂ (·-inj op-invariant) ⟩      
+  ≻'ty-tm⇒≻ty-tm i (Λ L) i≻' j =
+    let И⟨ Иe₁ , Иe₂ ⟩ = induc-hypo (suc j) ⦃ s≤s it ⦄
+    in И⟨ Иe₁ , (λ a {a∉} → cong Λ_ (Иe₂ a {a∉})) ⟩
+    where
+      si≻'L : (suc i) ≻'ty-tm L
+      si≻'L (suc j) =
+        let ⟨ X , op-invariant ⟩ = i≻' j ⦃ ≤-pred it ⦄
+        in ⟨ X , Λ-inj op-invariant ⟩
+      induc-hypo : (suc i) ≻ty-tm L
+      induc-hypo = ≻'ty-tm⇒≻ty-tm (suc i) L si≻'L
+  ≻'ty-tm⇒≻ty-tm i (L [ A ]) i≻' j =
+    let И⟨ L-Иe₁ , L-Иe₂ ⟩ = L-induc-hypo j
+        И⟨ A-Иe₁ , A-Иe₂ ⟩ = A-induc-hypo j
+    in И⟨ L-Иe₁ ++ A-Иe₁ , (λ a {a∉} →
+      let ⟨ a∉L , a∉A ⟩ = ∉-++ a∉
+      in cong₂ _[_] (L-Иe₂ a {a∉L}) (A-Иe₂ a {a∉A}))⟩
+    where
+      i≻'L : i ≻'ty-tm L
+      i≻'L j =
+        let ⟨ X , op-invariant ⟩ = i≻' j
+        in ⟨ X , proj₁ ([]-inj op-invariant) ⟩
+      L-induc-hypo : i ≻ty-tm L
+      L-induc-hypo = ≻'ty-tm⇒≻ty-tm i L i≻'L
+      i≻'A : i ≻'ty A
+      i≻'A j =
+        let ⟨ X , op-invariant ⟩ = i≻' j
+        in ⟨ X , proj₂ ([]-inj op-invariant) ⟩
+      A-induc-hypo : i ≻ty A
+      A-induc-hypo = ≻'ty⇒≻ty i A i≻'A
+  ≻'ty-tm⇒≻ty-tm i ‵zero i≻' j = И⟨ [] , (λ _ → refl) ⟩
+  ≻'ty-tm⇒≻ty-tm i (‵suc L) i≻' j =
+    let И⟨ Иe₁ , Иe₂ ⟩ = induc-hypo j
+    in И⟨ Иe₁ , (λ a {a∉} → cong ‵suc_ (Иe₂ a {a∉})) ⟩
+    where
+      i≻'L : i ≻'ty-tm L
+      i≻'L j =
+        let ⟨ X , op-invariant ⟩ = i≻' j
+        in ⟨ X , ‵suc-inj op-invariant ⟩
+      induc-hypo : i ≻ty-tm L
+      induc-hypo = ≻'ty-tm⇒≻ty-tm i L i≻'L
 \end{code}
 
 \chapter{Prior work submitted for TSPL}
