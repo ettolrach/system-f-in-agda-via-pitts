@@ -1,9 +1,9 @@
 \subsection{The lambda calculus.}
-The $\lambda$-calculus (pronounced \textit{lambda calculus}), is a theoretical model of computation
-developed by Alonzo \citet{church_set_1932} and is the basis for System F. The $\lambda$-calculus
-looks and works similarly to familiar functional programming languages, yet its definition is as
-minimal as possible while still being Turing-complete. Although Turing machines would be invented
-independently of Church's work after the $\lambda$-calculus \citep{turing_computable_1937},
+The $\lambda$-calculus is a theoretical model of computation developed by Alonzo
+\citet{church_set_1932} and is the basis for System F. The $\lambda$-calculus looks and works
+similarly to familiar functional programming languages, yet its definition is as minimal as possible
+while still being Turing-complete. Although Turing machines would be invented after the
+$\lambda$-calculus and independently of Church's work \citep{turing_computable_1937},
 `turing-complete' has become a shorthand for `universal method of computation'. Such a universal
 method was not Church's initial goal, but is why we are still interested in the $\lambda$-calculus.
 
@@ -34,7 +34,7 @@ occurrence of $x$ in the term $N$).
 
 The last reduction of the $\lambda$-calculus is $\eta$-reduction; for some term $L$, we have that
 $\lambda \, x. L x \mapsto_{\eta} L$ where $x$ does not appear free in $L$. I will not be focussing
-on this reduction.
+on this reduction and won't mention it henceforth as it is not relevant.
 
 If no $\beta$-reductions can be performed on a term, we say that it is in its \textit{normal form}.
 We shall represent an arbitrary number of successive $\beta$-reductions using the Kleene star
@@ -44,17 +44,18 @@ $N$ eventually $\beta$-reduce to \citep{church_properties_1936}.
 
 Notably, some terms may not have a normal form. Take \textit{little omega} $\omega \triangleq
 \lambda \, x. (x x)$ and \textit{omega} (sometimes called the $\Omega$\textit{-combinator}) $\Omega
-\, \triangleq \, \omega \omega$. After a $\beta$ reduction step, $\Omega$ will remain unchanged and
-we can perform the same $\beta$ reduction.
+\, \triangleq \, \omega \omega$. After a reduction step, $\Omega$ will remain unchanged and we can
+perform the same reduction.
 
 \begin{equation*}
   (\lambda \, x. (x x)) (\lambda \, x. (x x)) \quad
   \mapsto_{\beta} \quad (\lambda \, x. (x x)) (\lambda \, x. (x x))
 \end{equation*}
 
-The \textit{y-combinator} $\mathcal{Y} \triangleq (\lambda \, f. (\lambda \, x. f (x x )) (\lambda
-\, x. f (xx)))$ allows for recursion. For some term $L$, $\mathcal{Y} L \mapsto_{\beta^{\star}} L
-(\mathcal{Y} L)$. If we set $L$ to some free variable $L = x$, then the term will grow forever.
+The \textit{y-combinator} is defined as $\mathcal{Y} \triangleq (\lambda \, f. (\lambda \, x. f (x x
+)) (\lambda \, x. f (xx)))$. For some term $L$, we have the eventual reduction $\mathcal{Y} L
+\mapsto_{\beta^{\star}} L (\mathcal{Y} L)$. If we set $L$ to a free variable $L = x$, then the term
+will grow forever.
 
 Terms which do not reduce to a final value \textit{do not have a normal form}. The $\Omega$-
 combinator and $\mathcal{Y} x$ (for some free variable $x$) are examples of terms that do not have
@@ -67,7 +68,7 @@ requires each term to have a \textit{type}. In the STLC, terms which do not have
 cannot be given a type. Thus, all expressions will eventually reduce to an irreducible
 expression---their normal form. This is also called \textit{strong normalisation}
 \citep{pierce_types_2002}. However, this means we can longer represent all of the terms of the
-untyped $\lambda$-calculus (such as $\Omega$), and thus, Turing-completeness is lost.
+untyped $\lambda$-calculus (such as $\Omega$), and Turing-completeness is lost.
 
 In the STLC, some base types need to be chosen. These are indeterminates which are not given
 definitions. \citet{church_formulation_1940} originally used the symbols $\iota$ and $\sigma$ for
@@ -88,21 +89,22 @@ how we separate the context from the term using the symbol $\vdash$);
   \colon (\iota \to \iota) \to \iota \to \iota
 \end{equation*}
 
-Sometimes we may choose to omit the type of the bound variable for clarity, so we could write
-$(\lambda \, f. \lambda \, x. fx) \colon (\iota \to \iota) \to \iota \to \iota$.
+Sometimes we may choose to omit the type of the bound variable for clarity, so we could write the
+above expression as $x \colon \iota \in \Gamma (\lambda \, f. \lambda \, x. fx) \colon (\iota \to
+\iota) \to \iota \to \iota$.
 
 To give a type to an expression, we will use a set of \textit{typing rules}. If a term $L$ with a
 context $\Gamma$ can be given a type $A$, we write $\Gamma \vdash L \colon A$ and call this a
 \textit{type judgement}. As the focus of this work is on System F, we will omit the typing rules for
 the STLC and instead present the typing rules for System F only.
 
-In the STLC, we can't give a type to little omega, since we can't give a type to both the argument
+In the STLC, we cannot give a type to little omega, since we cannot give a type to both the argument
 and the argument applied to itself ($(\lambda \, x  \colon ? . x x) \colon ??$).
 
 \subsection{System F.}
-System F has been the formal background to what many modern programming languages call
-\textit{generics}. For an anachronistic example, in Rust, we could write a function which applies a
-function twice to an argument.
+System F has been the formal background to what many modern programming languages call \textit{type
+parameters} or \textit{generics}. For an anachronistic example, in Rust, we could write a function
+which applies a given function twice to an argument.
 
 \begin{minted}[samepage]{rust}
 fn twice<T>(f: impl Fn(T) -> T, x: T) -> T {
@@ -110,16 +112,17 @@ fn twice<T>(f: impl Fn(T) -> T, x: T) -> T {
 }
 \end{minted}
 
-Since we used a \textit{type parameter} in the function's type signature (here \texttt{T}), we can
-use any appropriate function which has the type signature $\texttt{T} \to \texttt{T}$. One such
-function is \texttt{u64::isqrt}, the (flooring) square root function. If this function was invoked
-with \texttt{twice(u64::isqrt, 81)}, its output would be \texttt{3}. Here, the compiler can infer
-that the type for \texttt{T} should be \texttt{u64}, so we do not need to specify it explicitly.
+Since we used a type parameter in the function's type signature (here \texttt{T}), we can use any
+appropriate function which has the type signature $\texttt{T} \to \texttt{T}$. One such function is
+\texttt{u64::isqrt}, the (flooring) square root function. If this function was invoked with
+\texttt{twice(u64::isqrt, 81)}, its output would be \texttt{3}. Here, the compiler can infer that
+the type for \texttt{T} should be \texttt{u64}, so we do not need to specify it explicitly.
 
 System F is the STLC equipped with \textit{polymorphic types}, another term for type parameters. It
 was independently discovered by Jean-Yves \citet{girard_interpretation_1972} and John
 \citet{goos_towards_1974}. We introduce a $\Lambda$-abstraction (also called
-\textit{type-abstraction}) which will introduce a bound type variable, and type application.
+\textit{type-abstraction}) which will introduce a bound type variable. To replace this bound type
+variable, we introduce \textit{type application}.
 
 We can write the above \textit{twice} function like so in System F:
 \begin{equation*}
@@ -127,10 +130,10 @@ We can write the above \textit{twice} function like so in System F:
   \colon \forall T . (T \to T) \to T \to T.
 \end{equation*}
 
-Unlike the Rust example above, if we wanted to use the above \textit{twice} function, we would need
-to explicitly perform a type application to specify what type we are using. The type inference
-required for implicit type application is beyond the scope of this formalisation. We write type
-applications using [square brackets]. For instance,
+Unlike the Rust example above, if we wanted to use the System F \textit{twice} function, we would
+need to explicitly perform a type application to specify which type we should replace the bound type
+variable $T$ with. The type inference required for implicit type application is beyond the scope of
+this formalisation. We write type applications using [square brackets]. For example,
 \begin{align*}
   s \colon \iota \to \iota, z \colon \iota \in \Gamma \vdash
     &(\Lambda \, T. \lambda \, f \colon T \to T . \lambda \, x \colon T . f (f x))

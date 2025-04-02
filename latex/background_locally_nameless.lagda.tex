@@ -94,11 +94,12 @@ term $L$, we write that $L$ is locally closed at level $i$ as $i \succ L$. Forma
 If it is locally closed at level $0$, we simply call it \textit{locally closed}. Local closure is
 defined for System F in section \ref{chapter3:local_closure}.
 
+TODO: CITE PITTS AND SAY THE ABOVE HOLDS IFF PITTS HOLDS.
+
 As detailed in \citet{aydemir_engineering_2008}, local closure can be defined using universal
 quantification instead. For example, equation (\ref{equation:local_closure}) could read $\forall a
-\notin \fv(L), \; [j \to a] L = L$ (where $\text{fv} \colon \text{Terms} \to \text{Identifiers}$
-returns all identifiers of free variables). The benefit of using cofinite quantification comes when
-we use quantified properties in assumptions of theorems.
+\notin \fv(L), \; [j \to a] L = L$. The benefit of using cofinite quantification comes when we use
+quantified properties in assumptions of theorems.
 
 Suppose we have as an assumption the local closure of terms $L$ and $M$ and we wanted to prove that
 $LM$ was locally closed. We would need to combine the two `disallowed' lists together. We would run

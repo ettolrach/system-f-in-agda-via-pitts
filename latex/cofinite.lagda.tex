@@ -5,19 +5,22 @@ This quantification uses the symbol $\cof$. We write, for some (finite or counta
 \begin{equation}
   \label{equation:cofinite}
   \cof x \in X, P(x) \iff
-  \exists S \subsetneq X, \, S \text{ is finite}, \, \forall x \in X \setminus S, \, P(x).
+  \exists S \subsetneq X, \, S \text{ is finite}, \, \forall x \in (X \setminus S), \, P(x).
 \end{equation}
 
 That is, the property $P$ may or may not hold for some finite subset $S \subseteq X$, but for all
 elements $x \in (X \setminus S)$, the property $P(x)$ holds.
 
-For some motivation for this quantification, suppose we have two properties $P$ and $Q$ of a term
-$L$, each of which hold for all fresh identifiers, and we wish to prove that there exists some
-identifier $z$ for which both properties hold. Written formally,
+To motivate this quantification, consider the following example which is very similar to a problem
+that arises in the next section. Let $P$ and $Q$ be properties of a term $L$, each of which hold for
+all fresh identifiers. Suppose we wish to prove that there exists some identifier $z$ for which both
+properties hold. Written formally,
 \begin{equation*}
   \forall x, y \notin \fv(L), \; P(L, x) \wedge Q(L, y)
-  \implies \exists z \; \text{such that} \; P(L, z) \wedge Q(L, z).
+  \implies \exists z \; \text{such that} \; P(L, z) \wedge Q(L, z),
 \end{equation*}
+where $\text{fv} \colon \text{Terms} \to \text{Identifiers}$ returns all identifiers of free
+variables in a term.
 
 Since there are only a finite number of free variables in a term, we can always find a fresh
 identifier. Informally, the proof is trivial since we can choose a fresh identifier such that $z = x

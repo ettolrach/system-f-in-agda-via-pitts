@@ -193,24 +193,26 @@ $\lambda$-calculus, first described by Alonzo \citet{church_set_1932}. Backgroun
 in section \ref{background:lambda_calculus}.
 
 Usually, $\lambda$-calculus is written using \textit{fully named} syntax: all variables are given
-identifiers (usually strings). An alternative representation uses de Bruijn indices, where a
-variable is referred to using a natural number representing how many binders ago the variable was
-bound, first described by Nicolaas Govert \citet{de_bruijn_lambda_1972}. By using identifiers for
-free variables and de Bruijn indices for bound variables, we use a syntax called the \textit{locally
-nameless representation}. More detail on this syntax is given in section
-\ref{background:locally_nameless}.
+\textit{identifiers} (usually these are strings). An alternative representation uses \textit{de Bruijn
+indices}, where a variable is referred to using a natural number representing how many binders ago
+the variable was bound, first described by Nicolaas Govert \citet{de_bruijn_lambda_1972}. By using
+identifiers for free variables and de Bruijn indices for bound variables, we use a syntax called the
+\textit{locally nameless representation}, first used by Andrew \citet{goos_mechanisation_1994}. More
+detail on this syntax is given in section \ref{background:locally_nameless}.
 
 Most of the prior literature uses the proof-assistant Coq for its formalisation of the locally
 nameless representation. A generalisation of this representation, called \textit{locally nameless
 sets}, has previously been explored in another proof assistant, Agda, by Andrew
-\citet{pitts_locally_2023}. While this generalisation did not focus on the $\lambda$-calculus, it
-proves that the syntax is able to be used effectively in Agda. This work is central in motivating an
-Agda development of a formal langauge like System F using locally nameless representation, as it
-helped develop the crucial initial proofs of the syntax and informed future proof strategies.
+\citet{pitts_locally_2023}. Some background to Agda is given in section \ref{background:agda}. While
+this work did not focus on the $\lambda$-calculus, it demonstrated that the syntax is able to be
+used effectively in Agda. As such, I would like to explore formalising System F in Agda using
+locally nameless representation using the methods shown in the work presented by Pitts. His work was
+essential in helping develop crucial initial proofs of the syntax and informed future proof
+strategies.
 
-I present the first formalisation of System F using the locally nameless representation in Agda that
-I am aware of. Specifically, I successfully create a formalisation which proves the following
-properties of System F using locally nameless representation:
+In this work, I present the first formalisation of System F using the locally nameless
+representation in Agda that I am aware of. Specifically, I successfully create a formalisation which
+proves the following properties of System F using locally nameless representation:
 \begin{itemize}
   \item System F terms and types can be represented and manipulated using locally nameless
   representation (sections \ref{chapter3:syntax} to \ref{chapter3:substitution_syntax}).
@@ -221,7 +223,9 @@ properties of System F using locally nameless representation:
   \item An evaluator can be built by using the progress and preservation properties
   \ref{chapter3:evaluation}.
 \end{itemize}
-An evaluaton of my formalisation as well as future work will be presented in chapter \ref{chapter4}.
+Since all code presented is checked to be correct by Agda, I have managed to accomplish each of
+these points. A more detailed evaluaton of my formalisation as well as future work will be presented
+in chapter \ref{chapter4}.
 
 To do so, I will follow the work of Arthur \citet{chargueraud_locally_2012}, where he describes a
 formalisation of System F with subtyping in Coq. Although I will closely follow him initially, from
@@ -234,20 +238,26 @@ details.
 \chapter{Background}
 
 \section{Agda}
+\label{background:agda}
 Agda is a dependently-typed functional programming language based on Martin--Löf type theory, which
 makes it suitable as a proof-assistant using intuitionistic logic \citep{norell_towards_2007}.
+
+A brief overview of Agda is presented in appendix \ref{appendix:agda_overview}. As described in said
+appendix, a correspondence between mathematical proofs and computer programs exist, where a
+dependently typed program is equivalent to a proof of a mathematical claim
+\citep{howard_formulae-as-types_1980}. Thus, we can rely on a computer to check that a proof is
+correct. All code presented in this document, has been checked to be correct by Agda (with a single
+exception where a regular proof has been provided, see page \pageref{chapter3:subst}). An in-depth guide to Agda is
+presented in \citet{wadler_programming_2022}. Knowledge of Agda (or proof-assistants which are
+similar) will be assumed henceforth.
 
 In Agda, like many other programming languages, we need to declare a module for our program.
 \begin{code}
 module dissertation where
 \end{code}
 
-A brief overview of Agda is presented in appendix \ref{appendix:agda_overview}. An in-depth guide to
-Agda is presented in \citet{wadler_programming_2022}. Knowledge of Agda (or proof-assistants which
-are similar) will be assumed henceforth.
-
-We will make use of the Agda standard library \citep{the_agda_community_agda_2024}. The specific
-imports are omitted, but are included in the full source code (see appendix
+We will make use of the Agda standard library \citep{the_agda_community_agda_2024}. Specific imports
+of standard library functions are omitted, but are included in the full source code (see appendix
 \ref{appendix:compilation_instructions}).
 \begin{comment}
 \begin{code}
@@ -317,19 +327,20 @@ formalised a variant of System F with language extensions known as \textit{Syste
 They also used a different approach, opting to make use of de Bruijn indices only. This paper will
 use the locally nameless representation, which hasn't been used for System F in Agda before.
 
-As mentioned before, \citet{pitts_locally_2023} explored a generalisation called Locally Nameless
-Sets in Agda. Since the scope of his work was only to prove properties of the syntax and not of any
-lanugage in particular, the helpfulness of his development is limited. By relying on only the
-opening and closing operations, one cannot manipulate language constructs enough to prove properties
-such as \texttt{subst-open}, as explained by \citet{kiselyov_generic_2025}. Although they present a
-library which does prove properties such as \texttt{subst-open}, their work is written in Coq and so
-cannot be used here.
+As mentioned before, \citet{pitts_locally_2023} explored a generalisation called \textit{locally
+nameless sets} in Agda. Since the scope of his work was only to prove properties of the syntax and
+not of any lanugage in particular, the helpfulness of his development is limited. By relying on only
+the opening and closing operations, one cannot manipulate language constructs enough to prove
+properties such as \texttt{subst-open}, as explained by \citet{kiselyov_generic_2025}. Although they
+present a library which does prove properties such as \texttt{subst-open}, their work is written in
+Coq and so cannot be used here.
 
-I have previously submitted some work on STLC using locally nameless representation for a course
+I have previously submitted some work on the STLC using locally nameless representation for a course
 called \textit{Types and Semantics of Programming Languages} (TSPL) \citep{ausel_simply_2025}. While
-this was very helpful in preparing my formalisation of System F, detailing it is not a prerequisite.
-The only functions which will be reused here are those for generating fresh variables (see appendix
-\ref{appendix:tspl}).
+this was very helpful in preparing my formalisation of System F, it is not a prerequisite in
+formalising System F, nor is it necessaary to understand this formalisation. The only functions from
+the work submitted for TSPL which will be reused here are those for generating fresh variables (see
+appendix \ref{appendix:tspl}).
 
 \chapter{System F formalisation}
 \label{chapter3}
@@ -1647,6 +1658,7 @@ the \texttt{:=} substitution out of the \texttt{:→} one is exactly the reason 
 \end{code}
 The last two cases are a simple application of the inductive hypothesis.
 
+\label{chapter3:subst}
 For \texttt{subst}, our proof is very similar to how it is in \citet{wadler_programming_2022}, with
 cofinite induction and \texttt{subst-open} being the only notable additions. Agda believes that the
 $\vdash\lambda$ case doesn't terminate. However, as we're recursing on the deconstructed type
@@ -2637,6 +2649,69 @@ typechecked by the compiler and is identical to the code below.
   ⊢⇒lc-ty-tm (⊢zero _) j = И⟨ [] , (λ _ → refl) ⟩
   ⊢⇒lc-ty-tm {Γ} (⊢suc ⊢L) j = И⟨ [] , (λ a →
     cong ‵suc_ (lemma2·7-2-ty-tm it (⊢⇒lc-ty-tm ⊢L))) ⟩
+\end{code}
+
+\chapter{Local closure definition equivalence}
+We aim to prove that our definition of local closure is equivalent to the definition that Pitts TODO
+CITE gives.
+
+\begin{code}
+  open import Data.Product using (∃; ∃-syntax)
+  _≻'_ : ℕ → Type → Set
+  i ≻' A = (j : ℕ) ⦃ _ : j ≥ i ⦄ → ∃[ T ] (ty-ty[ j —→ T ] A ≡ A)
+\end{code}
+
+Specifically, we will prove an if and only if relation between the two. We will only prove this for
+the type-in-type local closure, but the proof for the other two openings works similarly.
+\begin{code}
+  ≻ty⇒≻' : ∀ (i : ℕ) (A : Type)
+    → i ≻ty A → i ≻' A
+
+  ≻'⇒≻ty : ∀ (i : ℕ) (A : Type)
+    → i ≻' A → i ≻ty A
+\end{code}
+
+The proof that the cofinite definition implies the existential one is simple. The cofinite
+quantification gives a `disallow' list. Simply choose an identifier not in that list, and use
+this identifier for the existential quantification.
+\begin{code}
+  ≻ty⇒≻' i A i≻tyA j =
+    let И⟨ Иe₁ , Иe₂ ⟩ = i≻tyA j
+    in ⟨ (fresh Иe₁) , (Иe₂ (fresh Иe₁) {fresh-correct Иe₁}) ⟩
+\end{code}
+
+Proving the other implication is much more difficult. To do this we need to use an alternative
+definition of local closure given by TODO: CITE CHARGUÉRAUD.
+\begin{code}
+  data _lc-at_ : Type → ℕ → Set where
+    lc-at-‵ℕ : ∀ {i}
+      → ‵ℕ lc-at i
+    
+    lc-at-frᵀ : ∀ {X i}
+      → (frᵀ X) lc-at i
+    
+    lc-at-#ᵀ : ∀ {j i} ⦃ _ : j < i ⦄
+      → (#ᵀ j) lc-at i
+
+    lc-at-⇒ : ∀ {i A B} → A lc-at i → B lc-at i
+      → (A ⇒ B) lc-at i
+
+    lc-at-∀ᵀ : ∀ {i A} → A lc-at (suc i)
+      → (∀ᵀ A) lc-at i
+\end{code}
+
+Now we prove the implication by induction on the structure of the type.
+\begin{code}
+  ≻'⇒≻ty i ‵ℕ i≻'A = n≻‵ℕ
+  ≻'⇒≻ty i (frᵀ X) i≻'A j = И⟨ [] , (λ _ → refl) ⟩
+  ≻'⇒≻ty i (#ᵀ k) i≻'A j with j ≟ℕ k
+  ... | no  j≢k  = И⟨ [] , (λ _ → refl) ⟩
+  ... | yes refl with i≻'A j
+  ...   | ⟨ X , op-invariant ⟩ with k ≟ℕ k
+  ...     | yes refl with () ← op-invariant
+  ...     | no  k≢k  = contradiction refl k≢k
+  ≻'⇒≻ty i (A ⇒ B) i≻'A j = {!!}
+  ≻'⇒≻ty i (∀ᵀ A) i≻'A = {!!}
 \end{code}
 
 \chapter{Prior work submitted for TSPL}
