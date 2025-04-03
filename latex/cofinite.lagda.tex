@@ -22,6 +22,11 @@ properties hold. Written formally,
 where $\text{fv} \colon \text{Terms} \to \text{Identifiers}$ returns all identifiers of free
 variables in a term.
 
+This definition is adapted from the one given by \citet{pitts_locally_2023}, which uses an
+existential quantifier rather than a cofinite quantifier. However, these two definitions are
+equivalent, there is an if and only if relation between them. See Appendix
+\ref{appendix:lc_equivalence} for a proof of this claim.
+
 Since there are only a finite number of free variables in a term, we can always find a fresh
 identifier. Informally, the proof is trivial since we can choose a fresh identifier such that $z = x
 = y$.
@@ -44,7 +49,7 @@ S_2$ (note that as both $S_1$ and $S_2$ are by definition finite, this doesn't r
 axiom of choice). This $z$ will satisfy $P(L, z)$ since $z \notin S_1$ and it will also satisfy
 $Q(L, z)$ since $z \notin S_2$.
 
-This technique of combining several different `disallowed' sets will be used in chapter
+This technique of combining several different `disallowed' sets will be used in Chapter
 \ref{chapter3} for theorems such as \texttt{rename}.
 
 While the Agda implementation that \citet{pitts_locally_2023} gives uses an arbitrary set, I chose

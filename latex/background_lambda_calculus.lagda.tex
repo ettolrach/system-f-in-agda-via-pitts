@@ -4,7 +4,7 @@ The $\lambda$-calculus is a theoretical model of computation developed by Alonzo
 similarly to familiar functional programming languages, yet its definition is as minimal as possible
 while still being Turing-complete. Although Turing machines would be invented after the
 $\lambda$-calculus and independently of Church's work \citep{turing_computable_1937},
-`turing-complete' has become a shorthand for `universal method of computation'. Such a universal
+`Turing-complete' has become a shorthand for `universal method of computation'. Such a universal
 method was not Church's initial goal, but is why we are still interested in the $\lambda$-calculus.
 
 The $\lambda$-calculus includes three reductions. $\alpha$-conversion is the renaming of variables
@@ -38,13 +38,11 @@ on this reduction and won't mention it henceforth as it is not relevant.
 
 If no $\beta$-reductions can be performed on a term, we say that it is in its \textit{normal form}.
 We shall represent an arbitrary number of successive $\beta$-reductions using the Kleene star
-$\mapsto_{\beta^{\star}}$. The Church-Rosser theorem states that for any term $L$, if it
-$\beta$-reduces to two terms $M$ and $N$, then there exists a common term $L'$ which both $M$ and
-$N$ eventually $\beta$-reduce to \citep{church_properties_1936}.
+$\mapsto_{\beta^{\star}}$.
 
 Notably, some terms may not have a normal form. Take \textit{little omega} $\omega \triangleq
-\lambda \, x. (x x)$ and \textit{omega} (sometimes called the $\Omega$\textit{-combinator}) $\Omega
-\, \triangleq \, \omega \omega$. After a reduction step, $\Omega$ will remain unchanged and we can
+\lambda \, x. (x x)$ and \textit{omega} (also called the $\Omega$\textit{-combinator}) $\Omega \,
+\triangleq \, \omega \omega$. After a reduction step, $\Omega$ will remain unchanged, and we can
 perform the same reduction.
 
 \begin{equation*}
@@ -67,8 +65,8 @@ extension of the untyped $\lambda$-calculus developed by Alonzo \citet{church_fo
 requires each term to have a \textit{type}. In the STLC, terms which do not have a normal form
 cannot be given a type. Thus, all expressions will eventually reduce to an irreducible
 expression---their normal form. This is also called \textit{strong normalisation}
-\citep{pierce_types_2002}. However, this means we can longer represent all of the terms of the
-untyped $\lambda$-calculus (such as $\Omega$), and Turing-completeness is lost.
+\citep{pierce_types_2002}. However, this means we can longer represent all the terms of the untyped
+$\lambda$-calculus (such as $\Omega$), and Turing-completeness is lost.
 
 In the STLC, some base types need to be chosen. These are indeterminates which are not given
 definitions. \citet{church_formulation_1940} originally used the symbols $\iota$ and $\sigma$ for
@@ -143,4 +141,7 @@ this formalisation. We write type applications using [square brackets]. For exam
   &\mapsto_{\beta^{\star}} s s z \colon \iota.
 \end{align*}
 
-The typing rules for System F will be given in section \ref{chapter3:type_judgements}.
+We also now keep track of free type variables in the context. Thus, a context could read $x \colon
+\iota, T, U, y \colon T \in \Gamma$.
+
+The typing rules for System F will be given in Section \ref{chapter3:type_judgements}.

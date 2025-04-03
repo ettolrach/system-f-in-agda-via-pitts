@@ -152,14 +152,17 @@
 
 \date{\today}
 
-\abstract{
-This skeleton demonstrates how to use the \texttt{infthesis} style for
-undergraduate dissertations in the School of Informatics. It also emphasises the
-page limit, and that you must not deviate from the required style.
-The file \texttt{skeleton.tex} generates this document and should be used as a
-starting point for your thesis. Replace this abstract text with a concise
-summary of your report.
-}
+\abstract{ Proofs of properties of programming languages are expected to be formally verified to
+improve confidence in correctness of said proofs, yet the approaches to do so continue to be
+difficult and tedious. One reason for this is the difficulty in dealing with the syntax of
+\textit{binders}. The typed $\lambda$-calculus \textit{System F} is of particular interest due to
+its mix of bound term and bound type variables. While typically \textit{fully named syntax} or
+\textit{de Bruijn indices} are used for the syntax of System F, the two can be combined as
+\textit{locally nameless representation}. Although this representation has been studied extensively,
+most of the literature uses the proof-assistant Rocq, whereas few use Agda. I present the first
+formalisation of System F in Agda using locally nameless representation that I am aware of. While
+some properties were difficult to prove and to understand, this work demonstrates that both Agda and
+locally nameless representation are viable options for future programming language formalisations. }
 
 \maketitle
 
@@ -177,7 +180,13 @@ from the Informatics Research Ethics committee.
 
 
 \begin{acknowledgements}
-Any acknowledgements go here.
+This project could not have been possible without the generous guidance of my supervisor Philip
+Wadler, who has not only supported me throughout this project, but also inspired my passion for
+theoretical computer science. For this, I thank him greatly.
+
+The feedback and support of my friends, in particular Cosmo Bobak, Jacob Cochrane, Artemis
+Livingstone, Ol Rushton, Aria Shrimpton, Jacob Walters, and Lucy Winters, has also helped me greatly.
+To them, I would also like to express my gratitude.
 \end{acknowledgements}
 
 
@@ -190,25 +199,25 @@ Any acknowledgements go here.
 \textit{System F} is a theoretical model of computation first described independently by Jean
 \citet{girard_interpretation_1972} and John \citet{goos_towards_1974} and is based on the
 $\lambda$-calculus, first described by Alonzo \citet{church_set_1932}. Background to these is given
-in section \ref{background:lambda_calculus}.
+in Section \ref{background:lambda_calculus}.
 
 Usually, $\lambda$-calculus is written using \textit{fully named} syntax: all variables are given
-\textit{identifiers} (usually these are strings). An alternative representation uses \textit{de Bruijn
-indices}, where a variable is referred to using a natural number representing how many binders ago
-the variable was bound, first described by Nicolaas Govert \citet{de_bruijn_lambda_1972}. By using
-identifiers for free variables and de Bruijn indices for bound variables, we use a syntax called the
-\textit{locally nameless representation}, first used by Andrew \citet{goos_mechanisation_1994}. More
-detail on this syntax is given in section \ref{background:locally_nameless}.
+\textit{identifiers} (usually these are strings). An alternative representation uses \textit{de
+Bruijn indices}, where a variable is referred to using a natural number representing how many
+binders ago the variable was bound, first described by Nicolaas Govert
+\citet{de_bruijn_lambda_1972}. By using identifiers for free variables and de Bruijn indices for
+bound variables, we use a syntax called the \textit{locally nameless representation}, first used by
+Andrew \citet{goos_mechanisation_1994}. More detail on this syntax is given in Section
+\ref{background:locally_nameless}.
 
-Most of the prior literature uses the proof-assistant Coq for its formalisation of the locally
+Most of the prior literature uses the proof-assistant Rocq for its formalisation of the locally
 nameless representation. A generalisation of this representation, called \textit{locally nameless
 sets}, has previously been explored in another proof assistant, Agda, by Andrew
-\citet{pitts_locally_2023}. Some background to Agda is given in section \ref{background:agda}. While
-this work did not focus on the $\lambda$-calculus, it demonstrated that the syntax is able to be
-used effectively in Agda. As such, I would like to explore formalising System F in Agda using
-locally nameless representation using the methods shown in the work presented by Pitts. His work was
-essential in helping develop crucial initial proofs of the syntax and informed future proof
-strategies.
+\citet{pitts_locally_2023}. Some background to Agda is given in Section \ref{background:agda}. While
+his work did not focus on the $\lambda$-calculus, it demonstrated that the syntax can effectively in
+Agda. As such, I would like to explore formalising System F in Agda using locally nameless
+representation using the methods shown in the work presented by Pitts. His work was essential in
+helping develop crucial initial proofs of the syntax and informed future proof strategies.
 
 In this work, I present the first formalisation of System F using the locally nameless
 representation in Agda that I am aware of. Specifically, I successfully create a formalisation which
@@ -224,15 +233,15 @@ proves the following properties of System F using locally nameless representatio
   \ref{chapter3:evaluation}.
 \end{itemize}
 Since all code presented is checked to be correct by Agda, I have managed to accomplish each of
-these points. A more detailed evaluaton of my formalisation as well as future work will be presented
-in chapter \ref{chapter4}.
+these points. A more detailed evaluation of my formalisation as well as future work will be
+presented in chapter \ref{chapter4}.
 
 To do so, I will follow the work of Arthur \citet{chargueraud_locally_2012}, where he describes a
-formalisation of System F with subtyping in Coq. Although I will closely follow him initially, from
-section \ref{chapter3:contexts} onwards, my proofs will diverge from his approach.
+formalisation of System F with subtyping in Rocq. Although I will closely follow him initially, from
+Section \ref{chapter3:contexts} onwards, my proofs will diverge from his approach.
 
 This document is a literate Agda file and uses {\color{violet}colour}. All Agda code typeset in
-colour has been typechecked by Agda. Please see appendix \ref{appendix:compilation_instructions} for
+colour has been typechecked by Agda. Please see Appendix \ref{appendix:compilation_instructions} for
 details.
 
 \chapter{Background}
@@ -242,14 +251,15 @@ details.
 Agda is a dependently-typed functional programming language based on Martin--Löf type theory, which
 makes it suitable as a proof-assistant using intuitionistic logic \citep{norell_towards_2007}.
 
-A brief overview of Agda is presented in appendix \ref{appendix:agda_overview}. As described in said
-appendix, a correspondence between mathematical proofs and computer programs exist, where a
+A brief overview of Agda is presented in Appendix \ref{appendix:agda_overview}. As described in said
+Appendix, a correspondence between mathematical proofs and computer programs exist, where a
 dependently typed program is equivalent to a proof of a mathematical claim
 \citep{howard_formulae-as-types_1980}. Thus, we can rely on a computer to check that a proof is
 correct. All code presented in this document, has been checked to be correct by Agda (with a single
-exception where a regular proof has been provided, see page \pageref{chapter3:subst}). An in-depth guide to Agda is
-presented in \citet{wadler_programming_2022}. Knowledge of Agda (or proof-assistants which are
-similar) will be assumed henceforth.
+exception where a regular proof has been provided, see page \pageref{chapter3:subst}). An in-depth
+guide to Agda is presented in the excellent textbook \textit{Programming Language Foundations in
+Agda} \citep{wadler_programming_2022}. Knowledge of Agda (or proof-assistants which are similar)
+will be assumed henceforth.
 
 In Agda, like many other programming languages, we need to declare a module for our program.
 \begin{code}
@@ -257,7 +267,7 @@ module dissertation where
 \end{code}
 
 We will make use of the Agda standard library \citep{the_agda_community_agda_2024}. Specific imports
-of standard library functions are omitted, but are included in the full source code (see appendix
+of standard library functions are omitted, but are included in the full source code (see Appendix
 \ref{appendix:compilation_instructions}).
 \begin{comment}
 \begin{code}
@@ -325,29 +335,30 @@ open DecPropMembership _≟lchar_ using (_∈_; _∉_; _∈?_)
 System F was previously formalised in Agda by \citet{hutton_system_2019}. However, the authors
 formalised a variant of System F with language extensions known as \textit{System F$_{\omega \mu}$}.
 They also used a different approach, opting to make use of de Bruijn indices only. This paper will
-use the locally nameless representation, which hasn't been used for System F in Agda before.
+use the locally nameless representation, which has not been used for System F in Agda before as far
+as I am aware of.
 
-As mentioned before, \citet{pitts_locally_2023} explored a generalisation called \textit{locally
-nameless sets} in Agda. Since the scope of his work was only to prove properties of the syntax and
-not of any lanugage in particular, the helpfulness of his development is limited. By relying on only
-the opening and closing operations, one cannot manipulate language constructs enough to prove
-properties such as \texttt{subst-open}, as explained by \citet{kiselyov_generic_2025}. Although they
-present a library which does prove properties such as \texttt{subst-open}, their work is written in
-Coq and so cannot be used here.
+As mentioned above, most of the literature has used Rocq for locally nameless representation, and
+although \citet{pitts_locally_2023} used Agda, he explored a generalisation called \textit{locally
+nameless sets}. The scope of his work was only to prove properties of the syntax and not of any
+language in particular. By relying on only the definition of locally nameless sets, one cannot
+manipulate language constructs enough to prove properties such as \texttt{subst-open}, as explained
+by \citet{kiselyov_generic_2025}. Although they present a library which does prove properties such
+as \texttt{subst-open} for another generalisation, their work is written in Rocq and so cannot be
+used here.
 
 I have previously submitted some work on the STLC using locally nameless representation for a course
 called \textit{Types and Semantics of Programming Languages} (TSPL) \citep{ausel_simply_2025}. While
 this was very helpful in preparing my formalisation of System F, it is not a prerequisite in
-formalising System F, nor is it necessaary to understand this formalisation. The only functions from
+formalising System F, nor is it necessary to understand this formalisation. The only functions from
 the work submitted for TSPL which will be reused here are those for generating fresh variables (see
-appendix \ref{appendix:tspl}).
+Appendix \ref{appendix:tspl}).
 
 \chapter{System F formalisation}
 \label{chapter3}
 Combining System F with the locally nameless representation was previously described by
-\citet{chargueraud_locally_2012}. We first import various the previously defined cofinite
-quantification and various helper functions, see appendices \ref{appendix:tspl} and
-\ref{appendix:plfa} for full details.
+\citet{chargueraud_locally_2012}. We first import the previously defined cofinite quantification and
+various helper functions from appendices \ref{appendix:tspl} and \ref{appendix:plfa}.
 \begin{code}
 module chapter3 where
   open import cofinite
@@ -356,8 +367,8 @@ module chapter3 where
 \end{code}
 
 As the following code covers a lot of detail, and since I am limited by the page count of this
-dissertation, I will leave some proofs from this chapter and present them in appendix
-\ref{appendix:f} instead. I will only do this in two cases:
+dissertation, I will present some proofs from this chapter in Appendix \ref{appendix:f} instead. I
+will only do this in two cases:
 \begin{itemize}
   \item If the proof is trivial (for example, an induction where each case is proven immediately
   using \texttt{refl} and each inductive step is a simple recursive call).
@@ -371,7 +382,7 @@ we can use forward declarations, Agda still ensures that these are correct.
 \section{Syntax of types and terms}
 \label{chapter3:syntax}
 To represent identifiers, we use \texttt{List Char}, and thus define a type alias. Functions to
-generate new identifiers can be found in appendix \ref{appendix:list_functions}. Namely,
+generate new identifiers can be found in Appendix \ref{appendix:list_functions}. Namely,
 \texttt{fresh} generates a new identifier and \texttt{fresh-correct} gives a proof that this
 identifier does not exist in the given list.
 \begin{code}
@@ -417,10 +428,10 @@ We also define some helper functions for reasoning about equality.
   ‵suc-inj refl = refl
 \end{code}
 
-Since there are two different types of free and bound variables now, outside of Agda code, I shall
-refer to free variables in lowercase and free type variables in UPPERCASE, and bound variables using
-regular arabic numerals ($0$) and bound type variables using bold arabic numerals ($\mathbf{0}$). So
-for example,
+Since there are now two different kinds of free and bound variables, outside Agda code, I shall
+refer to free variables in lowercase and free type variables in UPPERCASE as I have before, and
+bound variables using regular Arabic numerals ($0$) and bound type variables using bold Arabic
+numerals ($\mathbf{0}$). So for example,
 
 \begin{equation*}
   \text{id} \triangleq (\Lambda \lambda 0) \colon \forall \mathbf{0} \to \mathbf{0}
@@ -428,8 +439,8 @@ for example,
 
 \section{Opening}
 \label{chapter3:opening}
-In System F, we only require the opening operation \citep{chargueraud_locally_2012}. There are three
-kinds of opening:
+In System F, we only require the opening operation and will not need to define the closing operation
+\citep{chargueraud_locally_2012}. There are three kinds of opening:
 \begin{itemize}
   \item opening a type at an index by replacing the bound type variable at that index with a free
         type variable,
@@ -475,9 +486,11 @@ kinds of opening:
 
 When \citet{pitts_locally_2023} defines locally nameless sets, he requires that they follow 9
 axioms. In our development we will only need one of these, axiom 1. Proving the others is possible,
-but not necessary. Axiom 1 states that applying two openings of the same index to a type is the same
-as applying the first one only. The proof is done by induction on the structure of the type with
-each case being trivial (proven using reflexivity).
+but not necessary, as our goal is not to prove that we are using locally nameless sets.
+
+Axiom 1 states that applying two openings of the same index to a type is the same as applying the
+first one only. The proof is done by induction on the structure of the type with each case being
+trivial (proven using reflexivity).
 \begin{code}
   ax1-ty : ∀ (i : ℕ) (a b : Id) (A : Type)
     → ty-ty[ i —→ a ] (ty-ty[ i —→ b ] A) ≡ ty-ty[ i —→ b ] A
@@ -495,7 +508,7 @@ each case being trivial (proven using reflexivity).
 
 The same can be said of the other kinds of opening. Repeating proofs for the three kinds of opening
 will be a recurring theme \label{page:repeated_proofs}. The proofs for the other two opening
-operations are very similar and left in appendix \ref{appendix:f_local_closure}.
+operations are very similar and left in Appendix \ref{appendix:f_local_closure}.
 \begin{code}
   ax1-tm : ∀ (i : ℕ) (a b : Id) (L : Term)
     → tm-tm[ i —→ a ] (tm-tm[ i —→ b ] L) ≡ tm-tm[ i —→ b ] L
@@ -508,9 +521,9 @@ operations are very similar and left in appendix \ref{appendix:f_local_closure}.
 Recall that a term is locally closed at level $i$ if it remains unchanged after opening it at $i$,
 see equation \ref{equation:local_closure}. We will have three kinds of local closure, one for each
 kind of opening. In Agda, we can make use of \textit{instance arguments} to automatically search for
-a evidence that is in scope. In the above definitions, we try and automatically find evidence that
-$j \geq i$. If Agda cannot find such evidence, it has to be provided using ⦃ these unicode curly
-brackets ⦄ or \{\{ double curly brackets \}\}.
+a evidence that is in scope. In the below definitions, we try and automatically find evidence that
+$j \geq i$. If Agda cannot find such evidence, it has to be provided using ⦃these Unicode curly
+brackets⦄ or \{\{double curly brackets\}\}.
 
 \begin{code}
   _≻ty_ : ℕ → Type → Set
@@ -534,7 +547,7 @@ brackets ⦄ or \{\{ double curly brackets \}\}.
 
 \citet{pitts_locally_2023} proves three lemmas about local closure that we will make use of later.
 As I simply adapted these proofs with the syntax of System F defined earlier, the proofs are
-detailed in the appendix \ref{appendix:f_local_closure}.
+detailed in the Appendix \ref{appendix:f_local_closure}.
 
 \textbf{Lemma 2.6} states that if a type is locally closed at level $i$, then it is also locally
 closed at any level greater than $i$. The proof follows from the definition of local closure.
@@ -542,7 +555,6 @@ closed at any level greater than $i$. The proof follows from the definition of l
   lemma2·6-ty : ∀ {i j L}
     → j ≥ i
     → i ≻ty L
-      -------
     → j ≻ty L
 \end{code}
 The same can be said of the other kinds of local closure.
@@ -555,7 +567,7 @@ The same can be said of the other kinds of local closure.
 
 \textbf{Lemma 2.7-1} states that if opening a type with an identifier leaves it unchanged, then
 opening it with any other identifier will also leave it unchanged. Once again, the same can be said
-of the other local closure properties.
+of the other local closure properties. The proofs follow from axiom 1.
 \begin{code}
   lemma2·7-1-ty : ∀ {i x y L}
     → ty-ty[ i —→ x ] L ≡ L
@@ -569,11 +581,11 @@ of the other local closure properties.
 
 And \textbf{Lemma 2.7-2} states that if a type is locally closed at level $i$, then opening it at
 $i$ or any greater index will leave the type unchanged. And the same applies to the other local
-closure properties.
+closure properties. This is a corollary of Lemma 2.7-1.
 \begin{code}
   lemma2·7-2-ty : ∀ {i j x A}
-    → j ≥ i       → i ≻ty A
-      ---------------------
+    → j ≥ i
+    → i ≻ty A
     → ty-ty[ j —→ x ] A ≡ A
 
   lemma2·7-2-tm : ∀ {i j x L} → j ≥ i
@@ -582,10 +594,11 @@ closure properties.
     → i ≻ty-tm L → ty-tm[ j —→ x ] L ≡ L
 \end{code}
 
-We also have some local closure properties which will become useful in later proofs. I would like to
-draw particular attention to the first property, that if a type $\forall A$ is locally closed up to
-$i$, then $A$ is locally closed up to $i + 1$. The property does not follow from Lemma 2.6 as that
-would prove $i \succ \forall A$ implies $i + 1 \succ \forall A$ without removing the $\forall$.
+We also have some local closure properties of specific terms and types which will become useful in
+later proofs. I would like to draw particular attention to the first property, that if a type
+$\forall A$ is locally closed up to $i$, then $A$ is locally closed up to $i + 1$. The property does
+not follow from Lemma 2.6 as that would prove $i \succ \forall A$ implies $i + 1 \succ \forall A$
+without removing the $\forall$.
 \begin{code}
   i≻∀A⇒si≻A : ∀ {A i} → i ≻ty (∀ᵀ A) → (suc i) ≻ty A
   i≻∀A⇒si≻A {A} i≻∀ (suc j) =
@@ -604,7 +617,7 @@ an identifier that isn't in \texttt{Иe₁}, which we give the variable name $a$
 injectivity of \texttt{∀ᵀ} to get a proof of $([suc j \to a] A) = A$, which is exactly what is
 required.
 
-We can prove a similar properties for \texttt{ƛ} and \texttt{Λ} in the same way.
+We can prove similar properties for \texttt{ƛ} and \texttt{Λ} in the same way.
 \begin{code}
   ≻ƛ⇒s≻ƛ : ∀ {L i} → i ≻tm (ƛ L) → (suc i) ≻tm L
   ≻ƛ⇒s≻ƛ ≻ƛ (suc j) = let И⟨ Иe₁ , Иe₂ ⟩ = ≻ƛ j ⦃ ≤-pred it ⦄
@@ -615,7 +628,8 @@ We can prove a similar properties for \texttt{ƛ} and \texttt{Λ} in the same wa
     in И⟨ Иe₁ , (λ a {a∉} → Λ-inj (Иe₂ a {a∉})) ⟩
 \end{code}
 
-For some terms, opening will not increment the index, and so the proof is even simpler.
+For some terms, opening will not increment the index, and so the proof is even simpler. We follow
+the same procedure as above, but miss out the steps involving manipulating \texttt{suc}.
 \begin{code}
   Λ-≻ : ∀ {L i} → i ≻tm (Λ L) → i ≻tm L
   Λ-≻ i≻ j = let И⟨ Иe₁ , Иe₂ ⟩ = i≻ j
@@ -674,14 +688,13 @@ the hypothesis and injectivity.
 \end{code}
 
 One important lemma which will be used later is called \texttt{open-rec-lc-lemma} by
-\citet{chargueraud_locally_2012} (his \texttt{open-rec-lc} is in fact Pitts lemma 2.6 proven above).
+\citet{chargueraud_locally_2012} (his \texttt{open-rec-lc} is in fact Pitts Lemma 2.6 proven above).
 It states that if applying an opening to an opened term leaves it unchanged, then the opening will
-have no effect on the term. This is, in fact, true for combinations of type-opening too, so we need
-several versions of the proof.
+have no effect on the term.
 
 The lemma is proven by induction on the structure of the term (or type for the other proofs). For
 the base cases, the proof is immediate by reflexivity, and for the inductive cases, the inductive
-hypothesis immediately gives the result, so the proof is left in appendix
+hypothesis immediately gives the result, so the proof is left in Appendix
 \ref{appendix:f_local_closure}.
 \begin{code}
   open-rec-lc-lemma : ∀ {L : Term} {i j u v} → i ≢ j
@@ -689,8 +702,8 @@ hypothesis immediately gives the result, so the proof is left in appendix
     → tm-tm[ i —→ u ] L ≡ L
 \end{code}
 
-The proofs of the related versions of this lemma are left in appendix \ref{appendix:f_local_closure}
-as they are very similar.
+As before, \texttt{open-rec-lc-lemma} holds true for combinations of other openings. The proofs of
+the related versions of this lemma are also left in Appendix \ref{appendix:f_local_closure}.
 \begin{code}
   open-rec-lc-lemma-ty : ∀ {A : Type} {i j u v} → i ≢ j
     → ty-ty[ i —→ u ] (ty-ty[ j —→ v ] A) ≡ ty-ty[ j —→ v ] A
@@ -706,8 +719,8 @@ as they are very similar.
 \section{Free variables}
 \label{chapter3:free_variables}
 We want to collect free variables in terms and free type variables in terms and types. As before,
-there are three such functons we need to define. The full definitions of the other two functions is
-left in appendix \ref{appendix:f_free_variables}.
+there are three such functions we need to define. The full definitions of the other two functions is
+left in Appendix \ref{appendix:f_free_variables}.
 \begin{code}
   fv-tm : Term → List Id
   fv-tm (fr x) = x ∷ []
@@ -748,8 +761,8 @@ left in appendix \ref{appendix:f_free_variables}.
 
 \section{Substitution of types and terms}
 \label{chapter3:substitution_syntax}
-We can substitute a term for a free variable, and a type for a free type variable in a term and a
-type. Thus, we have three functions. We define them recursively.
+We can substitute a term for a free variable in a term, and a type for a free type variable in a
+term and a type. Thus, we have three functions. We define them recursively.
 \begin{code}
   tm-tm[_:=_]_ : Id → Term → Term → Term
   tm-tm[ x := N ] (fr y) with x ≟lchar y
@@ -763,7 +776,7 @@ type. Thus, we have three functions. We define them recursively.
   tm-tm[ x := N ] ‵zero = ‵zero
   tm-tm[ x := N ] (‵suc L) = ‵suc tm-tm[ x := N ] L
 \end{code}
-The definition of the other two substitution functions is in appendix
+The definition of the other two substitution functions is in Appendix
 \ref{appendix:f_substitution_of_terms}.
 \begin{code}
   ty-ty[_:=_]_ : Id → Type → Type → Type
@@ -793,27 +806,28 @@ The definition of the other two substitution functions is in appendix
 This substitution is central to proving evaluation properties, so we require two lemmas about its
 interaction with local closure. The first proves that if types $A$ and $C$ are locally closed up to
 $i$, then the substitution $[X := C] A$ is locally closed up to $i$ too. The proof is a consequence
-of lemma 2.6 and is done by induction on the structure of types. Since the proof is a
-straight-forward induction, it has been detailed in appendix \ref{appendix:f_substitution_of_terms}.
+of Lemma 2.6 and is done by induction on the structure of types. Since the proof is a
+straight-forward induction, it has been detailed in Appendix \ref{appendix:f_substitution_of_terms}.
+We only need the type-in-type opening version of this property.
 \begin{code}
   :=-≻ : ∀ {A X C i j} → j ≥ i → i ≻ty A → i ≻ty C
     → j ≻ty (ty-ty[ X := C ] A)
 \end{code}
 
 The second is how types are invariant under substitution if the free type variable that is being
-substituted for is not present in the type. While this is also true for the other forms of
-substitution, we only need the result for type-in-type substitution. The proof is a trivial
-induction.
+substituted for is absent in the type. We once again only require the result for type-in-type
+substitution. The proof is a trivial induction and detailed in Appendix
+\ref{appendix:f_substitution_of_terms}.
 \begin{code}
   :=-∉-invariant : ∀ {A X B} → X ∉ ftv-ty A
     → (ty-ty[ X := B ] A) ≡ A
 \end{code}
 
-And we also have an alternative substitution; substituting a term for a bound variable.
-\citet{chargueraud_locally_2012} also calls this operation opening, since it's the same as opening
-but instead of replacing the index with a free (type) varaible, it is replaced with a term. I
-believe this operation is closer to substitution than opening, and thus will call it substitution.
-Notice that we still increase the index when going under a $\lambda$-abstraction.
+We also have an alternative substitution; substituting a term for a bound variable.
+\citet{chargueraud_locally_2012} also calls this operation opening, since it is the same as opening
+but instead of replacing the index with a free (type) variable, it is replaced with a term. I see
+this operation closer to substitution than opening, and thus will call it substitution. Note how we
+still increase the index when going under a $\lambda$-abstraction.
 \begin{code}
   tm-tm[_:→_]_ : ℕ → Term → Term → Term
   tm-tm[ k :→ N ] (fr x) = fr x
@@ -828,7 +842,8 @@ Notice that we still increase the index when going under a $\lambda$-abstraction
   tm-tm[ k :→ N ] ‵zero = ‵zero
   tm-tm[ k :→ N ] (‵suc L) = ‵suc tm-tm[ k :→ N ] L
 \end{code}
-The definition of the other two substitution functions is in the appendix \ref{appendix:f_substitution_of_terms}.
+The definition of the other two substitution functions is in Appendix
+\ref{appendix:f_substitution_of_terms}.
 \begin{code}
   ty-ty[_:→_]_ : ℕ → Type → Type → Type
   ty-tm[_:→_]_ : ℕ → Type → Term → Term
@@ -856,7 +871,7 @@ The definition of the other two substitution functions is in the appendix \ref{a
 
 Similar to before, we want to prove that if an index doesn't occur in a type, then substituting for
 that index will leave the type unchanged. The proof once again is a trivial induction and so left in
-appendix \ref{appendix:f_substitution_of_terms}.
+Appendix \ref{appendix:f_substitution_of_terms}.
 \begin{code}
   ≻⇒:→-invariant : ∀ {C i j} (A : Type) → j ≥ i
     → i ≻ty A
@@ -865,7 +880,10 @@ appendix \ref{appendix:f_substitution_of_terms}.
 
 \section{Type contexts}
 \label{chapter3:contexts}
-As previously described, type contexts keep track of free type variables and the type of free variables.
+As previously described, type contexts keep track of free type variables and the type of free
+variables. We shall refer to the last added (i.e. right-most) variable as being on the `top' of the
+context. We can have an empty context, add a free variable of some type, or add a free type
+variable.
 \begin{code}
   data Context : Set where
     ∅ : Context
@@ -873,8 +891,8 @@ As previously described, type contexts keep track of free type variables and the
     _,_ : Context → Id → Context
 \end{code}
 
-We can either add a free variable of some type, or a free type variable to the context. Contexts are
-isomorphic to lists \citep{wadler_programming_2022}, so we can concatenate them and map over the
+As contexts
+are isomorphic to lists \citep{wadler_programming_2022}, we can concatenate them and map over the
 types of free variables.
 \begin{code}
   _+_ : Context → Context → Context
@@ -882,7 +900,7 @@ types of free variables.
   Γ + (Δ , x ⦂ A) = (Γ + Δ) , x ⦂ A
   Γ + (Δ , X) = (Γ + Δ) , X
 
-  map : ∀ (f : Type → Type) → Context → Context
+  map : (Type → Type) → Context → Context
   map f ∅ = ∅
   map f (Γ , x ⦂ A) = (map f Γ) , x ⦂ f A
   map f (Γ , X) = (map f Γ) , X
@@ -906,8 +924,8 @@ types of the free variables in the context (\texttt{domain-all-ftv}).
 
 We also have a few properties of concatenation and mapping. Since applying a map to a context
 $\Gamma$ will only change the type of free variables, the free type variables will not change after
-the map is applied. The proof is a simple induction on $\Gamma$ and so left in appendix
-\ref{appendix:f_contexts}.
+the map is applied. The proof is a simple induction on the structure of $\Gamma$ and so left in
+Appendix \ref{appendix:f_contexts}.
 \begin{code}
   domain-ftv-map-invariant : ∀ {Γ f}
     → domain-ftv Γ ≡ (domain-ftv (map f Γ))
@@ -915,7 +933,7 @@ the map is applied. The proof is a simple induction on $\Gamma$ and so left in a
 
 We require two further lemmas about concatenation in the future. We can switch between context and
 list concatenation, the proof of which is a simple induction on one of the contexts ($\Delta$ in the
-below code block) and so left in appendix \ref{appendix:f_contexts}.
+below code block) and so left in Appendix \ref{appendix:f_contexts}.
 \begin{code}
   domain-++ : ∀ (Γ Δ : Context)
     → (domain-ftv Δ) ++ (domain-ftv Γ) ≡ domain-ftv (Γ + Δ)
@@ -935,7 +953,8 @@ If $X \in \texttt{domain-ftv}(\Delta)$, then $X \in \texttt{domain-ftv}(\Gamma +
   \item Let $x$ be a free variable. If $x$'s type contains a free type variable, then $x$ must be
   added to the context after the free type variable (or in other words, the free type variable must
   be \textit{in scope}). We also restrict ourselves to locally closed types; we do not add any bound
-  variables to the context, so we should not add any bound type variables either.
+  variables to the context, so we should not add any free variables whose type contains bound type
+  variables either.
   \item There are no duplicate free type variables.
 \end{itemize}
 \begin{code}
@@ -960,14 +979,15 @@ We also have two convenience functions which are simple consequences of the defi
   extract-⊆ (ok-∷fv okΓ lc-A A⊆Γ) = A⊆Γ
 \end{code}
 
-\paragraph*{Accessing variables in the context.} Accessing the context is done in two different ways:
+\paragraph*{Accessing variables in the context.} We have two ways of accessing the context:
 \begin{itemize}
-  \item If a free variable is required, then the accessor is the constructor \texttt{\_∋\_⦂\_}.
-  \item If a free type variable is required, then the accessor is the constructor \texttt{\_∋\_}.
+  \item If a free variable is required, then the accessor is \texttt{\_∋\_⦂\_}.
+  \item If a free type variable is required, then the accessor is \texttt{\_∋\_}.
 \end{itemize}
 
 Each accessor has three constructors; one for getting the variable at the top of the context, one
-for going deeper, and one for changing between free and free type variables.
+for going deeper with a free variable at the top, and one for going deeper with a free type variable
+at the top.
 \begin{code}
   data _∋_ : Context → Id → Set where
     Z : ∀ {Γ X} → (Γ , X) ∋ X
@@ -977,12 +997,11 @@ for going deeper, and one for changing between free and free type variables.
   infix 4 _∋_⦂_
   data _∋_⦂_ : Context → Id → Type → Set where
     H : ∀ {Γ x y A} → x ≡ y → (Γ , x ⦂ A) ∋ y ⦂ A
-    T : ∀ {Γ x y A B}
-      → x ≢ y → (Γ ∋ x ⦂ A) → (Γ , y ⦂ B) ∋ x ⦂ A
+    T : ∀ {Γ x y A B} → x ≢ y → (Γ ∋ x ⦂ A) → (Γ , y ⦂ B) ∋ x ⦂ A
     T⦂ : ∀ {Γ x Y A} → (Γ ∋ x ⦂ A) → (Γ , Y) ∋ x ⦂ A
 \end{code}
 
-We define two convenience functionsto find the relevant evidence automatically. These are adapted
+We define two convenience functions to find the relevant evidence automatically. These are adapted
 from \citet[chapter~Lambda]{wadler_programming_2022}.
 \begin{code}
   H′ : ∀ {Γ x A} → (Γ , x ⦂ A) ∋ x ⦂ A
@@ -1053,11 +1072,11 @@ type we want, so we can simply use \texttt{H′}.
   ∋-map-ftv (Δ , Y) (ok-∷ftv okΓ,X+Δ Y∉) (T⦂ ∋x) =
     T⦂ (∋-map-ftv Δ okΓ,X+Δ ∋x)
 \end{code}
-In the other cases, we simply induct.
+In the other cases, we use \texttt{T} \texttt{T⦂} together with the induction hypothesis.
 
 The other proof we need is that if the free type variables of $A$ are in $\Gamma, X, \Delta$, then
-after applying a substitution, they will still be in new context. We prove this by inducting on the
-structure of the type $A$.
+after applying a substitution, they will still be in the new context. We prove this by inducting on
+the structure of the type $A$.
 \begin{code}
   ftv⊆dom-:= : ∀ {X A C} (Γ Δ : Context)
      → Ty-LocallyClosed C
@@ -1089,8 +1108,10 @@ If the type is $\nat$, then it's vacuously true.
       helper (Δ , W) (here refl) Y≢X = here refl
       helper (Δ , W) (there Y∈) Y≢X = there (helper Δ Y∈ Y≢X)
 \end{code}
-If it's a free type variable, then we need to check whether it's equal to $X$. If it is, we use the
-assumption \texttt{ftv-ty C ⊆ domain-ftv Δ} and apply the mapping to the context.
+If it is a free type variable $Y$, then we need to check whether it is equal to $X$. If it is, we
+use the assumption \texttt{ftv-ty C ⊆ domain-ftv Δ} and apply the mapping to the context. If not, we
+need to prove that $Y$ will still be in the context after the map. This is proven using
+\texttt{helper}, which itself is proven by a trivial induction.
 \begin{code}
   ftv⊆dom-:= {X} {#ᵀ n} Γ Δ lc-C C⊆Δ okΓ+map A⊆dom = All.[]
 \end{code}
@@ -1109,7 +1130,7 @@ The last cases are the inductive steps and are trivial.
 \section{Type judgements}
 \label{chapter3:type_judgements}
 Modifying the ones presented in \citet{chargueraud_locally_2012}, since he uses subtyping, System F
-has these type judgements (a version with more familiar mathematical notation is given in appendix \ref{appendix:f_type_judgements}):
+has these type judgements (a version with more familiar mathematical notation is given in Appendix \ref{appendix:f_type_judgements}):
 \begin{code}
   infix  4 _⊢_⦂_
   data _⊢_⦂_ : Context → Term → Type → Set where
@@ -1158,24 +1179,23 @@ has these type judgements (a version with more familiar mathematical notation is
 Observe there is a rule for typing a free variable but not a bound variable. Now consider the
 $\vdash\lambdabar$ rule. Since the term $L$ will contain bound variables, we will open the term to
 replace these with a free variable. We use cofinite quantification to choose an identifier for the
-free variable which does not cause accidental shadowing. After opening, the type rule is the same as
-for the fully named syntax \citep[chapter~Lambda]{wadler_programming_2022}, apart from the added
-type local closure requirement.
+free variable which does not cause accidental shadowing. Since we will replace all bound variables
+with free variables using this opening operation, we only require a type rule for free variables.
 
 The only real difference between these and the rules presented by \citet{chargueraud_locally_2012}
-(besides the substyping) is in $\vdash[]$. We add an explicit rule to only allow a type-application
+(besides the subtyping) is in $\vdash[]$. We add an explicit rule to only allow a type-application
 for types where the free variables are entirely contained in the context. Recall that we restrict
 our metalanguage to closed terms, those without free (type) variables. Thus, all free (type)
 variables must be contained in the context. We did not need this explicit rule for free variables as
 their presence in the context is guaranteed by the $\vdash\text{free}$ rule. But as free type
 variables are eliminated in the $\vdash[]$ rule, we need to put this guarantee here.
 
-We can give a type to \textit{twice} and $\Omega$ now.
+We can give a type to \textit{twice} and $\omega$ now.
 \begin{align}
 \label{equation:twice_big_omega}
   \text{twice} &\triangleq (\Lambda \lambda \colon \mathbf{0} \to \mathbf{0}. \lambda \colon \mathbf{0}. 1(10))
     \colon \forall (\mathbf{0} \to \mathbf{0}) \to \mathbf{0} \to \mathbf{0}\\
-  \Omega &\triangleq (\lambda \colon (\forall \mathbf{0} \to \mathbf{0}). (0 [\forall \mathbf{0} \to \mathbf{0}]) 0)
+  \omega &\triangleq (\lambda \colon (\forall \mathbf{0} \to \mathbf{0}). (0 [\forall \mathbf{0} \to \mathbf{0}]) 0)
     \colon (\forall \mathbf{0} \to \mathbf{0}) \to (\forall \mathbf{0} \to \mathbf{0}) \notag
 \end{align}
 \begin{code}
@@ -1214,8 +1234,7 @@ We can give a type to \textit{twice} and $\Omega$ now.
       ok-ctx = ok-∷fv ok-∅ lc-forall All.[]
 \end{code}
 
-We want to apply an equality in a type judgement, so we define helper functions as we did for type
-accessors.
+We want to apply an equality in a type judgement, so we define helper functions as we have before.
 \begin{code}
   ≡-with-⊢-tm : ∀ {Γ L M A} → Γ ⊢ L ⦂ A → L ≡ M → Γ ⊢ M ⦂ A
   ≡-with-⊢-tm ⊢L refl = ⊢L
@@ -1247,7 +1266,6 @@ a simple induction on the type judgement.
 If we have a map which takes evidence that a context contains a free variable to a different
 context, then we can extend the two contexts with another free variable.
 \begin{code}
-  -- Extending contexts.
   ext-tm : ∀ {Γ Δ}
     → (∀ {x A}     →        Γ ∋ x ⦂ A →         Δ ∋ x ⦂ A)
     → (∀ {x y A B} → Γ , y ⦂ B ∋ x ⦂ A → Δ , y ⦂ B ∋ x ⦂ A)
@@ -1279,7 +1297,6 @@ The renaming property is a good example to explain the inductive hypothesis when
 cofinite quantification. The proof is by induction on the evidence that $L$ is well-typed in
 $\Gamma$.
 \begin{code}
-  -- Renaming (a.k.a. rebasing) contexts.
   rename : ∀ {Γ Δ}
     → Ok Δ
     → (∀ {x A} → Γ ∋ x ⦂ A → Δ ∋ x ⦂ A)
@@ -1314,7 +1331,7 @@ We need to create our own $\vdash\Lambda$ type judgement and then create our own
 quantification. We will use the list the assumption's \texttt{Иe₁} for the identifiers we will
 disallow but also append all identifiers used for the free type variables in the types of free
 variables in $\Delta$ (\texttt{domain-all-ftv Δ}). Then we use a lambda function to receive a $T$
-that is not in the previously defined list.
+that is not in the list we just defined.
 
 We can then call \texttt{Иe₂} with our newly created $T$. We induct by calling \texttt{rename} on
 the evidence given be \texttt{Иe₂} (along with the other necessary arguments).
@@ -1335,8 +1352,8 @@ in \texttt{Иe₁} and not in \texttt{domain-all-ftv Δ}.
       ... | ok-∷fv OkΓ lc-A ftvA⊆Γ =
         ok-∷fv okΔ lc-A (⊆-change-ctx {Γ} {A} ftvA⊆Γ ρ-ty)
 \end{code}
-The case for $\vdash\lambdabar$ is very similar, except that we only do not need to append any other
-list to \texttt{Иe₁} in our own cofinite quantification.
+The case for $\vdash\lambdabar$ is very similar, except that we do not need to append any other list
+to \texttt{Иe₁} in our own cofinite quantification.
 \begin{code}
   rename okΔ ρ-tm ρ-ty (⊢[] lc A⊆Γ ⊢L) = ⊢[]
     lc
@@ -1358,16 +1375,13 @@ We have a few remaining properties. If a term is well-typed in the empty context
 in any context. This is proven using \texttt{rename} where the mappings are constructed using the
 absurd pattern since there are no variables in the empty context.
 \begin{code}
-  -- Weakening contexts.
   weaken : ∀ {Γ L A} → Ok Γ → ∅ ⊢ L ⦂ A → Γ ⊢ L ⦂ A
   weaken okΓ ⊢L = rename okΓ (λ ()) (λ ()) ⊢L
 \end{code}
 
-We want to swap variables at the top of the context and drop shadowed ones. Since these are also a
-corollary of the \texttt{rename} lemma, their proof is left in appendix
-\ref{appendix:f_type_properties}.
+We want to swap variables at the top of the context and drop shadowed ones. As these are a corollary
+of the \texttt{rename} lemma, their proof is left in Appendix \ref{appendix:f_type_properties}.
 \begin{code}
-  -- Swapping variables in a context.
   swap : ∀ {Γ x y L A B C}
     → x ≢ y
     → (Γ , y ⦂ B) , x ⦂ A ⊢ L ⦂ C
@@ -1387,8 +1401,8 @@ adapted from \citep[chapter~Properties]{wadler_programming_2022}.
 
 The next lemma is called \texttt{subst-open} by \citet{chargueraud_locally_2012}. This will be used
 in the main substitution properties later (\texttt{subst} and \texttt{subst-ty}). The proof is a
-trivial induction induction on the structure of the term. Note that this is for a
-\textit{term-in-term} substitution.
+trivial induction on the structure of the term. Note that this is for a term-in-term
+substitution.
 \begin{code}
   subst-open : ∀ {N x y i} (L : Term)
     → x ≢ y → (i ≻tm N)
@@ -1424,7 +1438,7 @@ We want to apply this to a term in a type judgement, so we define this helper fu
 \end{code}
 
 We now prove \texttt{subst-open} for the other kinds of substitution. As their proofs are similarly
-a trivial induction, their proofs are placed in appendix \ref{appendix:f_type_properties}.
+a trivial induction, their proofs are placed in Appendix \ref{appendix:f_type_properties}.
 \begin{code}
   subst-open-ty-tm : ∀ {N x y i j} (L : Term)
     → x ≢ y → j ≥ i → (i ≻ty-tm N)
@@ -1465,8 +1479,8 @@ a trivial induction, their proofs are placed in appendix \ref{appendix:f_type_pr
 
 To swap between the two substitutions, we have a lemma called \texttt{subst-intro} by
 \citet{chargueraud_locally_2012}. It says that, so long as we choose a fresh identifier $x$, we can
-swap between \texttt{:=} with opening and \texttt{:→}. The proof is a trivial induction, and so
-detailed in appendix \ref{appendix:f_type_properties}.
+swap between \texttt{:=} with opening and \texttt{:→}. The proof is a trivial induction, and so is
+detailed in Appendix \ref{appendix:f_type_properties}.
 \begin{code}
   subst-intro : ∀ {x i} (L N : Term) → x ∉ fv-tm L
     → tm-tm[ i :→ N ] L ≡ tm-tm[ x := N ] (tm-tm[ i —→ x ] L)
@@ -1478,20 +1492,22 @@ detailed in appendix \ref{appendix:f_type_properties}.
 
 \section{Well-typed terms are locally closed}
 \label{chapter3:typed_is_locally_closed}
-If the typing rules are correct, then all well-typed terms are locally closed. Intuitively, since we
-only allow closed terms in our language, then all well-typed terms are locally closed. We prove this by inducting on the type judgement.
+If the typing rules are correct, then all well-typed terms are locally closed. Intuitively, this is
+because we only allow closed terms in our language. We prove this by inducting on the type
+judgement.
 \begin{code}
   ⊢⇒lc : ∀ {Γ L A} → Γ ⊢ L ⦂ A → Tm-LocallyClosed L
-  ⊢⇒lc (⊢free okΓ lc-A ∋x) j = И⟨ [] , (λ a → refl) ⟩
+  ⊢⇒lc (⊢free okΓ lc-A ∋x) j = И⟨ [] , (λ _ → refl) ⟩
   ⊢⇒lc (⊢ƛ lc-A И⟨ Иe₁ , Иe₂ ⟩) j = И⟨ Иe₁ , (λ a {a∉} → cong ƛ_
     (open-rec-lc-lemma (λ ())
       (lemma2·7-2-tm z≤n (⊢⇒lc (Иe₂ a {a∉}))))) ⟩
 \end{code}
-For the $\vdash\lambda$ case, since the type judgement is in the form of a cofinite quantification,
-we need to create a cofinite quantification ourselves and use the same finite set for our
-exceptions. Then we're given an identifier $a$ which is not in \texttt{Иe₁}. We can use this $a$ to
-use the inductive hypothesis, which is called using \texttt{⊢⇒lc Иe₂ a {a∉}}. Then we simply apply
-\texttt{open-rec-lc-lemma} to complete the proof for this case.
+The $\vdash\text{free}$ case is trivial. For the $\vdash\lambda$ case, since the type judgement is
+in the form of a cofinite quantification, we need to create a cofinite quantification ourselves and
+use the same finite set for our exceptions. Then the lambda function gives an identifier $a$ which
+is not in \texttt{Иe₁}. We can use this $a$ with the inductive hypothesis, which is called using
+\texttt{⊢⇒lc (Иe₂ a {a∉})}. Then we simply apply \texttt{open-rec-lc-lemma} to complete the proof
+for this case.
 \begin{code}
   ⊢⇒lc {Γ} (⊢· ⊢A⇒B ⊢A) _ = И⟨ [] , (λ _ → cong₂ _·_
     (lemma2·7-2-tm z≤n (⊢⇒lc ⊢A⇒B))
@@ -1527,9 +1543,10 @@ use the inductive hypothesis, which is called using \texttt{⊢⇒lc Иe₂ a {a
         let И⟨ Иe₁ , Иe₂ ⟩ = (helper k≥i (‵suc-≻ i≻ty)) j
         in И⟨ Иe₁ , (λ a {a∉} → cong ‵suc_ (Иe₂ a {a∉})) ⟩
 \end{code}
-For the $\vdash\Lambda$ case, we need a helper function which is very similar to lemma 2.6. It says
+For the $\vdash\Lambda$ case, we need a helper function which is very similar to Lemma 2.6. It says
 that, if a term is locally closed at $i$ after opening, it will also be locally closed at $i$ (and
-any greater number) for the unopened term. This is itself proven by induction on the term.
+any greater number) for the unopened term. This is itself proven by induction on the term. The rest
+is proven using Lemma 2.7-2.
 \begin{code}
   ⊢⇒lc {L = L [ A ]} (⊢[] _ _ ⊢L) j =
     let И⟨ Иe₁ , Иe₂ ⟩ = (⊢⇒lc ⊢L) j
@@ -1539,9 +1556,10 @@ any greater number) for the unopened term. This is itself proven by induction on
     in И⟨ Иe₁ , (λ a {a∉} → cong ‵suc_ (Иe₂ a {a∉})) ⟩
 \end{code}
 The remaining cases are a simple induction, once again, using cofinite quantification by reusing the
-same set of exceptions.
+same list of exceptions.
 
-The proofs for the other two local closure predicates are presented in the appendix \ref{appendix:f_well_typed_lc}.
+The proofs for the other two local closure predicates are in Appendix
+\ref{appendix:f_well_typed_lc}.
 \begin{code}
   ⊢⇒lc-ty : ∀ {Γ L A} → Γ ⊢ L ⦂ A → Ty-LocallyClosed A
   ⊢⇒lc-ty-tm : ∀ {Γ L A} → Γ ⊢ L ⦂ A → Ty-Tm-LocallyClosed L
@@ -1549,7 +1567,7 @@ The proofs for the other two local closure predicates are presented in the appen
 
 \section{Substitution preserves types}
 \label{chapter3:substitution_preserves_types}
-Before proving the main substitution theorem, we'll need a lemma for extracting one kind of
+Before proving the main substitution theorem, we need a lemma for extracting one kind of
 substitution out of another. We only need the type substitution version of this property. The proof
 is a simple induction and a consequence of the previously proven \texttt{≻⇒:→-invariant}.
 \begin{code}
@@ -1581,10 +1599,10 @@ is a simple induction and a consequence of the previously proven \texttt{≻⇒:
 \end{code}
 
 \texttt{subst-ty} shows that we can substitute a free type variable and have the type of the term
-effected accordingly, and \texttt{subst} shows that we can apply a substitution to eliminate a
+affected accordingly, and \texttt{subst} shows that we can apply a substitution to eliminate a
 function type of a term.
 
-This first proof is done with an induction on the type judgement.
+This first proof is done by inducting on the type judgement.
 \begin{code}
   subst-ty : ∀ {Γ Δ X L B C}
     → Ty-LocallyClosed C
@@ -1599,24 +1617,8 @@ This first proof is done with an induction on the type judgement.
   ... | ok-∷ftv okΓ X∉Γ =
     ⊢free okΓ+map (:=-≻ z≤n lc-B lc-C) (∋-map-ftv Δ okΓ+Δ ∋x)
 \end{code}
-In the $\vdash\text{free}$ case, we use the previously proven \texttt{∋-map-ftv} property to apply
-the substitution to the type of the free variable.
-\begin{code}
-  subst-ty {Γ} {Δ} {L = ƛ L}
-      lc-C C⊆Δ okΓ+map (⊢ƛ {A = A} lc-A И⟨ Иe₁ , Иe₂ ⟩) =
-    ⊢ƛ (:=-≻ z≤n lc-A lc-C) И⟨ Иe₁ , (λ a {a∉} →
-      let ⊢tm-tm[0→]L = Иe₂ a {a∉}
-          ok = ⊢⇒Ok ⊢tm-tm[0→]L
-      in subst-open-ty-tm-tm-tm-ctx L z≤n lc-C
-        (subst-ty lc-C C⊆Δ (ok-∷fv
-            okΓ+map
-            (:=-≻ z≤n lc-A lc-C)
-            (ftv⊆dom-:= {A = A} Γ Δ lc-C C⊆Δ okΓ+map (extract-⊆ ok)))
-          ⊢tm-tm[0→]L)) ⟩
-\end{code}
-In the $\vdash\lambda$ case, we simply need to use the inductive hypothesis. The only tricky part
-comes in proving that the context is still okay when adding the new free variable to it. Luckily, we
-have already done the hard work when we proved \texttt{ftv⊆dom-:=} earlier.
+In the $\vdash\text{free}$ case, we use the previously proven \texttt{∋-map-ftv} lemma to apply the
+substitution to the type of the free variable.
 \begin{code}
   subst-ty lc-C C⊆Δ okΓ+map (⊢· ⊢L ⊢M) = ⊢·
     (subst-ty lc-C C⊆Δ okΓ+map ⊢L)
@@ -1634,10 +1636,27 @@ have already done the hard work when we proved \texttt{ftv⊆dom-:=} earlier.
         in subst-open-ty-tm-ty-tm-ctx X≢a z≤n lc-C
           (subst-open-ty-ty-ty-ty-ctx {A = B} {j = 0} X≢a z≤n lc-C hypo) ) ⟩
 \end{code}
-The $\vdash\text{app}$ case is simple. For $\vdash\Lambda$, after application of the inductive
+The $\vdash\cdot$ case is simple. For $\vdash\Lambda$, after application of the inductive
 hypothesis, we end up with a term which is of the form $\vdash [Y := C] ([i \to a] L) \colon [...]$.
 But to type a $\Lambda$-abstraction, we need the opening operation to be on the outside. Luckily we
 can use \texttt{subst-open} to swap these two around.
+\begin{code}
+  subst-ty {Γ} {Δ} {L = ƛ L}
+      lc-C C⊆Δ okΓ+map (⊢ƛ {A = A} lc-A И⟨ Иe₁ , Иe₂ ⟩) =
+    ⊢ƛ (:=-≻ z≤n lc-A lc-C) И⟨ Иe₁ , (λ a {a∉} →
+      let ⊢tm-tm[0→]L = Иe₂ a {a∉}
+          ok = ⊢⇒Ok ⊢tm-tm[0→]L
+      in subst-open-ty-tm-tm-tm-ctx L z≤n lc-C
+        (subst-ty lc-C C⊆Δ (ok-∷fv
+            okΓ+map
+            (:=-≻ z≤n lc-A lc-C)
+            (ftv⊆dom-:= {A = A} Γ Δ lc-C C⊆Δ okΓ+map (extract-⊆ ok)))
+          ⊢tm-tm[0→]L)) ⟩
+\end{code}
+In the $\vdash\lambda$ case, we need to use the inductive hypothesis together with
+\texttt{subst-open} to swap the opening and substitution operations around. The only tricky part
+comes in proving that the context is still okay when adding the new free variable to it. Luckily, we
+have already done the hard work when we proved \texttt{ftv⊆dom-:=} earlier.
 \begin{code}
   subst-ty {Γ} {Δ} {X = Y} {L = L [ A ]} {B = D}
       lc-C C⊆Δ okΓ+map (⊢[] {B = B} lc-A A⊆ ⊢L)
@@ -1648,9 +1667,9 @@ can use \texttt{subst-open} to swap these two around.
         (subst-ty lc-C C⊆Δ okΓ+map ⊢L))
 \end{code}
 For $\vdash[]$, after applying the inductive hypothesis and the $\vdash[]$ type judgement, we get an
-expression of the type \texttt{(ty-ty[ 0 :→ ty-ty[ Y := C ] A ] (ty-ty[ Y := C ] B))}. Extracting
-the \texttt{:=} substitution out of the \texttt{:→} one is exactly the reason why we need to call
-\texttt{extract-subst-ctx}.
+expression of the type $\text{ty-ty}[ 0 \texttt{:→} \text{ty-ty}[ Y := C ] A ] (\text{ty-ty}[ Y := C
+] B)$. Extracting the \texttt{:=} substitution out of the \texttt{:→} one is exactly the reason why
+we need to call \texttt{extract-subst-ctx}.
 \begin{code}
   subst-ty lc-C C⊆Δ okΓ+map (⊢zero okΓ+Δ) = ⊢zero okΓ+map
   subst-ty lc-C C⊆Δ okΓ+map (⊢suc ⊢L) =
@@ -1670,7 +1689,7 @@ which is exactly the requirement for termination that Agda uses
   subst : ∀ {Γ x L N A B}
     → ∅ ⊢ N ⦂ A
     → Γ , x ⦂ A ⊢ L ⦂ B
-      --------------------
+      -----------------------
     → Γ ⊢ tm-tm[ x := N ] L ⦂ B
   subst {x = y} ⊢N (⊢free (ok-∷fv okΓ _ A⊆Γ) lc-A (H refl))
     with y ≟lchar y
@@ -1706,7 +1725,7 @@ And to put these two properties to use, we need to replace the \texttt{:→} sub
   subst-op : ∀ {Γ L N A B}
     → ∅ ⊢ N ⦂ A
     → Γ ⊢ ƛ L ⦂ A ⇒ B
-      --------------------
+      -----------------------
     → Γ ⊢ tm-tm[ 0 :→ N ] L ⦂ B
   subst-op {Γ} {L} {N} ⊢N (⊢ƛ lc-A И⟨ Иe₁ , Иe₂ ⟩) =
     let x                  = fresh (fv-tm L ++ Иe₁)
@@ -1719,7 +1738,7 @@ And to put these two properties to use, we need to replace the \texttt{:→} sub
     → Ty-LocallyClosed C
     → ftv-ty C ⊆ []
     → ∅ ⊢ Λ L ⦂ ∀ᵀ B
-      --------------------
+      -----------------------------
     → ∅ ⊢ ty-tm[ 0 :→ C ] L ⦂ ty-ty[ 0 :→ C ] B
   subst-op-ty {L} {B} {C} lc-C C⊆[] (⊢Λ И⟨ Иe₁ , Иe₂ ⟩) =
     let x = fresh (fv-tm L ++ ftv-ty B ++ ftv-tm L ++ Иe₁)
@@ -1735,7 +1754,8 @@ And to put these two properties to use, we need to replace the \texttt{:→} sub
 
 \section{Evaluation}
 \label{chapter3:evaluation}
-As mentioned earlier, we will stop evaluating at abstractions.
+As mentioned in Section \ref{background:evaluation_strategy}, we will stop evaluating at
+abstractions.
 \begin{code}
   data Value : Term → Set where
     V-ƛ : ∀ {L} → Value (ƛ L)
@@ -1744,7 +1764,7 @@ As mentioned earlier, we will stop evaluating at abstractions.
     V-suc : ∀ {L} → Value L → Value (‵suc L)
 \end{code}
 
-We have the following evaluation rules.
+We have the following evaluation rules, adapted from \citet{chargueraud_locally_2012}.
 \begin{code}
   infix 4 _—→_
   data _—→_ : Term → Term → Set where
@@ -1779,11 +1799,11 @@ We have the following evaluation rules.
         --------------------------------
       → (Λ L) [ A ] —→ ty-tm[ 0 :→ A ] L
 \end{code}
-Notice how we only allow type applications which do not have any free type variables. This is
-because in our language, the only way to receive a free type variable is in the type judgement of a
-$\Lambda$-abstraction, evaluation will only work on empty contexts.
+The only difference in our version is that we only allow type applications which do not have any
+free type variables. This is because in our language, the only way to receive a free type variable
+is in the type judgement of a $\Lambda$-abstraction---evaluation will only work on empty contexts.
 
-We have reflexivity and transitivity of evaluation.
+We have transitivity and reflexivity of evaluation.
 \begin{code}
   data _—↠_ : Term → Term → Set where
     _∎' : ∀ M → M —↠ M
@@ -1794,9 +1814,10 @@ We have reflexivity and transitivity of evaluation.
   begin' M—↠N = M—↠N
 \end{code}
 
-The proof of progress is quite straight-forward. Compared to the proof as presented in
-\citet{wadler_programming_2022}, we only need to add some properties about local closure, which is
-easily obtained by \texttt{⊢⇒lc}.
+The proof of progress is quite straight-forward. Compared to the proof for the STLC as presented in
+\citet[chapter~Properties]{wadler_programming_2022}, we only need to add some properties about local
+closure, which is easily obtained by \texttt{⊢⇒lc}, and $\vdash[]$, which works the same as
+$\vdash\cdot$, except that we only need to evaluate one term instead of two.
 \begin{code}
   data Progress (L : Term) : Set where
     done : Value L → Progress L
@@ -1819,8 +1840,8 @@ easily obtained by \texttt{⊢⇒lc}.
   ... | done val-L = done (V-suc val-L)
 \end{code}
 
-The proof of preservation, however, proves difficult, because it requires the proofs of substitution
-which were presented earlier.
+The proof of preservation, however, proves difficult. Luckily, we already did the hard work when we
+proved \texttt{subst-ty}, \texttt{subst}, \texttt{subst-op}, and \texttt{subst-op-ty} earlier.
 \begin{code}
   preserve : ∀ {L L' A} → ∅ ⊢ L ⦂ A → L —→ L' → ∅ ⊢ L' ⦂ A
   preserve (⊢· ⊢L ⊢M) (ξ₁ L→L') = ⊢· (preserve ⊢L L→L') ⊢M
@@ -1833,7 +1854,10 @@ which were presented earlier.
   preserve (⊢suc ⊢L) (ξ-suc L→L') = ⊢suc (preserve ⊢L L→L')
 \end{code}
 
-Now we can make an evaluation function.
+Now we can make an evaluation function. We follow \citet{wadler_programming_2022} and define
+\texttt{Gas}: the number of evaluation steps we will take before giving up evaluation (we have `run
+out of gas'). We can either be finished when we are out of gas, or when we have reached a value. We
+keep track of the reduction steps using \texttt{Steps}.
 \begin{code}
   record Gas : Set where
     pattern
@@ -1847,7 +1871,11 @@ Now we can make an evaluation function.
 
   data Steps (L : Term) : Set where
     steps : ∀ {N} → L —↠ N → Finished N → Steps L
+\end{code}
 
+Finally, the evaluation function is defined by repeatedly applying the progress and preservation
+Lemmas as long as we have `gas' left.
+\begin{code}
   eval : ∀ {L A} → Gas → ∅ ⊢ L ⦂ A → Steps L
   eval {L} (gas zero) ⊢L = steps (L ∎') out-of-gas
   eval {L} (gas (suc n)) ⊢L with progress ⊢L
@@ -1856,7 +1884,7 @@ Now we can make an evaluation function.
   ...   | steps M→N fin = steps (L —→⟨ L→M ⟩ M→N) fin
 \end{code}
 
-As an example, we can apply the earlier defined \texttt{twice} function to apply $\lambda \;
+As an example, we can use the earlier defined \texttt{twice} function to apply $\lambda \;
 \texttt{‵suc} \; 0$ twice to \texttt{‵zero} to get \texttt{‵suc (‵suc ‵zero)}.
 \begin{code}
   ⊢twice-suc-zero :
@@ -1870,19 +1898,18 @@ As an example, we can apply the earlier defined \texttt{twice} function to apply
     (⊢zero ok-∅)
 \end{code}
 
-The Agda-generated code is ommitted here, but one could figure this out interactively by using
-Agda's normalise feature. For example, in Emacs, one can press \texttt{C-c} \texttt{C-n} and type
-\texttt{eval (gas 10) ⊢twice-suc-zero} to see the derivation being automatically generated.
+One could evaluate this expression by using Agda's normalise feature. For example, in Emacs, one can
+press \texttt{C-c} \texttt{C-n} and type \texttt{eval (gas 10) ⊢twice-suc-zero} to see the
+derivation being automatically generated.
 
 \chapter{Conclusions}
 \label{chapter4}
 We have successfully developed an evaluator for System F using the locally nameless representation
 and have proven many important properties of the language, culminating in progress and preservation.
-However, to do so, we required proofs which were very difficult to explain. It is unclear if a
-different proof approach would have given a simpler function body. Additionally, despite following
-Agda's requirements for termination, the compiler still complains that \texttt{subst} does not
-terminate. Of course, termination-checking is undecidable, but a proof of \texttt{subst} without the
-\texttt{\{\#- TERMINATING -\#\}} pragma would be desirable.
+However, to do so, we required lemmas which were very difficult to prove and to explain.
+Additionally, despite following Agda's requirements for termination, the compiler still complains
+that \texttt{subst} does not terminate. Of course, termination-checking is undecidable, but a proof
+of \texttt{subst} without the \texttt{\{\#- TERMINATING -\#\}} pragma would be desirable.
 
 \paragraph*{Future work} Most, if not all, of the prior literature on locally nameless
 representation, including the work presented here, uses an extrinsically typed approach. This means
@@ -1893,8 +1920,8 @@ restrict ourselves to only well-typed terms. For the STLC,
 trivial, such as preservation, and the overall code being more concise. As preservation
 (specifically \texttt{subst} and \texttt{subst-ty}) proved to be the most difficult theorem in this
 work, this would certainly be welcome. The main problem with an intrinsically typed approach is that
-the locally nameless representation requires infrastructure for the syntax to be defined. Since
-bound variables outside of a $\lambda$-abstraction are ill-typed, it would prove difficult to
+the locally nameless representation requires infrastructure (opening, closing, local closure, etc.).
+Since bound variables outside of a $\lambda$-abstraction are ill-typed, it would prove difficult to
 combine an intrinsically typed approach with the infrastructure required.
 
 The language we presented here is plain System F, but often the literature studies more complex
@@ -1904,7 +1931,8 @@ with a few extra type judgements for subtyping, extra evaluation rules, and some
 restrictions on the `Ok' predicate. As mentioned above, System F$_\omega$ has been formalised by
 \citet{hutton_system_2019} in Agda, and a locally nameless approach has been used for System
 F$_\omega^\ast$ by \citet{rendel_typed_2009}, an extension of System F$_\omega$ which allows typed
-self-representation. Thus, an Agda development would not be unreasonable to develop.
+self-representation. He used Rocq, and as far as I am aware, an Agda development has not yet been
+published.
 
 \bibliographystyle{plainnat}
 \bibliography{dissertation}
@@ -1926,6 +1954,42 @@ These functions are adapted from the PLFA textbook \citep{wadler_programming_202
 \label{appendix:f}
 \section{Local Closure}
 \label{appendix:f_local_closure}
+\begin{code}
+  -- ax1-tm : ∀ (i : ℕ) (a b : Id) (L : Term)
+  --   → tm-tm[ i —→ a ] (tm-tm[ i —→ b ] L)
+  --     ≡ tm-tm[ i —→ b ] L
+  ax1-tm i a b (fr x) = refl
+  ax1-tm i a b (# k) with i ≟ℕ k
+  ... | yes refl = refl
+  ... | no  i≢k  with i ≟ℕ k
+  ... |   yes refl = contradiction refl i≢k
+  ... |   no  _    = refl
+  ax1-tm i a b (ƛ L) rewrite ax1-tm (suc i) a b L = refl
+  ax1-tm i a b (L · M)
+    rewrite ax1-tm i a b L | ax1-tm i a b M = refl
+  ax1-tm i a b (Λ L) rewrite ax1-tm i a b L = refl
+  ax1-tm i a b (L [ A ]) rewrite ax1-tm i a b L = refl
+  ax1-tm i a b ‵zero = refl
+  ax1-tm i a b (‵suc L) rewrite ax1-tm i a b L = refl
+
+  -- ax1-ty-tm : ∀ (i : ℕ) (a b : Id) (L : Term)
+  --   → ty-tm[ i —→ a ] (ty-tm[ i —→ b ] L)
+  --     ≡ ty-tm[ i —→ b ] L
+  ax1-ty-tm i a b (fr x) = refl
+  ax1-ty-tm i a b (# k) = refl
+  ax1-ty-tm i a b (ƛ L) rewrite
+    ax1-ty-tm i a b L = refl
+  ax1-ty-tm i a b (L · M) rewrite
+    ax1-ty-tm i a b L | ax1-ty-tm i a b M = refl
+  ax1-ty-tm i a b (Λ L)
+    rewrite ax1-ty-tm (suc i) a b L = refl
+  ax1-ty-tm i a b (L [ A ])
+    rewrite ax1-ty i a b A | ax1-ty-tm i a b L = refl
+  ax1-ty-tm i a b ‵zero = refl
+  ax1-ty-tm i a b (‵suc L)
+    rewrite ax1-ty-tm i a b L = refl
+\end{code}
+
 \begin{code}
   -- lemma2·6-ty : ∀ {i j A}
   --   → j ≥ i
@@ -2004,41 +2068,6 @@ These functions are adapted from the PLFA textbook \citep{wadler_programming_202
   lemma2·7-2-ty-tm {j = j} j≥i i≻L =
     let И⟨ Иe₁ , Иe₂ ⟩ = i≻L j ⦃ j≥i ⦄ in
       lemma2·7-1-ty-tm (Иe₂ (fresh Иe₁) {fresh-correct Иe₁})
-\end{code}
-\begin{code}
-  -- ax1-tm : ∀ (i : ℕ) (a b : Id) (L : Term)
-  --   → tm-tm[ i —→ a ] (tm-tm[ i —→ b ] L)
-  --     ≡ tm-tm[ i —→ b ] L
-  ax1-tm i a b (fr x) = refl
-  ax1-tm i a b (# k) with i ≟ℕ k
-  ... | yes refl = refl
-  ... | no  i≢k  with i ≟ℕ k
-  ... |   yes refl = contradiction refl i≢k
-  ... |   no  _    = refl
-  ax1-tm i a b (ƛ L) rewrite ax1-tm (suc i) a b L = refl
-  ax1-tm i a b (L · M)
-    rewrite ax1-tm i a b L | ax1-tm i a b M = refl
-  ax1-tm i a b (Λ L) rewrite ax1-tm i a b L = refl
-  ax1-tm i a b (L [ A ]) rewrite ax1-tm i a b L = refl
-  ax1-tm i a b ‵zero = refl
-  ax1-tm i a b (‵suc L) rewrite ax1-tm i a b L = refl
-
-  -- ax1-ty-tm : ∀ (i : ℕ) (a b : Id) (L : Term)
-  --   → ty-tm[ i —→ a ] (ty-tm[ i —→ b ] L)
-  --     ≡ ty-tm[ i —→ b ] L
-  ax1-ty-tm i a b (fr x) = refl
-  ax1-ty-tm i a b (# k) = refl
-  ax1-ty-tm i a b (ƛ L) rewrite
-    ax1-ty-tm i a b L = refl
-  ax1-ty-tm i a b (L · M) rewrite
-    ax1-ty-tm i a b L | ax1-ty-tm i a b M = refl
-  ax1-ty-tm i a b (Λ L)
-    rewrite ax1-ty-tm (suc i) a b L = refl
-  ax1-ty-tm i a b (L [ A ])
-    rewrite ax1-ty i a b A | ax1-ty-tm i a b L = refl
-  ax1-ty-tm i a b ‵zero = refl
-  ax1-ty-tm i a b (‵suc L)
-    rewrite ax1-ty-tm i a b L = refl
 \end{code}
 
 \begin{code}
@@ -2190,25 +2219,6 @@ compiler and is identical to the code below.
 \end{minted}
 
 \begin{code}
-  -- ≻⇒:→-invariant : ∀ {C i j} (A : Type)
-  --   → j ≥ i       → i ≻ty A
-  --     ---------------------
-  --   → ty-ty[ j :→ C ] A ≡ A
-  ≻⇒:→-invariant ‵ℕ j≥i i≻A = refl
-  ≻⇒:→-invariant (frᵀ x) j≥i i≻A = refl
-  ≻⇒:→-invariant {C} {i} {j} (#ᵀ n) j≥i i≻A with j ≟ℕ n
-  ... | no  j≢n  = refl
-  ... | yes refl with i≻A j ⦃ j≥i ⦄
-  ...   | И⟨ Иe₁ , Иe₂ ⟩ with n ≟ℕ n
-  ...     | yes refl with () ← Иe₂ (fresh Иe₁) {fresh-correct Иe₁}
-  ...     | no  n≢n  = contradiction refl n≢n
-  ≻⇒:→-invariant (A ⇒ B) j≥i i≻ = let ⟨ i≻A , i≻B ⟩ = ⇒-≻ i≻
-    in cong₂ _⇒_ (≻⇒:→-invariant A j≥i i≻A) (≻⇒:→-invariant B j≥i i≻B)
-  ≻⇒:→-invariant {i = i} {j = j} (∀ᵀ A) j≥i i≻ = cong ∀ᵀ_
-    (≻⇒:→-invariant A (s≤s j≥i) (i≻∀A⇒si≻A i≻))
-\end{code}
-
-\begin{code}
   -- :=-≻ : ∀ {A X C i j} → j ≥ i → i ≻ty A → i ≻ty C
   --   → j ≻ty (ty-ty[ X := C ] A)
   :=-≻ {‵ℕ} j≥i i≻A i≻C = n≻‵ℕ
@@ -2243,6 +2253,25 @@ compiler and is identical to the code below.
     (:=-∉-invariant {A} (proj₁ (∉-++ X∉)))
     (:=-∉-invariant {B} (proj₂ (∉-++ X∉)))
   :=-∉-invariant {∀ᵀ A} X∉A = cong ∀ᵀ_ (:=-∉-invariant {A} X∉A)
+\end{code}
+
+\begin{code}
+  -- ≻⇒:→-invariant : ∀ {C i j} (A : Type)
+  --   → j ≥ i       → i ≻ty A
+  --     ---------------------
+  --   → ty-ty[ j :→ C ] A ≡ A
+  ≻⇒:→-invariant ‵ℕ j≥i i≻A = refl
+  ≻⇒:→-invariant (frᵀ x) j≥i i≻A = refl
+  ≻⇒:→-invariant {C} {i} {j} (#ᵀ n) j≥i i≻A with j ≟ℕ n
+  ... | no  j≢n  = refl
+  ... | yes refl with i≻A j ⦃ j≥i ⦄
+  ...   | И⟨ Иe₁ , Иe₂ ⟩ with n ≟ℕ n
+  ...     | yes refl with () ← Иe₂ (fresh Иe₁) {fresh-correct Иe₁}
+  ...     | no  n≢n  = contradiction refl n≢n
+  ≻⇒:→-invariant (A ⇒ B) j≥i i≻ = let ⟨ i≻A , i≻B ⟩ = ⇒-≻ i≻
+    in cong₂ _⇒_ (≻⇒:→-invariant A j≥i i≻A) (≻⇒:→-invariant B j≥i i≻B)
+  ≻⇒:→-invariant {i = i} {j = j} (∀ᵀ A) j≥i i≻ = cong ∀ᵀ_
+    (≻⇒:→-invariant A (s≤s j≥i) (i≻∀A⇒si≻A i≻))
 \end{code}
 
 As mentioned above, for technical reasons, the real Agda code for these functions had to be included
@@ -2652,51 +2681,60 @@ typechecked by the compiler and is identical to the code below.
 \end{code}
 
 \chapter{Local closure definition equivalence}
+\label{appendix:lc_equivalence}
 We aim to prove that our definition of local closure is equivalent to the definition that
-\citet{pitts_locally_2023} gives.
+\citet{pitts_locally_2023} gives. I will show that the three local closure definitions given in
+Section \ref{chapter3:local_closure} are each equivalent to a version using existential
+quantification.
 
+\begin{comment}
 \begin{code}
   open import Data.Product using (∃; ∃-syntax)
+\end{code}
+\end{comment}
+
+We will prove an if and only if relation between the two by having two functions for each direction
+of the implication. We will only give an explanation of the Agda code for the type-in-type local
+closure, but the proofs for the other two openings work similarly. We first define the existential
+local closure predicate.
+\begin{code}
   _≻'ty_ : ℕ → Type → Set
   i ≻'ty A = (j : ℕ) ⦃ _ : j ≥ i ⦄ → ∃[ T ] (ty-ty[ j —→ T ] A ≡ A)
 \end{code}
 
-Specifically, we will prove an if and only if relation between the two. We will only prove this for
-the type-in-type local closure, but the proof for the other two openings works similarly.
+The proof of the necessary condition is straight-forward. Since we can always create a new
+identifier, we simply create one that is not in the `disallow' list provided by the cofinite
+quantifier.
+
 \begin{code}
   ≻ty⇒≻'ty : ∀ (i : ℕ) (A : Type)
     → i ≻ty A → i ≻'ty A
-
-  ≻'ty⇒≻ty : ∀ (i : ℕ) (A : Type)
-    → i ≻'ty A → i ≻ty A
-\end{code}
-
-The first proof is straight-forward. Since we can always create a new identifier, we simply create
-one that is not in the `disallow' list provided by the cofinite quantifier.
-
-\begin{code}
   ≻ty⇒≻'ty i A i≻tyA j =
     let И⟨ Иe₁ , Иe₂ ⟩ = i≻tyA j
     in ⟨ (fresh Иe₁) , Иe₂ (fresh Иe₁) {fresh-correct Иe₁} ⟩
 \end{code}
 
-Now we prove the other implication by induction on the structure of the type.
-
-The base cases \texttt{‵ℕ}, and \texttt{frᵀ} are trivial. For a bound variable, if the bound
-variable is not the same as the index, we don't replace and so the proof is completed by
-reflexivity. If they are the same, then that means that the other local closure would have opened
-the term, which would \textit{not} have left the term unchanged---a contradiction. The other cases
-are the inductive steps and simply use the inductive hypothesis together with the injectivity of
-\texttt{⇒}, \texttt{∀ᵀ}, and \texttt{‵suc}.
+Now we prove the sufficient condition by induction on the structure of the type.
 \begin{code}
+  ≻'ty⇒≻ty : ∀ (i : ℕ) (A : Type)
+    → i ≻'ty A → i ≻ty A
   ≻'ty⇒≻ty i ‵ℕ i≻'tyA = n≻‵ℕ
   ≻'ty⇒≻ty i (frᵀ X) i≻'tyA j = И⟨ [] , (λ _ → refl) ⟩
+\end{code}
+The base cases \texttt{‵ℕ}, and \texttt{frᵀ} are trivial.
+\begin{code}
   ≻'ty⇒≻ty i (#ᵀ k) i≻'tyA j with j ≟ℕ k
   ... | no  j≢k  = И⟨ [] , (λ _ → refl) ⟩
   ... | yes refl with i≻'tyA j
   ...   | ⟨ X , op-invariant ⟩ with k ≟ℕ k
   ...     | yes refl with () ← op-invariant
   ...     | no  k≢k  = contradiction refl k≢k
+\end{code}
+For a bound variable, if the bound variable is not the same as the index, we don't replace and so
+the proof is completed by reflexivity. If they are the same, then that means that the other local
+closure would have opened the term, which would \textit{not} have left the term unchanged---a
+contradiction.
+\begin{code}
   ≻'ty⇒≻ty i (A ⇒ B) i≻'ty j =
     let И⟨ A-Иe₁ , A-Иe₂ ⟩ = (≻'ty⇒≻ty i A i≻'tyA) j
         И⟨ B-Иe₁ , B-Иe₂ ⟩ = (≻'ty⇒≻ty i B i≻'tyB) j
@@ -2721,6 +2759,8 @@ are the inductive steps and simply use the inductive hypothesis together with th
       induc-hypo : (suc i) ≻ty A
       induc-hypo = ≻'ty⇒≻ty (suc i) A si≻'tyA
 \end{code}
+The other cases are the inductive steps and simply use the inductive hypothesis together with the
+injectivity of \texttt{⇒}, \texttt{∀ᵀ}, and \texttt{‵suc}.
 
 The proofs for the other kinds of local closure work by the same reasoning.
 \begin{code}
@@ -2873,6 +2913,21 @@ The proofs for the other kinds of local closure work by the same reasoning.
       induc-hypo : i ≻ty-tm L
       induc-hypo = ≻'ty-tm⇒≻ty-tm i L i≻'L
 \end{code}
+
+\label{appendix:lc_note}
+Note that this cannot be proven for any locally nameless set, but it does hold for any locally
+nameless set. This is because the proof of the sufficient condition requires induction on the
+structure of the set, and we cannot do this in the general case. However, if one works uses locally
+nameless representation for a syntax for a programming language, we know the structure of the syntax
+and thus \textit{can} use induction on the structure.
+
+The proof for any programming language which uses an inductively defined structure with free and
+bound variables follows the same strategy as presented above. For the base case of a bound variable,
+if the index $j$ is equal to or smaller $i$, then the existential local closure predicate doesn't
+hold and we have a contradiction. Otherwise, opening it will have no effect, and so the opened term
+is trivially equal to itself. For the other base cases, opening will have no effect, and so again,
+we are done. For the inductive steps, we simply use the injectivity of the syntax, optionally
+requiring modifying the index if going under a binder, together with the inductive hypothesis.
 
 \chapter{Prior work submitted for TSPL}
 \label{appendix:tspl}

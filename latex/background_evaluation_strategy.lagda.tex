@@ -7,17 +7,15 @@ There are several ways of evaluating the $\lambda$-calculus. One important decis
 treat $\lambda$-abstractions as values, or to reduce these if they are a redex.
 
 When evaluating, we need to consider some terms to be \textit{values}. These cannot be reduced any
-further. One method is to consider $\lambda$-abstractions to be values and to only evaluate
-\textit{closed} terms, that is, terms without any free variables or free type variables. This is
-called weak-head reduction, and the values are called weak-head normal forms
-\citep{wadler_programming_2022}. This method is also used by popular programming languages such as
-Haskell \citep{hutchison_sharing_2005}. The definition of the $\lambda$-calculus as Church first
-described it uses what is nowadays referred to as \textit{full normalisation}
-\citep{wadler_programming_2022}. The reduction rule which is absent in weak-head reduction is the
-$\zeta$ rule (see equation \ref{equation:untyped_beta_rules}), also called \textit{reducing under a
-$\lambda$-abstraction}.
+further. We could consider $\lambda$-abstractions to be values and to only evaluate \textit{closed}
+terms---terms without any free variables or free type variables. This is called \textit{weak-head
+reduction}, and the values are called \textit{weak-head normal forms}
+\citep{wadler_programming_2022}. The $\lambda$-calculus as Church first described it uses what is
+nowadays referred to as \textit{full normalisation} \citep{wadler_programming_2022}. The reduction
+rule which is absent in weak-head reduction is the $\zeta$ rule (see equation
+\ref{equation:untyped_beta_rules}), also called \textit{reducing under a $\lambda$-abstraction}.
 
-When using weak-head reduction, we run into an issue. Consider the following expression;
+When using weak-head reduction, we run into an issue. Consider the following;
 \begin{align*}
   \lambda \, q. \lambda \, r. q ((\lambda \, f. \lambda \, x . x) q r).
 \end{align*}
@@ -52,6 +50,6 @@ Now we can evaluate the above expression by modifying it slightly;
 
 Although this results in a different expression, it allows us to reduce the redex, which we couldn't
 before. This approach is more concise than adding the previously mentioned extra evaluation rules.
-In my develpoment of System F, I will consider $\lambda$-abstractions, $\Lambda$-abstractions,
+In my development of System F, I will consider $\lambda$-abstractions, $\Lambda$-abstractions,
 \texttt{‵zero}, and \texttt{‵suc} to be values. The evaluation rules used in my development are
-detailed in section \ref{chapter3:evaluation}.
+detailed in Section \ref{chapter3:evaluation}.

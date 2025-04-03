@@ -10,16 +10,17 @@ equivalent.
 \begin{equation*}
   x \colon \iota \in \Gamma \vdash (\lambda \, f \colon \iota \to \iota. f x) \colon \iota.
 \end{equation*}
-As previously mentioned, $\alpha$-conversion forms an equivalence relation. Like any other equivalence
-relation, this induces a quotient set. We say that we have \textit{quotient} inductive definitions
-\citep{aydemir_engineering_2008}; we have both an inductive definition of the $\lambda$-calculus,
-but also (infinitely) many $\alpha$-equivalence classes. In some proof assistants, this makes proofs
-difficult, as they cannot handle quotient definitions well \citep{pitts_locally_2023}.
+As previously mentioned, $\alpha$-conversion forms an equivalence relation. Like any other
+equivalence relation, this induces a quotient set. We say that we have \textit{quotient} inductive
+definitions \citep{aydemir_engineering_2008}; we have both an inductive definition of the
+$\lambda$-calculus, but also (infinitely) many $\alpha$-equivalence classes. In some proof
+assistants, this makes proofs difficult, as they cannot handle quotient definitions well
+\citep{pitts_locally_2023}.
 
-We can solve this by using \textit{De Bruijn indices}, which eliminate $\alpha$-conversions. De Bruijn
-indices, first described by Nicolaas Govert \citet{de_bruijn_lambda_1972}, are a natural number
-which reference a variable. The natural number is how many binders from the current reference the
-variable is bound at. In our example,
+We can solve this by using \textit{de Bruijn indices}, which eliminate $\alpha$-conversions. De
+Bruijn indices, first described by Nicolaas Govert \citet{de_bruijn_lambda_1972}, are a natural
+number which reference a variable. The natural number is how many binders from the current reference
+the variable is bound at. In our example,
 \begin{equation*}
   \iota, \in \Gamma \vdash (\lambda \, 0 1) \colon \iota.
 \end{equation*}
@@ -37,9 +38,9 @@ demonstrated reindexing requirement \citep[section~2.1]{aydemir_engineering_2008
 
 \subsection{Locally Nameless Representation}
 \label{section:background_locally_nameless}
-Using \textit{locally nameless representation}, we can get both purely inductive definitions and
-solve the reindexing issue. Free variables use variable names while bound variables use indices. Our
-example becomes
+Using \textit{locally nameless representation} (first used by \citet{goos_mechanisation_1994}), we
+can get both purely inductive definitions and solve the reindexing issue. Free variables use
+variable names while bound variables use indices. Our example becomes
 \begin{equation*}
   x \colon \iota \in \Gamma \vdash (\lambda \, 0 x) \colon \iota,
 \end{equation*}
@@ -48,8 +49,8 @@ or with another variable in the context,
   x \colon \iota, y \colon \iota \to \iota \in \Gamma \vdash (\lambda \, 0 x) \colon \iota.
 \end{equation*}
 
-Although locally nameless representation was described earlier, our approach of combining it with
-cofinite quantification was first described by \citet{aydemir_engineering_2008}.
+Combining locally nameless representation with cofinite quantification was first described by
+\citet{aydemir_engineering_2008}.
 
 As part of using locally nameless terms, common operations and properties (called `infrastructure'
 by \citet{aydemir_engineering_2008}) need to be defined for the target language, which will be
@@ -57,24 +58,24 @@ detailed below. A recent article by Andrew \citet{pitts_locally_2023} uses Agda 
 abstraction of this representation called locally nameless sets, and shows that this infrastructure
 can be defined in a syntax-agnostic way.
 
-For the development of the System F formalisation in chapter \ref{chapter3}, the infrastructure
-required is term and type opening (section \ref{chapter3:opening}), local closure (section
-\ref{chapter3:local_closure}), and the various substitutions (section
+For the development of the System F formalisation in Chapter \ref{chapter3}, the infrastructure
+required is term and type opening (Section \ref{chapter3:opening}), local closure (Section
+\ref{chapter3:local_closure}), and the various substitutions (Section
 \ref{chapter3:substitution_syntax}). Term opening and local closure are defined below.
 
 The drawback of using this representation is that we need to define infrastructure and prove some
 properties of the syntax (detailed in sections \ref{chapter3:opening} to
-\ref{chapter3:substitution_syntax}) before we can prove the properties of the metalangauge. But
-usually, this drawback is too small to outweight the benefits.
+\ref{chapter3:substitution_syntax}) before we can prove the properties of the metalanguage. But
+usually, this drawback is too small to outweigh the benefits \citep{aydemir_engineering_2008}.
 
 \paragraph*{Opening and closing.} Two fundamental operations on locally nameless terms are
 \textit{term opening} and \textit{term closing} \citep{pitts_locally_2023}. Opening will replace all
-occurrences of a bound variable with a free variable, written $[i \to x] L$ for some De Bruijn
-index $i$, name $x$, and term $L$. For example,
+occurrences of a bound variable with a free variable, written $[i \to x] L$ for some de Bruijn index
+$i$, name $x$, and term $L$. For example,
 \begin{equation*}
   [0 \to y] (0 q (\lambda \, 1 t 0)) \quad \mapsto \quad y q (\lambda \, y t 0).
 \end{equation*}
-Every occurence of the bound variable $0$ is replaced with the free variable $y$. Note how after we
+Every occurrence of the bound variable $0$ is replaced with the free variable $y$. Note how after we
 go under a new $\lambda$-abstraction, we have to increment this index to $1$ to keep referring to
 the same bound variable.
 
@@ -92,16 +93,21 @@ term $L$, we write that $L$ is locally closed at level $i$ as $i \succ L$. Forma
   i \succ L \triangleq \forall j \geq i, \; \cof a , \; [j \to a] L = L.
 \end{equation}
 If it is locally closed at level $0$, we simply call it \textit{locally closed}. Local closure is
-defined for System F in section \ref{chapter3:local_closure}.
+defined for System F in Section \ref{chapter3:local_closure}.
 
-TODO: CITE PITTS AND SAY THE ABOVE HOLDS IFF PITTS HOLDS.
+We have adapted this definition from the one given by \citet{pitts_locally_2023}, replacing the
+existential quantification in his definition with cofinite quantification. A proof that these are
+equivalent for System F (that there is an if and only if relation between the two) is given in
+Appendix \ref{appendix:lc_equivalence}. Note that this is not true in the general case for any
+locally nameless set, but is true for any locally nameless representation of a programming language
+with an inductive definition and free and bound variables, such as other $\lambda$-calculus variants
+(see page \pageref{appendix:lc_note}).
 
-As detailed in \citet{aydemir_engineering_2008}, local closure can be defined using universal
-quantification instead. For example, equation (\ref{equation:local_closure}) could read $\forall a
-\notin \fv(L), \; [j \to a] L = L$. The benefit of using cofinite quantification comes when we use
-quantified properties in assumptions of theorems.
+We could also define local closure using universal quantification instead. For example, equation
+(\ref{equation:local_closure}) could read $\forall a \notin \fv(L), \; [j \to a] L = L$. The benefit
+of using cofinite quantification comes when we use quantified properties in assumptions of theorems.
 
 Suppose we have as an assumption the local closure of terms $L$ and $M$ and we wanted to prove that
-$LM$ was locally closed. We would need to combine the two `disallowed' lists together. We would run
-into the same issue described in the example given in section \ref{background:cofinite}, simply
+$LM$ was locally closed. We would need to combine the two `disallowed' sets together. We would run
+into the same issue described in the example given in Section \ref{background:cofinite}, simply
 replace $P$ and $Q$ with the local closure property.

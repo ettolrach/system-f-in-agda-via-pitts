@@ -1,0 +1,12 @@
+subtyping
+Agda
+Rocq
+typechecked
+redex
+indeterminates
+metalanguage
+cofinite
+injectivity
+subexpressions
+subexpression
+pragma

@@ -58,7 +58,7 @@ In the function body, we take in our first argument and give it the name \texttt
 function \texttt{f} in the type signature, but we could have given it a different name, like
 \texttt{g}. The next argument is the evidence that \texttt{x ≡ y}. We can use
 \textit{pattern-matching} to deconstruct the argument and present its constructors instead; since
-equality only has the one arguemnt---\texttt{refl}---this will be the second argument. In doing so,
+equality only has the one argument---\texttt{refl}---this will be the second argument. In doing so,
 Agda now knows that \texttt{x} and \texttt{y} are the same, so the proof holds by reflexivity.
 
 We can define addition recursively. The function \texttt{\_+\_} takes as arguments two natural
