@@ -2946,8 +2946,28 @@ This document is a literate Agda file. It has been tested to work with
   \texttt{texlive-xetex} 2025.2-1).
 \end{itemize}
 
-The full source code is available at \url{https://github.com/ettolrach/system-f-in-agda-via-pitts}.
+You should have received the full source code with this document. If not, it is available at
+\url{https://github.com/ettolrach/system-f-in-agda-via-pitts}.
 
-Please see \texttt{./README.md} in the above linked repository for full compilation instructions.
+To typecheck the \texttt{.agda} files, simply run \texttt{agda FILE.agda}, or open the file in an
+editor with Agda support, like Emacs.
+
+To compile the LaTeX files, located in the \texttt{./latex} directory, follow these instructions:
+
+\begin{enumerate}
+  \item Change directory to \texttt{./latex}.
+  
+  \item Choose a temporary directory to compile the LaTeX and PDF files to. We will refer to this as
+  \texttt{\$TMP}.
+
+  \item Run \texttt{./agda\_build.sh \$TMP} to build the literate Agda LaTeX files. The script will
+  exit with code 0 if it is successful. The script is written for a Linux target, but should be
+  relatively easy to modify for other operating systems by inspecting its source code.
+
+  \item Run \texttt{latexmk -xelatex -shell-escape -cd \$TMP/dissertation.tex} (I would recommend
+  the \texttt{-quiet} option too).
+
+  \item The compiled document will be in \texttt{\$TMP/dissertation.pdf}.
+\end{enumerate}
 
 \end{document}
